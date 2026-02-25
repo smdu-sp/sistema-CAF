@@ -1,0 +1,145 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import DataTable from "@/components/data-table";
+import { getColumns, type UsuarioRow } from "./_components/columns";
+
+type CoordenadoriaOption = { id: string; nome: string };
+
+export default function UsuariosAdminPage() {
+  const { data: session } = useSession();
+  const [login, setLogin] = useState("");
+  const [resultado, setResultado] = useState<unknown>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
+  const [coordenadorias, setCoordenadorias] = useState<CoordenadoriaOption[]>([]);
+
+  const permissao = (session as any)?.usuario?.permissao;
+
+  async function carregarUsuarios() {
+    try {
+      const res = await fetch("/api/usuarios");
+      if (res.ok) {
+        const data = await res.json();
+        setUsuarios(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      setUsuarios([]);
+    }
+  }
+
+  async function carregarCoordenadorias() {
+    try {
+      const res = await fetch("/api/coordenadorias");
+      if (res.ok) {
+        const data = await res.json();
+        setCoordenadorias(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      setCoordenadorias([]);
+    }
+  }
+
+  useEffect(() => {
+    if (session && (permissao === "ADM" || permissao === "DEV")) {
+      carregarUsuarios();
+      carregarCoordenadorias();
+    }
+  }, [session, permissao]);
+
+  async function alterarCoordenadoria(usuarioId: string, coordenadoriaId: string | null) {
+    try {
+      const res = await fetch(`/api/usuarios/${usuarioId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coordenadoriaId }),
+      });
+      if (res.ok) carregarUsuarios();
+    } catch {
+      // silencioso
+    }
+  }
+
+  const columns = useMemo(
+    () => getColumns(coordenadorias, alterarCoordenadoria),
+    [coordenadorias],
+  );
+
+  async function importar() {
+    setErro(null);
+    setResultado(null);
+    setLoading(true);
+    try {
+      const resp = await fetch("/api/usuarios/importar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setErro(data.error ?? "Erro ao importar usuário");
+      } else {
+        setResultado(data);
+        carregarUsuarios();
+      }
+    } catch {
+      setErro("Falha na comunicação com o servidor.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!session) {
+    return (
+      <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
+        <p>Você precisa estar autenticado.</p>
+      </div>
+    );
+  }
+
+  if (permissao !== "ADM") {
+    return (
+      <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
+        <p>Somente administradores podem acessar esta página.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full px-0 md:px-8 relative pb-20 md:pb-14 h-full md:container mx-auto">
+      <h1 className="text-xl md:text-4xl font-bold">Usuários</h1>
+      <p className="text-sm text-muted-foreground mt-1">
+        Importar usuários do Active Directory e vincular coordenadorias.
+      </p>
+      <div className="flex flex-col max-w-sm mx-auto md:max-w-full gap-3 my-5 w-full">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-2 flex-1 min-w-[200px]">
+            <Label htmlFor="login">Login de rede</Label>
+            <Input
+              id="login"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              placeholder="Login para importar do AD"
+              className="w-full"
+            />
+          </div>
+          <Button onClick={importar} disabled={!login || loading}>
+            {loading ? "Importando..." : "Importar do AD"}
+          </Button>
+        </div>
+        {erro && <p className="text-sm text-destructive">{erro}</p>}
+        {resultado && (
+          <pre className="bg-muted text-foreground text-xs p-3 rounded-md overflow-auto max-h-64 border border-border">
+            {JSON.stringify(resultado, null, 2)}
+          </pre>
+        )}
+        <DataTable columns={columns} data={usuarios} />
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,32 @@
+---
+description: Padrão de cadastro (CRUD) igual ao base-frontend-2025 – estrutura obrigatória para páginas de cadastro
+alwaysApply: true
+---
+
+# Padrão de cadastro – base-frontend-2025
+
+O cadastro do projeto **deve seguir a mesma estrutura do base-frontend-2025** (padrão da empresa). Use-o como referência ao construir qualquer página de CRUD.
+
+## Estrutura de pastas por recurso
+
+- `app/(rotas-auth)/<recurso>/page.tsx` – página (preferir **Server Component**: lê searchParams, chama API/service, repassa dados).
+- `app/(rotas-auth)/<recurso>/_components/` – componentes da tela:
+  - `form-<recurso>.tsx` – formulário (react-hook-form + zod + Form do shadcn).
+  - `modal-update-create.tsx` – Dialog com botão Plus (criar) ou SquarePen (editar); DialogContent com o Form.
+  - `modal-delete.tsx` – Dialog de confirmação para excluir/ativar (Voltar + Deletar/Ativar).
+  - `columns.tsx` – definição das colunas da tabela (`ColumnDef<T>[]`), incluindo coluna **Ações** (editar + excluir/ativar).
+
+## Componentes e padrões
+
+- **Formulário**: `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormMessage` (components/ui/form.tsx); validação com **zod** e **zodResolver**; botões "Voltar" (`DialogClose`) e "Adicionar/Atualizar" com estado de loading (`Loader2`).
+- **Modais**: **Dialog** (Radix) – `Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose` (components/ui/dialog.tsx). Não usar Sheet/Drawer para criar/editar.
+- **Listagem**: `DataTable` com `columns` e `data`; opcionalmente `Filtros` (campos na URL) e `Pagination` quando houver paginação.
+- **Página**: título (h1), área com Filtros (se aplicável), DataTable, Pagination (se aplicável), botão flutuante para **criar** (ModalUpdateAndCreate com `isUpdating={false}`).
+- **Coluna Ações**: cada linha com ModalUpdateCreate (editar) e ModalDelete (excluir/ativar), centralizados.
+
+## Referência
+
+- Base: `C:\Users\d854440\Sistemas\base-frontend-2025\app\(rotas-auth)\usuarios\`
+- Arquivos de referência: `page.tsx`, `_components/form-usuario.tsx`, `_components/modal-update-create.tsx`, `_components/modal-delete.tsx`, `_components/columns.tsx`.
+
+Ao criar ou alterar páginas de cadastro, replicar essa estrutura e nomes de componentes.

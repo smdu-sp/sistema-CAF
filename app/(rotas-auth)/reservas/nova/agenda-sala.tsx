@@ -149,10 +149,10 @@ export function AgendaSala({
                   title={isAdmin ? `${r.titulo ?? ""} • ${r.usuarioNome ?? ""}` : undefined}
                 >
                   <div
-                    className={`h-full w-full flex flex-col justify-center px-2 py-0.5 text-left overflow-hidden transition-colors ${
+                    className={`h-full w-full flex flex-col justify-center px-2 py-0.5 text-left overflow-hidden transition-colors border border-border/80 ${
                       isAdmin
-                        ? "bg-primary/15 hover:bg-primary/25 border-primary/20"
-                        : "bg-muted text-muted-foreground"
+                        ? "bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-foreground"
+                        : "bg-gray-200 text-muted-foreground dark:bg-gray-600 dark:text-gray-400"
                     }`}
                   >
                     {isAdmin ? (

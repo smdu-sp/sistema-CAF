@@ -16,6 +16,14 @@ export default function UsuariosAdminPage() {
   const [resultado, setResultado] = useState<unknown>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingLote, setLoadingLote] = useState(false);
+  const [resultadoLote, setResultadoLote] = useState<{
+    importadosD: number;
+    importadosX: number;
+    atualizadosD: number;
+    atualizadosX: number;
+    erros: string[];
+  } | null>(null);
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
   const [coordenadorias, setCoordenadorias] = useState<CoordenadoriaOption[]>([]);
 
@@ -94,6 +102,26 @@ export default function UsuariosAdminPage() {
     }
   }
 
+  async function importarLoteDeX() {
+    setErro(null);
+    setResultadoLote(null);
+    setLoadingLote(true);
+    try {
+      const resp = await fetch("/api/usuarios/importar-lote", { method: "POST" });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setErro(data.error ?? "Erro ao importar em lote.");
+      } else {
+        setResultadoLote(data);
+        carregarUsuarios();
+      }
+    } catch {
+      setErro("Falha na comunicação com o servidor.");
+    } finally {
+      setLoadingLote(false);
+    }
+  }
+
   if (!session) {
     return (
       <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
@@ -102,7 +130,7 @@ export default function UsuariosAdminPage() {
     );
   }
 
-  if (permissao !== "ADM") {
+  if (permissao !== "ADM" && permissao !== "DEV") {
     return (
       <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
         <p>Somente administradores podem acessar esta página.</p>
@@ -131,8 +159,35 @@ export default function UsuariosAdminPage() {
           <Button onClick={importar} disabled={!login || loading}>
             {loading ? "Importando..." : "Importar do AD"}
           </Button>
+          <Button
+            variant="outline"
+            onClick={importarLoteDeX}
+            disabled={loadingLote}
+          >
+            {loadingLote ? "Importando..." : "Importar todos D e X do AD"}
+          </Button>
         </div>
         {erro && <p className="text-sm text-destructive">{erro}</p>}
+        {resultadoLote && (
+          <div className="text-sm rounded-md border border-border bg-muted/30 p-3 space-y-1">
+            <p className="font-medium">Importação em lote concluída</p>
+            <p>Login D*: {resultadoLote.importadosD} novos, {resultadoLote.atualizadosD} atualizados (permissão USR – podem reservar).</p>
+            <p>Login X*: {resultadoLote.importadosX} novos, {resultadoLote.atualizadosX} atualizados (permissão TEC – não podem reservar).</p>
+            {resultadoLote.erros.length > 0 && (
+              <div className="mt-2">
+                <p className="font-medium text-destructive">Erros:</p>
+                <ul className="list-disc list-inside text-destructive">
+                  {resultadoLote.erros.slice(0, 10).map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                  {resultadoLote.erros.length > 10 && (
+                    <li>… e mais {resultadoLote.erros.length - 10} erros.</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
         {resultado && (
           <pre className="bg-muted text-foreground text-xs p-3 rounded-md overflow-auto max-h-64 border border-border">
             {JSON.stringify(resultado, null, 2)}

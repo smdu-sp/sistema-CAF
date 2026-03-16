@@ -7,6 +7,8 @@ export default async function NovaReservaPage() {
   const session = await auth();
   if (!session) redirect("/login");
   const usuario = (session as any).usuario;
+  const podeReservar = usuario?.permissao === "USR" || usuario?.permissao === "ADM" || usuario?.permissao === "DEV";
+  if (!podeReservar) redirect("/dashboard");
   const [salas, coordenadorias] = await Promise.all([
     listarSalasAtivas(),
     listarCoordenadoriasAtivas(),
@@ -28,6 +30,8 @@ export default async function NovaReservaPage() {
         coordenadorias={coordenadorias}
         coordenadoriaIdPadrao={coordenadoriaIdPadrao}
         isAdmin={isAdmin}
+        usuarioNome={usuario?.nome ?? usuario?.nomeSocial ?? null}
+        usuarioEmail={usuario?.email ?? null}
       />
     </main>
   );

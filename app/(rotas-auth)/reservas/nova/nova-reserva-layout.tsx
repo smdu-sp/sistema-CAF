@@ -10,21 +10,28 @@ export function NovaReservaLayout({
   coordenadorias,
   coordenadoriaIdPadrao,
   isAdmin = false,
+  usuarioNome,
+  usuarioEmail,
 }: {
   salas: SalaOption[];
   coordenadorias: CoordenadoriaOption[];
   coordenadoriaIdPadrao: string;
   isAdmin?: boolean;
+  usuarioNome?: string | null;
+  usuarioEmail?: string | null;
 }) {
   const [salaId, setSalaId] = useState("");
-  const [data, setData] = useState("");
+  const [data, setData] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
 
   const salaNome =
     salas.find((s) => s.id === salaId)?.nome ?? "Selecione uma sala";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,400px)_1fr] gap-6 lg:gap-8 items-start">
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-6 lg:gap-8 items-start">
+      <div className="space-y-4 min-w-0">
         <FormNovaReserva
           salas={salas}
           coordenadorias={coordenadorias}
@@ -33,6 +40,8 @@ export function NovaReservaLayout({
           valueData={data}
           onSalaChange={setSalaId}
           onDataChange={setData}
+          usuarioNome={usuarioNome}
+          usuarioEmail={usuarioEmail}
         />
       </div>
       <div className="lg:sticky lg:top-4">

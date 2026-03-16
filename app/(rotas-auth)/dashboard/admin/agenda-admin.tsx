@@ -273,7 +273,7 @@ export function AgendaAdmin() {
                   {reservasSala.map((r) => (
                     <div
                       key={r.id}
-                      className="absolute left-1 right-1 rounded-md overflow-hidden border border-primary/20 bg-primary/15"
+                      className="absolute left-1 right-1 rounded-md overflow-hidden border border-border/80 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500"
                       style={{
                         top: `${r.topPct}%`,
                         height: `${r.heightPct}%`,

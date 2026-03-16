@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   }
 
   const usuarioSessao: any = (session as any).usuario;
-  if (usuarioSessao?.permissao !== "ADM") {
+  if (usuarioSessao?.permissao !== "ADM" && usuarioSessao?.permissao !== "DEV") {
     return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   }
 

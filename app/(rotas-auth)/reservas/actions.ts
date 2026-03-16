@@ -23,13 +23,21 @@ export async function criarReserva(
   if (!usuario?.login) {
     return { erro: "Dados do usuário não encontrados." };
   }
+  const podeReservar = usuario.permissao === "USR" || usuario.permissao === "ADM" || usuario.permissao === "DEV";
+  if (!podeReservar) {
+    return { erro: "Sua permissão não permite reservar salas." };
+  }
 
   const salaId = formData.get("salaId") as string;
   const dataStr = formData.get("data") as string;
   const horaInicio = formData.get("horaInicio") as string;
   const horaFim = formData.get("horaFim") as string;
-  const titulo = (formData.get("titulo") as string)?.trim() ?? "";
+  const tituloBase = (formData.get("titulo") as string)?.trim() ?? "";
+  const solicitacoes = (formData.get("solicitacoes") as string)?.trim() ?? "";
+  const titulo = solicitacoes ? `${tituloBase}\n${solicitacoes}`.trim() : tituloBase;
   const coordenadoriaIdForm = (formData.get("coordenadoriaId") as string)?.trim() || null;
+  const participantesIds = (formData.getAll("participantesIds") as string[]) ?? [];
+  const participantesIdsUnicos = [...new Set(participantesIds.map((id) => id.trim()).filter(Boolean))];
 
   if (!salaId || !dataStr || !horaInicio || !horaFim) {
     return { erro: "Preencha sala, data e horários." };
@@ -37,15 +45,18 @@ export async function criarReserva(
   if (!titulo) {
     return { erro: "O título da reserva é obrigatório." };
   }
-
-  let coordenadoriaId: string | null = null;
-  if (coordenadoriaIdForm) {
-    const existe = await prisma.coordenadoria.findFirst({
-      where: { id: coordenadoriaIdForm, ativo: true },
-      select: { id: true },
-    });
-    if (existe) coordenadoriaId = coordenadoriaIdForm;
+  if (!coordenadoriaIdForm) {
+    return { erro: "A coordenadoria é obrigatória." };
   }
+
+  const coordenadoriaExiste = await prisma.coordenadoria.findFirst({
+    where: { id: coordenadoriaIdForm, ativo: true },
+    select: { id: true },
+  });
+  if (!coordenadoriaExiste) {
+    return { erro: "Coordenadoria inválida ou inativa." };
+  }
+  const coordenadoriaId = coordenadoriaIdForm;
 
   const [ano, mes, dia] = dataStr.split("-").map(Number);
   const [hi, mi] = horaInicio.split(":").map(Number);
@@ -68,7 +79,7 @@ export async function criarReserva(
   const nomeExibicao =
     usuario.nomeSocial || usuario.nome || usuario.login || "Usuário";
 
-  await prisma.reserva.create({
+  const reserva = await prisma.reserva.create({
     data: {
       salaId,
       usuarioId: usuario.id ?? null,
@@ -80,6 +91,21 @@ export async function criarReserva(
       titulo,
     },
   });
+
+  if (participantesIdsUnicos.length > 0) {
+    const usuariosExistentes = await prisma.usuario.findMany({
+      where: { id: { in: participantesIdsUnicos }, status: true },
+      select: { id: true },
+    });
+    const idsValidos = usuariosExistentes.map((u) => u.id);
+    await prisma.reservaParticipante.createMany({
+      data: idsValidos.map((usuarioId) => ({
+        reservaId: reserva.id,
+        usuarioId,
+      })),
+      skipDuplicates: true,
+    });
+  }
 
   revalidatePath("/reservas/minhas");
   revalidatePath("/dashboard");

@@ -45,8 +45,9 @@ model Usuario {
   criadoEm     DateTime  @default(now())
   atualizadoEm DateTime  @default(now()) @updatedAt
 
-  coordenadoria Coordenadoria? @relation(fields: [coordenadoriaId], references: [id], onDelete: SetNull)
+  coordenadoria Coordenadoria?   @relation(fields: [coordenadoriaId], references: [id], onDelete: SetNull)
   reservas      Reserva[]
+  participacoes ReservaParticipante[]
 
   @@map("usuarios")
 }
@@ -80,9 +81,23 @@ model Reserva {
   criadoEm         DateTime @default(now())
   atualizadoEm     DateTime @default(now()) @updatedAt
 
-  sala           Sala           @relation(fields: [salaId], references: [id], onDelete: Cascade)
-  usuario        Usuario?       @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  coordenadoria  Coordenadoria? @relation(fields: [coordenadoriaId], references: [id], onDelete: SetNull)
+  sala           Sala                   @relation(fields: [salaId], references: [id], onDelete: Cascade)
+  usuario        Usuario?               @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  coordenadoria  Coordenadoria?         @relation(fields: [coordenadoriaId], references: [id], onDelete: SetNull)
+  participantes  ReservaParticipante[]
 
   @@map("reservas")
+}
+
+model ReservaParticipante {
+  id         String   @id @default(uuid())
+  reservaId  String
+  usuarioId  String
+  criadoEm   DateTime @default(now())
+
+  reserva Reserva @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([reservaId, usuarioId])
+  @@map("reserva_participantes")
 }

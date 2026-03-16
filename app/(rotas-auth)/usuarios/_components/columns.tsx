@@ -23,10 +23,14 @@ export function getColumns(
       accessorKey: 'nome',
       header: 'Nome',
       cell: ({ row }) => (
-        <span>
-          <span className="font-medium">{row.original.nome}</span>
-          <span className="text-muted-foreground ml-1">({row.original.login})</span>
-        </span>
+        <span className="font-medium">{row.original.nome}</span>
+      ),
+    },
+    {
+      accessorKey: 'login',
+      header: 'Usuário',
+      cell: ({ row }) => (
+        <span className="text-muted-foreground font-mono text-sm">{row.original.login}</span>
       ),
     },
     {

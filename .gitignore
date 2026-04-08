@@ -22,3 +22,7 @@ npm-debug.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Uploads locais (fotos de layout das salas)
+/public/uploads/salas/*
+!/public/uploads/salas/.gitkeep

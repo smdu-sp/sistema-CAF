@@ -10,7 +10,12 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog';
-import { Check, Loader2, Trash2 } from 'lucide-react';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Loader2, Power, PowerOff } from 'lucide-react';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
@@ -24,41 +29,56 @@ export default function ModalDelete({
 	const [isPending, startTransition] = useTransition();
 
 	async function handleAction() {
-		const res = await fetch(`/api/salas/${id}`, {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ ativo: status }),
-		});
-		const data = await res.json();
-		if (!res.ok) {
-			toast.error('Erro', { description: data.error });
-			return;
+		try {
+			const res = await fetch(`/api/salas/${id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ ativo: status }),
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok) {
+				toast.error('Erro', { description: data.error ?? 'Falha ao alterar status da sala.' });
+				return;
+			}
+			toast.success(
+				status ? 'Sala ativada com sucesso' : 'Sala desativada com sucesso',
+			);
+			window.location.reload();
+		} catch {
+			toast.error('Erro', { description: 'Falha na comunicação com o servidor.' });
 		}
-		toast.success(
-			status ? 'Sala ativada com sucesso' : 'Sala desativada com sucesso',
-		);
-		window.location.reload();
 	}
+
+	const labelAcao = status ? 'Ativar sala' : 'Desativar sala';
 
 	return (
 		<Dialog>
-			<DialogTrigger asChild>
-				<Button
-					size="icon"
-					variant="outline"
-					className={
-						status
-							? 'hover:bg-primary cursor-pointer hover:text-white group transition-all ease-linear duration-200'
-							: 'hover:bg-destructive cursor-pointer hover:text-white group transition-all ease-linear duration-200'
-					}
-				>
-					{status ? (
-						<Check size={24} className="text-primary dark:text-white group-hover:text-white group" />
-					) : (
-						<Trash2 size={24} className="text-destructive dark:text-white group-hover:text-white group" />
-					)}
-				</Button>
-			</DialogTrigger>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<DialogTrigger asChild>
+						<Button
+							type="button"
+							size="icon"
+							variant="outline"
+							aria-label={labelAcao}
+							className={
+								status
+									? 'hover:bg-primary cursor-pointer hover:text-white group transition-all ease-linear duration-200'
+									: 'hover:bg-destructive cursor-pointer hover:text-white group transition-all ease-linear duration-200'
+							}
+						>
+							{status ? (
+								<Power size={24} className="text-primary dark:text-white group-hover:text-white group" />
+							) : (
+								<PowerOff size={24} className="text-destructive dark:text-white group-hover:text-white group" />
+							)}
+						</Button>
+					</DialogTrigger>
+				</TooltipTrigger>
+				<TooltipContent side="top">
+					<p>{labelAcao}</p>
+				</TooltipContent>
+			</Tooltip>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>

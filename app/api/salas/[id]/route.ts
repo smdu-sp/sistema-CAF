@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import type { Layout } from "@prisma/client";
+import { isCaminhoUploadSalaSeguro, removerArquivoLayoutImagem } from "@/lib/sala-layout-imagem";
 
 const select = {
   id: true,
@@ -10,8 +11,43 @@ const select = {
   numero: true,
   lotacao: true,
   layout: true,
+  layoutImagemUrl: true,
   ativo: true,
+  mobiliarios: {
+    select: { id: true, nome: true, quantidade: true },
+    orderBy: { nome: "asc" as const },
+  },
+  midias: {
+    select: { id: true, nome: true, quantidade: true },
+    orderBy: { nome: "asc" as const },
+  },
 };
+
+type ItemPayload = { nome?: string; quantidade?: number };
+
+function normalizarItens(items: unknown): { nome: string; quantidade: number }[] {
+  if (!Array.isArray(items)) return [];
+  const normalizados = items
+    .map((item) => {
+      const raw = (item ?? {}) as ItemPayload;
+      const nome = typeof raw.nome === "string" ? raw.nome.trim() : "";
+      const quantidade =
+        typeof raw.quantidade === "number" &&
+        Number.isFinite(raw.quantidade) &&
+        raw.quantidade > 0
+          ? Math.trunc(raw.quantidade)
+          : 0;
+      if (!nome || quantidade <= 0) return null;
+      return { nome, quantidade };
+    })
+    .filter((x): x is { nome: string; quantidade: number } => !!x);
+
+  const mapa = new Map<string, number>();
+  for (const item of normalizados) {
+    mapa.set(item.nome, (mapa.get(item.nome) ?? 0) + item.quantidade);
+  }
+  return Array.from(mapa.entries()).map(([nome, quantidade]) => ({ nome, quantidade }));
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -30,13 +66,24 @@ export async function PATCH(
   if (!id) {
     return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
   }
+
+  const salaAntes = await prisma.sala.findUnique({
+    where: { id },
+    select: { layoutImagemUrl: true },
+  });
+  if (!salaAntes) {
+    return NextResponse.json({ error: "Sala não encontrada" }, { status: 404 });
+  }
   let body: {
     nome?: string;
     andar?: string;
     numero?: string;
     lotacao?: number;
     layout?: string;
+    layoutImagemUrl?: string | null;
     ativo?: boolean;
+    mobiliarios?: ItemPayload[];
+    midias?: ItemPayload[];
   };
   try {
     body = await request.json();
@@ -52,7 +99,10 @@ export async function PATCH(
     numero?: string | null;
     lotacao?: number | null;
     layout?: Layout | null;
+    layoutImagemUrl?: string | null;
     ativo?: boolean;
+    mobiliarios?: { deleteMany: {}; create: { nome: string; quantidade: number }[] };
+    midias?: { deleteMany: {}; create: { nome: string; quantidade: number }[] };
   } = {};
   if (typeof body.nome === "string") {
     const nome = body.nome.trim();
@@ -93,6 +143,38 @@ export async function PATCH(
       layoutRaw === "FIXO" || layoutRaw === "MOVEL"
         ? (layoutRaw as Layout)
         : null;
+    if (data.layout === "FIXO" || data.layout === null) {
+      data.layoutImagemUrl = null;
+    }
+  }
+  if (body.layoutImagemUrl !== undefined) {
+    const v = body.layoutImagemUrl;
+    if (v === null) {
+      data.layoutImagemUrl = null;
+    } else if (typeof v === "string") {
+      const t = v.trim();
+      data.layoutImagemUrl = t === "" ? null : t;
+    }
+  }
+  if (body.mobiliarios !== undefined) {
+    const mobiliarios = normalizarItens(body.mobiliarios);
+    data.mobiliarios = {
+      deleteMany: {},
+      create: mobiliarios.map((item) => ({
+        nome: item.nome,
+        quantidade: item.quantidade,
+      })),
+    };
+  }
+  if (body.midias !== undefined) {
+    const midias = normalizarItens(body.midias);
+    data.midias = {
+      deleteMany: {},
+      create: midias.map((item) => ({
+        nome: item.nome,
+        quantidade: item.quantidade,
+      })),
+    };
   }
   if (typeof body.ativo === "boolean") data.ativo = body.ativo;
 
@@ -107,5 +189,16 @@ export async function PATCH(
     data,
     select,
   });
+
+  const urlAntiga = salaAntes?.layoutImagemUrl ?? null;
+  const urlNova = sala.layoutImagemUrl ?? null;
+  if (
+    urlAntiga &&
+    urlAntiga !== urlNova &&
+    isCaminhoUploadSalaSeguro(urlAntiga)
+  ) {
+    await removerArquivoLayoutImagem(urlAntiga);
+  }
+
   return NextResponse.json(sala);
 }

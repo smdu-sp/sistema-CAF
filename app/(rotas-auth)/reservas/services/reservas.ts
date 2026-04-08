@@ -19,6 +19,9 @@ export type SalaOption = {
   numero: string | null;
   lotacao: number | null;
   layout: Layout | null;
+  layoutImagemUrl: string | null;
+  mobiliarios: { nome: string; quantidade: number }[];
+  midias: { nome: string; quantidade: number }[];
 };
 
 export type CoordenadoriaOption = {
@@ -39,7 +42,17 @@ export async function listarSalasAtivas(): Promise<SalaOption[]> {
   const salas = await prisma.sala.findMany({
     where: { ativo: true },
     orderBy: { nome: "asc" },
-    select: { id: true, nome: true, andar: true, numero: true, lotacao: true, layout: true },
+    select: {
+      id: true,
+      nome: true,
+      andar: true,
+      numero: true,
+      lotacao: true,
+      layout: true,
+      layoutImagemUrl: true,
+      mobiliarios: { select: { nome: true, quantidade: true } },
+      midias: { select: { nome: true, quantidade: true } },
+    },
   });
   return salas;
 }

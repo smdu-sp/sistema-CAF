@@ -22,7 +22,7 @@ export default async function NovaReservaPage() {
       <header>
         <h1 className="text-2xl font-semibold">Nova Reserva</h1>
         <p className="text-sm text-muted-foreground">
-          Escolha a sala, data e horário para sua reunião. À direita, a agenda do dia mostra os horários já reservados.
+        Escolha a sala, data e horário para sua reunião. À direita, a agenda do dia mostra os horários já reservados.
         </p>
       </header>
       <NovaReservaLayout
@@ -30,7 +30,7 @@ export default async function NovaReservaPage() {
         coordenadorias={coordenadorias}
         coordenadoriaIdPadrao={coordenadoriaIdPadrao}
         isAdmin={isAdmin}
-        usuarioNome={usuario?.nome ?? usuario?.nomeSocial ?? null}
+        usuarioNome={usuario?.nomeSocial ?? usuario?.nome ?? null}
         usuarioEmail={usuario?.email ?? null}
       />
     </main>

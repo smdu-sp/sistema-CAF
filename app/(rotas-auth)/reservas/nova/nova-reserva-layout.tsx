@@ -30,28 +30,26 @@ export function NovaReservaLayout({
     salas.find((s) => s.id === salaId)?.nome ?? "Selecione uma sala";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-6 lg:gap-8 items-start">
-      <div className="space-y-4 min-w-0">
-        <FormNovaReserva
-          salas={salas}
-          coordenadorias={coordenadorias}
-          coordenadoriaIdPadrao={coordenadoriaIdPadrao}
-          valueSalaId={salaId}
-          valueData={data}
-          onSalaChange={setSalaId}
-          onDataChange={setData}
-          usuarioNome={usuarioNome}
-          usuarioEmail={usuarioEmail}
-        />
-      </div>
-      <div className="lg:sticky lg:top-4">
-        <AgendaSala
-          salaId={salaId || null}
-          data={data || null}
-          salaNome={salaNome}
-          isAdmin={isAdmin}
-        />
-      </div>
+    <div className="min-w-0">
+      <FormNovaReserva
+        salas={salas}
+        coordenadorias={coordenadorias}
+        coordenadoriaIdPadrao={coordenadoriaIdPadrao}
+        valueSalaId={salaId}
+        valueData={data}
+        onSalaChange={setSalaId}
+        onDataChange={setData}
+        usuarioNome={usuarioNome}
+        usuarioEmail={usuarioEmail}
+        agendaSlot={
+          <AgendaSala
+            salaId={salaId || null}
+            data={data || null}
+            salaNome={salaNome}
+            isAdmin={isAdmin}
+          />
+        }
+      />
     </div>
   );
 }

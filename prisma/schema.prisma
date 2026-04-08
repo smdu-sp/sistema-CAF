@@ -64,13 +64,43 @@ model Sala {
   numero       String?   @db.VarChar(10)
   lotacao      Int?
   layout       Layout?
+  /// Caminho público da foto do layout (ex.: /uploads/salas/...). Usado quando layout = MOVEL.
+  layoutImagemUrl String? @db.VarChar(512)
   ativo        Boolean   @default(true)
   criadoEm     DateTime  @default(now())
   atualizadoEm DateTime  @default(now()) @updatedAt
 
-  reservas Reserva[]
+  reservas     Reserva[]
+  mobiliarios  SalaMobiliario[]
+  midias       SalaMidia[]
 
   @@map("salas")
+}
+
+model SalaMobiliario {
+  id         String   @id @default(uuid())
+  salaId      String
+  nome        String   @db.VarChar(120)
+  quantidade  Int
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  sala Sala @relation(fields: [salaId], references: [id], onDelete: Cascade)
+
+  @@map("sala_mobiliarios")
+}
+
+model SalaMidia {
+  id         String   @id @default(uuid())
+  salaId      String
+  nome        String   @db.VarChar(120)
+  quantidade  Int
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  sala Sala @relation(fields: [salaId], references: [id], onDelete: Cascade)
+
+  @@map("sala_midias")
 }
 
 model Reserva {
@@ -78,11 +108,15 @@ model Reserva {
   salaId           String
   usuarioId        String?
   usuarioLogin     String   @db.VarChar(60)
+  /// Nome do responsável pela reserva (preenchido no formulário).
   usuarioNome      String?  @db.VarChar(255)
   coordenadoriaId  String?
   inicio           DateTime
   fim              DateTime
   titulo           String?  @db.VarChar(255)
+  telefoneRamal    String?  @db.VarChar(80)
+  emailContato     String?  @db.VarChar(255)
+  numeroParticipantes Int?
   criadoEm         DateTime @default(now())
   atualizadoEm     DateTime @default(now()) @updatedAt
 

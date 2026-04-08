@@ -36,7 +36,18 @@ export default async function SalasPage() {
 async function SalasContent() {
 	const lista = await prisma.sala.findMany({
 		orderBy: { nome: 'asc' },
-		select: { id: true, nome: true, andar: true, numero: true, lotacao: true, layout: true, ativo: true },
+		select: {
+			id: true,
+			nome: true,
+			andar: true,
+			numero: true,
+			lotacao: true,
+			layout: true,
+			layoutImagemUrl: true,
+			ativo: true,
+			mobiliarios: { select: { id: true, nome: true, quantidade: true }, orderBy: { nome: 'asc' } },
+			midias: { select: { id: true, nome: true, quantidade: true }, orderBy: { nome: 'asc' } },
+		},
 	});
 
 	return (

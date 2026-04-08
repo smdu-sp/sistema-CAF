@@ -10,8 +10,43 @@ const select = {
   numero: true,
   lotacao: true,
   layout: true,
+  layoutImagemUrl: true,
   ativo: true,
+  mobiliarios: {
+    select: { id: true, nome: true, quantidade: true },
+    orderBy: { nome: "asc" as const },
+  },
+  midias: {
+    select: { id: true, nome: true, quantidade: true },
+    orderBy: { nome: "asc" as const },
+  },
 };
+
+type ItemPayload = { nome?: string; quantidade?: number };
+
+function normalizarItens(items: unknown): { nome: string; quantidade: number }[] {
+  if (!Array.isArray(items)) return [];
+  const normalizados = items
+    .map((item) => {
+      const raw = (item ?? {}) as ItemPayload;
+      const nome = typeof raw.nome === "string" ? raw.nome.trim() : "";
+      const quantidade =
+        typeof raw.quantidade === "number" &&
+        Number.isFinite(raw.quantidade) &&
+        raw.quantidade > 0
+          ? Math.trunc(raw.quantidade)
+          : 0;
+      if (!nome || quantidade <= 0) return null;
+      return { nome, quantidade };
+    })
+    .filter((x): x is { nome: string; quantidade: number } => !!x);
+
+  const mapa = new Map<string, number>();
+  for (const item of normalizados) {
+    mapa.set(item.nome, (mapa.get(item.nome) ?? 0) + item.quantidade);
+  }
+  return Array.from(mapa.entries()).map(([nome, quantidade]) => ({ nome, quantidade }));
+}
 
 export async function GET() {
   const session = await auth();
@@ -40,7 +75,15 @@ export async function POST(request: NextRequest) {
   if (permissao !== "ADM" && permissao !== "DEV") {
     return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   }
-  let body: { nome?: string; andar?: string; numero?: string; lotacao?: number; layout?: string };
+  let body: {
+    nome?: string;
+    andar?: string;
+    numero?: string;
+    lotacao?: number;
+    layout?: string;
+    mobiliarios?: ItemPayload[];
+    midias?: ItemPayload[];
+  };
   try {
     body = await request.json();
   } catch {
@@ -74,9 +117,29 @@ export async function POST(request: NextRequest) {
   const layoutRaw = typeof body.layout === "string" ? body.layout.trim().toUpperCase() : "";
   const layout: Layout | null =
     layoutRaw === "FIXO" || layoutRaw === "MOVEL" ? (layoutRaw as Layout) : null;
+  const mobiliarios = normalizarItens(body.mobiliarios);
+  const midias = normalizarItens(body.midias);
 
   const sala = await prisma.sala.create({
-    data: { nome, andar, numero, lotacao, layout },
+    data: {
+      nome,
+      andar,
+      numero,
+      lotacao,
+      layout,
+      mobiliarios: {
+        create: mobiliarios.map((item) => ({
+          nome: item.nome,
+          quantidade: item.quantidade,
+        })),
+      },
+      midias: {
+        create: midias.map((item) => ({
+          nome: item.nome,
+          quantidade: item.quantidade,
+        })),
+      },
+    },
     select,
   });
   return NextResponse.json(sala, { status: 201 });

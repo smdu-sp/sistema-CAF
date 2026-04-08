@@ -32,9 +32,9 @@ export async function criarReserva(
   const dataStr = formData.get("data") as string;
   const horaInicio = formData.get("horaInicio") as string;
   const horaFim = formData.get("horaFim") as string;
-  const tituloBase = (formData.get("titulo") as string)?.trim() ?? "";
-  const solicitacoes = (formData.get("solicitacoes") as string)?.trim() ?? "";
-  const titulo = solicitacoes ? `${tituloBase}\n${solicitacoes}`.trim() : tituloBase;
+  const titulo = (formData.get("titulo") as string)?.trim() ?? "";
+  const telefoneRamal = (formData.get("telefoneRamal") as string)?.trim() || null;
+  const numeroParticipantesStr = (formData.get("numeroParticipantes") as string)?.trim() ?? "";
   const coordenadoriaIdForm = (formData.get("coordenadoriaId") as string)?.trim() || null;
   const participantesIds = (formData.getAll("participantesIds") as string[]) ?? [];
   const participantesIdsUnicos = [...new Set(participantesIds.map((id) => id.trim()).filter(Boolean))];
@@ -45,8 +45,27 @@ export async function criarReserva(
   if (!titulo) {
     return { erro: "O título da reserva é obrigatório." };
   }
+  const usuarioNomeGravar = (
+    (usuario.nomeSocial || usuario.nome || usuario.login || "") as string
+  )
+    .trim()
+    .slice(0, 255);
+  if (!usuarioNomeGravar) {
+    return { erro: "Não foi possível identificar o nome do usuário logado." };
+  }
+  const emailContato = ((usuario.email as string | undefined) ?? "").trim();
+  if (!emailContato || !emailContato.includes("@")) {
+    return { erro: "Não foi possível identificar o e-mail do usuário logado." };
+  }
+  if (!telefoneRamal) {
+    return { erro: "Informe o telefone ou ramal." };
+  }
+  const numeroParticipantes = Number.parseInt(numeroParticipantesStr, 10);
+  if (!Number.isFinite(numeroParticipantes) || numeroParticipantes < 1) {
+    return { erro: "Informe o número de participantes (mínimo 1)." };
+  }
   if (!coordenadoriaIdForm) {
-    return { erro: "A coordenadoria é obrigatória." };
+    return { erro: "A coordenadoria ou setor é obrigatório." };
   }
 
   const coordenadoriaExiste = await prisma.coordenadoria.findFirst({
@@ -76,19 +95,21 @@ export async function criarReserva(
     return { erro: "Já existe uma reserva nesta sala no horário escolhido." };
   }
 
-  const nomeExibicao =
-    usuario.nomeSocial || usuario.nome || usuario.login || "Usuário";
-
   const reserva = await prisma.reserva.create({
     data: {
       salaId,
       usuarioId: usuario.id ?? null,
       usuarioLogin: usuario.login,
-      usuarioNome: nomeExibicao,
+      usuarioNome: usuarioNomeGravar,
       coordenadoriaId,
       inicio,
       fim,
-      titulo,
+      titulo: titulo.length > 255 ? titulo.slice(0, 255) : titulo,
+      telefoneRamal:
+        telefoneRamal.length > 80 ? telefoneRamal.slice(0, 80) : telefoneRamal,
+      emailContato:
+        emailContato.length > 255 ? emailContato.slice(0, 255) : emailContato,
+      numeroParticipantes,
     },
   });
 

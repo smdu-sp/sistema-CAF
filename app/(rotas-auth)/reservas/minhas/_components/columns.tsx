@@ -13,6 +13,7 @@ export type ReservaRow = {
   inicio: string;
   fim: string;
   titulo: string | null;
+  layoutEscolhidoDescricao: string | null;
 };
 
 function formatarData(d: string) {
@@ -88,6 +89,12 @@ export const columns: ColumnDef<ReservaRow>[] = [
     accessorKey: 'titulo',
     header: 'Título',
     cell: ({ row }) => row.original.titulo ?? '—',
+  },
+  {
+    accessorKey: 'layoutEscolhidoDescricao',
+    id: 'layout',
+    header: 'Layout',
+    cell: ({ row }) => row.original.layoutEscolhidoDescricao ?? '—',
   },
   {
     accessorKey: 'id',

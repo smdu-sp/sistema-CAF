@@ -38,6 +38,7 @@ export async function criarReserva(
   const coordenadoriaIdForm = (formData.get("coordenadoriaId") as string)?.trim() || null;
   const participantesIds = (formData.getAll("participantesIds") as string[]) ?? [];
   const participantesIdsUnicos = [...new Set(participantesIds.map((id) => id.trim()).filter(Boolean))];
+  const salaLayoutFotoIdForm = ((formData.get("salaLayoutFotoId") as string) ?? "").trim();
 
   if (!salaId || !dataStr || !horaInicio || !horaFim) {
     return { erro: "Preencha sala, data e horários." };
@@ -95,6 +96,33 @@ export async function criarReserva(
     return { erro: "Já existe uma reserva nesta sala no horário escolhido." };
   }
 
+  const salaReserva = await prisma.sala.findFirst({
+    where: { id: salaId, ativo: true },
+    select: {
+      id: true,
+      layout: true,
+      layoutFotos: { select: { id: true, descricao: true } },
+    },
+  });
+  if (!salaReserva) {
+    return { erro: "Sala inválida ou inativa." };
+  }
+
+  let salaLayoutFotoId: string | null = null;
+  let layoutEscolhidoDescricao: string | null = null;
+  if (salaReserva.layout === "MOVEL" && salaReserva.layoutFotos.length > 0) {
+    if (!salaLayoutFotoIdForm) {
+      return { erro: "Selecione o tipo de layout da reunião." };
+    }
+    const foto = salaReserva.layoutFotos.find((f) => f.id === salaLayoutFotoIdForm);
+    if (!foto) {
+      return { erro: "O layout selecionado não pertence a esta sala." };
+    }
+    salaLayoutFotoId = foto.id;
+    layoutEscolhidoDescricao =
+      foto.descricao.length > 120 ? foto.descricao.slice(0, 120) : foto.descricao;
+  }
+
   const reserva = await prisma.reserva.create({
     data: {
       salaId,
@@ -110,6 +138,8 @@ export async function criarReserva(
       emailContato:
         emailContato.length > 255 ? emailContato.slice(0, 255) : emailContato,
       numeroParticipantes,
+      salaLayoutFotoId,
+      layoutEscolhidoDescricao,
     },
   });
 

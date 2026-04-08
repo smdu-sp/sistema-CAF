@@ -10,6 +10,14 @@ export type ReservaResumo = {
   fim: Date;
   titulo: string | null;
   criadoEm: Date;
+  /** Tipo de layout móvel escolhido na reserva, se houver. */
+  layoutEscolhidoDescricao: string | null;
+};
+
+export type SalaLayoutFotoOption = {
+  id: string;
+  descricao: string;
+  imagemUrl: string;
 };
 
 export type SalaOption = {
@@ -19,7 +27,7 @@ export type SalaOption = {
   numero: string | null;
   lotacao: number | null;
   layout: Layout | null;
-  layoutImagemUrl: string | null;
+  layoutFotos: SalaLayoutFotoOption[];
   mobiliarios: { nome: string; quantidade: number }[];
   midias: { nome: string; quantidade: number }[];
 };
@@ -49,7 +57,10 @@ export async function listarSalasAtivas(): Promise<SalaOption[]> {
       numero: true,
       lotacao: true,
       layout: true,
-      layoutImagemUrl: true,
+      layoutFotos: {
+        select: { id: true, descricao: true, imagemUrl: true },
+        orderBy: [{ ordem: "asc" }, { criadoEm: "asc" }],
+      },
       mobiliarios: { select: { nome: true, quantidade: true } },
       midias: { select: { nome: true, quantidade: true } },
     },
@@ -78,6 +89,7 @@ export async function listarMinhasReservas(
     fim: r.fim,
     titulo: r.titulo,
     criadoEm: r.criadoEm,
+    layoutEscolhidoDescricao: r.layoutEscolhidoDescricao ?? null,
   }));
 }
 

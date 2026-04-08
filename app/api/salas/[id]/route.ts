@@ -11,8 +11,11 @@ const select = {
   numero: true,
   lotacao: true,
   layout: true,
-  layoutImagemUrl: true,
   ativo: true,
+  layoutFotos: {
+    select: { id: true, descricao: true, imagemUrl: true, ordem: true },
+    orderBy: [{ ordem: "asc" as const }, { criadoEm: "asc" as const }],
+  },
   mobiliarios: {
     select: { id: true, nome: true, quantidade: true },
     orderBy: { nome: "asc" as const },
@@ -67,11 +70,11 @@ export async function PATCH(
     return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
   }
 
-  const salaAntes = await prisma.sala.findUnique({
+  const salaExiste = await prisma.sala.findUnique({
     where: { id },
-    select: { layoutImagemUrl: true },
+    select: { id: true },
   });
-  if (!salaAntes) {
+  if (!salaExiste) {
     return NextResponse.json({ error: "Sala não encontrada" }, { status: 404 });
   }
   let body: {
@@ -80,7 +83,6 @@ export async function PATCH(
     numero?: string;
     lotacao?: number;
     layout?: string;
-    layoutImagemUrl?: string | null;
     ativo?: boolean;
     mobiliarios?: ItemPayload[];
     midias?: ItemPayload[];
@@ -99,8 +101,8 @@ export async function PATCH(
     numero?: string | null;
     lotacao?: number | null;
     layout?: Layout | null;
-    layoutImagemUrl?: string | null;
     ativo?: boolean;
+    layoutFotos?: { deleteMany: {} };
     mobiliarios?: { deleteMany: {}; create: { nome: string; quantidade: number }[] };
     midias?: { deleteMany: {}; create: { nome: string; quantidade: number }[] };
   } = {};
@@ -144,16 +146,16 @@ export async function PATCH(
         ? (layoutRaw as Layout)
         : null;
     if (data.layout === "FIXO" || data.layout === null) {
-      data.layoutImagemUrl = null;
-    }
-  }
-  if (body.layoutImagemUrl !== undefined) {
-    const v = body.layoutImagemUrl;
-    if (v === null) {
-      data.layoutImagemUrl = null;
-    } else if (typeof v === "string") {
-      const t = v.trim();
-      data.layoutImagemUrl = t === "" ? null : t;
+      const fotos = await prisma.salaLayoutFoto.findMany({
+        where: { salaId: id },
+        select: { imagemUrl: true },
+      });
+      for (const f of fotos) {
+        if (f.imagemUrl && isCaminhoUploadSalaSeguro(f.imagemUrl)) {
+          await removerArquivoLayoutImagem(f.imagemUrl);
+        }
+      }
+      data.layoutFotos = { deleteMany: {} };
     }
   }
   if (body.mobiliarios !== undefined) {
@@ -189,16 +191,6 @@ export async function PATCH(
     data,
     select,
   });
-
-  const urlAntiga = salaAntes?.layoutImagemUrl ?? null;
-  const urlNova = sala.layoutImagemUrl ?? null;
-  if (
-    urlAntiga &&
-    urlAntiga !== urlNova &&
-    isCaminhoUploadSalaSeguro(urlAntiga)
-  ) {
-    await removerArquivoLayoutImagem(urlAntiga);
-  }
 
   return NextResponse.json(sala);
 }

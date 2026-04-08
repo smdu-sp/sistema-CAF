@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       coordenadoriaNome: r.coordenadoria?.nome ?? null,
       inicio: r.inicio.toISOString(),
       fim: r.fim.toISOString(),
+      layoutEscolhidoDescricao: r.layoutEscolhidoDescricao ?? null,
     })),
     total,
     pagina,

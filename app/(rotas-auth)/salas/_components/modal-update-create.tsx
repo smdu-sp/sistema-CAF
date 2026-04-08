@@ -15,6 +15,7 @@ import {
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Plus, SquarePen } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { SalaRow } from './form-sala';
 import FormSala from './form-sala';
 
@@ -55,18 +56,29 @@ export default function ModalUpdateAndCreate({
 					<p>{labelAcao}</p>
 				</TooltipContent>
 			</Tooltip>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>
-						{isUpdating ? 'Editar ' : 'Criar '}Sala
-					</DialogTitle>
-					<DialogDescription>
-						{isUpdating
-							? 'Altere os dados da sala, incluindo mobiliário e mídia.'
-							: 'Preencha os dados para cadastrar uma nova sala.'}
-					</DialogDescription>
-				</DialogHeader>
-				<FormSala sala={sala} isUpdating={isUpdating} />
+			<DialogContent
+				className={cn(
+					'flex max-h-[min(90vh,880px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl',
+				)}
+			>
+				<div className="shrink-0 space-y-2 border-b px-6 pt-6 pb-4 pr-14">
+					<DialogHeader>
+						<DialogTitle>
+							{isUpdating ? 'Editar ' : 'Criar '}Sala
+						</DialogTitle>
+						<DialogDescription>
+							{isUpdating
+								? 'Altere os dados da sala, incluindo mobiliário e mídia.'
+								: 'Preencha os dados para cadastrar uma nova sala.'}
+						</DialogDescription>
+					</DialogHeader>
+				</div>
+				<FormSala
+					key={isUpdating ? sala?.id ?? 'edit' : 'nova'}
+					sala={sala}
+					isUpdating={isUpdating}
+					className="min-h-0 flex-1 overflow-hidden px-6 pb-6 pt-4"
+				/>
 			</DialogContent>
 		</Dialog>
 	);

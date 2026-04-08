@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Calendar as CalendarIcon,
+  Check,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -110,10 +111,15 @@ export function FormNovaReserva({
   const [telefoneRamal, setTelefoneRamal] = useState("");
   const [numeroParticipantes, setNumeroParticipantes] = useState("1");
   const [erroEtapa, setErroEtapa] = useState("");
+  const [salaLayoutFotoId, setSalaLayoutFotoId] = useState("");
 
   useEffect(() => {
     onStepChange?.(step);
   }, [step, onStepChange]);
+
+  useEffect(() => {
+    setSalaLayoutFotoId("");
+  }, [valueSalaId]);
 
   useEffect(() => {
     setCoordenadoriaId(coordenadoriaIdPadrao);
@@ -191,6 +197,9 @@ export function FormNovaReserva({
   };
 
   const salaSelecionada = salas.find((s) => s.id === (valueSalaId ?? ""));
+  const precisaEscolherLayoutMovel =
+    salaSelecionada?.layout === "MOVEL" &&
+    (salaSelecionada.layoutFotos?.length ?? 0) > 0;
   const nomeResponsavelSessao = usuarioNome?.trim() ?? "";
   const emailResponsavelSessao = usuarioEmail?.trim() ?? "";
 
@@ -249,6 +258,10 @@ export function FormNovaReserva({
       return;
     }
     if (step === 1) {
+      if (precisaEscolherLayoutMovel && !salaLayoutFotoId.trim()) {
+        setErroEtapa("Selecione o tipo de layout da reunião.");
+        return;
+      }
       setStep(2);
     }
   }
@@ -425,15 +438,16 @@ export function FormNovaReserva({
                       className={cn(
                         "h-9 rounded-md border text-sm font-medium transition-colors",
                         isInicio &&
-                          "bg-primary text-primary-foreground border-primary",
+                          "border-primary bg-primary text-primary-foreground",
+                        /* Evita bg-primary/80: com --primary em var() a opacidade costuma falhar e o texto primary-foreground fica ilegível. */
                         isFim &&
                           !isInicio &&
-                          "bg-primary/80 text-primary-foreground border-primary",
+                          "border-2 border-primary bg-muted text-foreground shadow-sm",
                         !isInicio &&
                           !isFim &&
                           !disabled &&
-                          "border-input hover:bg-accent hover:text-accent-foreground",
-                        disabled && "opacity-50 cursor-not-allowed border-input"
+                          "border-input text-foreground hover:bg-accent hover:text-accent-foreground",
+                        disabled && "cursor-not-allowed border-input opacity-50"
                       )}
                     >
                       {slot}
@@ -750,21 +764,55 @@ export function FormNovaReserva({
           </div>
 
           {salaSelecionada?.layout === "MOVEL" && (
-            <div className="rounded-lg border bg-muted/10 p-4 space-y-2 mt-1">
+            <div className="rounded-lg border bg-muted/10 p-4 space-y-3 mt-1">
               <h3 className="text-sm font-semibold">Layout móvel da sala</h3>
-              <p className="text-xs text-muted-foreground">
-                Visualize como a sala pode ser organizada. A disposição final pode
-                ser alinhada com a equipe de apoio.
-              </p>
-              {salaSelecionada.layoutImagemUrl ? (
-                <img
-                  src={salaSelecionada.layoutImagemUrl}
-                  alt={`Layout da sala ${salaSelecionada.nome}`}
-                  className="w-full max-h-80 rounded-md object-contain bg-muted/30 border"
-                />
+              {salaSelecionada.layoutFotos.length > 0 ? (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Escolha <span className="font-medium text-foreground">um</span>{" "}
+                    tipo de disposição para esta reserva. O administrador verá sua
+                    escolha na agenda.
+                  </p>
+                  <p className="text-xs font-medium text-foreground">
+                    Tipo de layout da reunião <span className="text-destructive">*</span>
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {salaSelecionada.layoutFotos.map((foto) => {
+                      const selecionada = salaLayoutFotoId === foto.id;
+                      return (
+                        <button
+                          key={foto.id}
+                          type="button"
+                          onClick={() => setSalaLayoutFotoId(foto.id)}
+                          className={cn(
+                            "relative rounded-lg border-2 p-3 text-left transition-colors",
+                            selecionada
+                              ? "border-primary bg-muted shadow-sm ring-2 ring-primary/30"
+                              : "border-border bg-card hover:border-primary/40",
+                          )}
+                        >
+                          {selecionada && (
+                            <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                              <Check className="size-3.5" aria-hidden />
+                            </span>
+                          )}
+                          <p className="pr-8 text-sm font-medium text-foreground">
+                            {foto.descricao}
+                          </p>
+                          <img
+                            src={foto.imagemUrl}
+                            alt=""
+                            className="mt-2 w-full max-h-48 rounded-md border object-contain bg-muted/30"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Esta sala não possui foto de layout cadastrada.
+                  Esta sala não possui fotos de layout cadastradas. Nenhuma escolha
+                  é necessária; alinhe a disposição com a equipe de apoio.
                 </p>
               )}
             </div>
@@ -788,6 +836,7 @@ export function FormNovaReserva({
       <input type="hidden" name="data" value={valueData ?? ""} />
       <input type="hidden" name="horaInicio" value={horaInicio} />
       <input type="hidden" name="horaFim" value={horaFim} />
+      <input type="hidden" name="salaLayoutFotoId" value={salaLayoutFotoId} />
       {participantes.map((p) => (
         <input key={p.id} type="hidden" name="participantesIds" value={p.id} />
       ))}
@@ -831,7 +880,13 @@ export function FormNovaReserva({
           {step === 2 && (
             <Button
               type="submit"
-              disabled={isPending || !horaInicio || !horaFim || !valueData}
+              disabled={
+                isPending ||
+                !horaInicio ||
+                !horaFim ||
+                !valueData ||
+                (precisaEscolherLayoutMovel && !salaLayoutFotoId.trim())
+              }
               size="lg"
               className="w-full sm:w-auto min-w-[180px]"
             >

@@ -43,8 +43,11 @@ async function SalasContent() {
 			numero: true,
 			lotacao: true,
 			layout: true,
-			layoutImagemUrl: true,
 			ativo: true,
+			layoutFotos: {
+				select: { id: true, descricao: true, imagemUrl: true, ordem: true },
+				orderBy: [{ ordem: 'asc' }, { criadoEm: 'asc' }],
+			},
 			mobiliarios: { select: { id: true, nome: true, quantidade: true }, orderBy: { nome: 'asc' } },
 			midias: { select: { id: true, nome: true, quantidade: true }, orderBy: { nome: 'asc' } },
 		},

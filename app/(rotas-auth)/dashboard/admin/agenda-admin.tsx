@@ -46,6 +46,7 @@ type ReservaAdmin = {
   coordenadoriaNome: string | null;
   inicio: string;
   fim: string;
+  layoutEscolhidoDescricao: string | null;
 };
 
 function minutosDesdeNoveHoras(d: Date): number {
@@ -289,6 +290,11 @@ export function AgendaAdmin() {
                             {r.usuarioNome ?? r.usuarioLogin}
                             {r.coordenadoriaNome ? ` · ${r.coordenadoriaNome}` : ""}
                           </p>
+                          {r.layoutEscolhidoDescricao ? (
+                            <p className="text-[10px] font-medium text-primary truncate mt-0.5">
+                              Layout: {r.layoutEscolhidoDescricao}
+                            </p>
+                          ) : null}
                         </div>
                         <Button
                           size="sm"
@@ -337,6 +343,7 @@ export function AgendaAdmin() {
                 <TableRow className="bg-primary hover:bg-primary">
                   <TableHead className="text-white text-xs">Sala</TableHead>
                   <TableHead className="text-white text-xs">Título</TableHead>
+                  <TableHead className="text-white text-xs">Layout</TableHead>
                   <TableHead className="text-white text-xs">Responsável</TableHead>
                   <TableHead className="text-white text-xs">Início</TableHead>
                   <TableHead className="text-white text-xs">Fim</TableHead>
@@ -349,6 +356,9 @@ export function AgendaAdmin() {
                     <TableCell className="text-xs">{r.salaNome}</TableCell>
                     <TableCell className="text-xs">
                       {r.titulo ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-xs max-w-[140px]">
+                      {r.layoutEscolhidoDescricao ?? "—"}
                     </TableCell>
                     <TableCell className="text-xs">
                       {r.usuarioNome ?? r.usuarioLogin}

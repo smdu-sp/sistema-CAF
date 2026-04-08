@@ -64,8 +64,6 @@ model Sala {
   numero       String?   @db.VarChar(10)
   lotacao      Int?
   layout       Layout?
-  /// Caminho público da foto do layout (ex.: /uploads/salas/...). Usado quando layout = MOVEL.
-  layoutImagemUrl String? @db.VarChar(512)
   ativo        Boolean   @default(true)
   criadoEm     DateTime  @default(now())
   atualizadoEm DateTime  @default(now()) @updatedAt
@@ -73,8 +71,26 @@ model Sala {
   reservas     Reserva[]
   mobiliarios  SalaMobiliario[]
   midias       SalaMidia[]
+  layoutFotos  SalaLayoutFoto[]
 
   @@map("salas")
+}
+
+/// Fotos de variantes de layout (layout móvel): uma imagem por tipo/disposição.
+model SalaLayoutFoto {
+  id          String   @id @default(uuid())
+  salaId      String
+  descricao   String   @db.VarChar(120)
+  imagemUrl   String   @db.VarChar(512)
+  ordem       Int      @default(0)
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  sala    Sala     @relation(fields: [salaId], references: [id], onDelete: Cascade)
+  reservas Reserva[]
+
+  @@index([salaId])
+  @@map("sala_layout_fotos")
 }
 
 model SalaMobiliario {
@@ -120,11 +136,17 @@ model Reserva {
   criadoEm         DateTime @default(now())
   atualizadoEm     DateTime @default(now()) @updatedAt
 
+  /// Layout móvel escolhido (quando aplicável). Cópia da descrição no momento da reserva.
+  layoutEscolhidoDescricao String? @db.VarChar(120)
+  salaLayoutFotoId        String?
+  salaLayoutFoto          SalaLayoutFoto? @relation(fields: [salaLayoutFotoId], references: [id], onDelete: SetNull)
+
   sala           Sala                   @relation(fields: [salaId], references: [id], onDelete: Cascade)
   usuario        Usuario?               @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
   coordenadoria  Coordenadoria?         @relation(fields: [coordenadoriaId], references: [id], onDelete: SetNull)
   participantes  ReservaParticipante[]
 
+  @@index([salaLayoutFotoId])
   @@map("reservas")
 }
 

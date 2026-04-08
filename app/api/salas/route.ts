@@ -10,8 +10,11 @@ const select = {
   numero: true,
   lotacao: true,
   layout: true,
-  layoutImagemUrl: true,
   ativo: true,
+  layoutFotos: {
+    select: { id: true, descricao: true, imagemUrl: true, ordem: true },
+    orderBy: [{ ordem: "asc" as const }, { criadoEm: "asc" as const }],
+  },
   mobiliarios: {
     select: { id: true, nome: true, quantidade: true },
     orderBy: { nome: "asc" as const },

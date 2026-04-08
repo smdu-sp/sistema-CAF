@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     prisma.sala.findMany({
       where: { ativo: true },
       orderBy: { nome: "asc" },
-      select: { id: true, nome: true, andar: true, localizacao: true },
+      select: { id: true, nome: true, andar: true, numero: true },
     }),
     prisma.reserva.findMany({
       where: {
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       id: s.id,
       nome: s.nome,
       andar: s.andar,
-      localizacao: s.localizacao,
+      numero: s.numero,
     })),
     reservas: reservas.map((r) => ({
       id: r.id,

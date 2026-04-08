@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
+import type { Layout } from "@prisma/client";
 
 const select = {
   id: true,
   nome: true,
   andar: true,
-  localizacao: true,
+  numero: true,
+  lotacao: true,
+  layout: true,
   ativo: true,
 };
 
@@ -37,7 +40,7 @@ export async function POST(request: NextRequest) {
   if (permissao !== "ADM" && permissao !== "DEV") {
     return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   }
-  let body: { nome?: string; andar?: string; localizacao?: string };
+  let body: { nome?: string; andar?: string; numero?: string; lotacao?: number; layout?: string };
   try {
     body = await request.json();
   } catch {
@@ -63,11 +66,17 @@ export async function POST(request: NextRequest) {
     );
   }
   const andar = typeof body.andar === "string" ? body.andar.trim() || null : null;
-  const localizacao =
-    typeof body.localizacao === "string" ? body.localizacao.trim() || null : null;
+  const numero = typeof body.numero === "string" ? body.numero.trim() || null : null;
+  const lotacao =
+    typeof body.lotacao === "number" && Number.isFinite(body.lotacao) && body.lotacao > 0
+      ? Math.trunc(body.lotacao)
+      : null;
+  const layoutRaw = typeof body.layout === "string" ? body.layout.trim().toUpperCase() : "";
+  const layout: Layout | null =
+    layoutRaw === "FIXO" || layoutRaw === "MOVEL" ? (layoutRaw as Layout) : null;
 
   const sala = await prisma.sala.create({
-    data: { nome, andar, localizacao },
+    data: { nome, andar, numero, lotacao, layout },
     select,
   });
   return NextResponse.json(sala, { status: 201 });

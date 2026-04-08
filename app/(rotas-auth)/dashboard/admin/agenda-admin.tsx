@@ -33,7 +33,7 @@ type SalaAdmin = {
   id: string;
   nome: string;
   andar: string | null;
-  localizacao: string | null;
+  numero: string | null;
 };
 
 type ReservaAdmin = {
@@ -219,8 +219,8 @@ export function AgendaAdmin() {
             {salas.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.nome}
-                {(s.andar || s.localizacao) &&
-                  ` — ${[s.andar, s.localizacao].filter(Boolean).join(", ")}`}
+                {(s.andar || s.numero) &&
+                  ` — ${[s.andar, s.numero ? `Sala ${s.numero}` : null].filter(Boolean).join(", ")}`}
               </option>
             ))}
           </select>
@@ -238,9 +238,9 @@ export function AgendaAdmin() {
             >
               <div className="px-4 py-2 border-b bg-muted/40">
                 <h3 className="font-semibold text-sm">{sala.nome}</h3>
-                {(sala.andar || sala.localizacao) && (
+                {(sala.andar || sala.numero) && (
                   <p className="text-xs text-muted-foreground">
-                    {[sala.andar, sala.localizacao].filter(Boolean).join(" · ")}
+                    {[sala.andar, sala.numero ? `Sala ${sala.numero}` : null].filter(Boolean).join(" · ")}
                   </p>
                 )}
               </div>

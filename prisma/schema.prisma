@@ -17,6 +17,11 @@ enum Permissao {
   USR
 }
 
+enum Layout {
+  MOVEL
+  FIXO
+}
+
 model Coordenadoria {
   id           String    @id @default(uuid())
   nome         String    @db.VarChar(120)
@@ -56,9 +61,9 @@ model Sala {
   id           String    @id @default(uuid())
   nome         String    @db.VarChar(120)
   andar        String?   @db.VarChar(60)
-  localizacao  String?   @db.VarChar(255)
-  descricao    String?   @db.Text
-  capacidade   Int?
+  numero       String?   @db.VarChar(10)
+  lotacao      Int?
+  layout       Layout?
   ativo        Boolean   @default(true)
   criadoEm     DateTime  @default(now())
   atualizadoEm DateTime  @default(now()) @updatedAt

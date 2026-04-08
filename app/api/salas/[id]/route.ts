@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
+import type { Layout } from "@prisma/client";
 
 const select = {
   id: true,
   nome: true,
   andar: true,
-  localizacao: true,
+  numero: true,
+  lotacao: true,
+  layout: true,
   ativo: true,
 };
 
@@ -30,7 +33,9 @@ export async function PATCH(
   let body: {
     nome?: string;
     andar?: string;
-    localizacao?: string;
+    numero?: string;
+    lotacao?: number;
+    layout?: string;
     ativo?: boolean;
   };
   try {
@@ -44,7 +49,9 @@ export async function PATCH(
   const data: {
     nome?: string;
     andar?: string | null;
-    localizacao?: string | null;
+    numero?: string | null;
+    lotacao?: number | null;
+    layout?: Layout | null;
     ativo?: boolean;
   } = {};
   if (typeof body.nome === "string") {
@@ -66,10 +73,25 @@ export async function PATCH(
     data.andar =
       typeof body.andar === "string" ? body.andar.trim() || null : null;
   }
-  if (body.localizacao !== undefined) {
-    data.localizacao =
-      typeof body.localizacao === "string"
-        ? body.localizacao.trim() || null
+  if (body.numero !== undefined) {
+    data.numero =
+      typeof body.numero === "string"
+        ? body.numero.trim() || null
+        : null;
+  }
+  if (body.lotacao !== undefined) {
+    data.lotacao =
+      typeof body.lotacao === "number" &&
+      Number.isFinite(body.lotacao) &&
+      body.lotacao > 0
+        ? Math.trunc(body.lotacao)
+        : null;
+  }
+  if (body.layout !== undefined) {
+    const layoutRaw = typeof body.layout === "string" ? body.layout.trim().toUpperCase() : "";
+    data.layout =
+      layoutRaw === "FIXO" || layoutRaw === "MOVEL"
+        ? (layoutRaw as Layout)
         : null;
   }
   if (typeof body.ativo === "boolean") data.ativo = body.ativo;

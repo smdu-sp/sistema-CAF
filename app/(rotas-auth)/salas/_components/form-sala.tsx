@@ -17,18 +17,23 @@ import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import type { Layout } from '@prisma/client';
 
 const formSchema = z.object({
 	nome: z.string().min(1, 'Nome da sala é obrigatório'),
 	andar: z.string().optional(),
-	localizacao: z.string().optional(),
+	numero: z.string().optional(),
+	lotacao: z.coerce.number().int().positive().optional(),
+	layout: z.string().optional(),
 });
 
 export type SalaRow = {
 	id: string;
 	nome: string;
 	andar: string | null;
-	localizacao: string | null;
+	numero: string | null;
+	lotacao: number | null;
+	layout: Layout | null;
 	ativo: boolean;
 };
 
@@ -44,7 +49,9 @@ export default function FormSala({ isUpdating, sala }: FormSalaProps) {
 		defaultValues: {
 			nome: sala?.nome ?? '',
 			andar: sala?.andar ?? '',
-			localizacao: sala?.localizacao ?? '',
+			numero: sala?.numero ?? '',
+			lotacao: sala?.lotacao ?? undefined,
+			layout: sala?.layout ?? '',
 		},
 	});
 
@@ -54,7 +61,9 @@ export default function FormSala({ isUpdating, sala }: FormSalaProps) {
 				const payload = {
 					nome: values.nome.trim(),
 					andar: values.andar?.trim() || null,
-					localizacao: values.localizacao?.trim() || null,
+					numero: values.numero?.trim() || null,
+					lotacao: values.lotacao ?? null,
+					layout: values.layout?.trim() || null,
 				};
 				if (isUpdating && sala?.id) {
 					const res = await fetch(`/api/salas/${sala.id}`, {
@@ -119,12 +128,54 @@ export default function FormSala({ isUpdating, sala }: FormSalaProps) {
 				/>
 				<FormField
 					control={form.control}
-					name="localizacao"
+					name="numero"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Localização (opcional)</FormLabel>
+							<FormLabel>Número da sala (opcional)</FormLabel>
 							<FormControl>
-								<Input placeholder="Ex: Bloco A, Ala Norte" {...field} />
+								<Input placeholder="Ex: 182-A" {...field} />
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+				<FormField
+					control={form.control}
+					name="lotacao"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Lotação (opcional)</FormLabel>
+							<FormControl>
+								<Input
+									type="number"
+									min={1}
+									placeholder="Ex: 12"
+									value={field.value ?? ''}
+									onChange={(e) =>
+										field.onChange(e.target.value ? Number(e.target.value) : undefined)
+									}
+								/>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+				<FormField
+					control={form.control}
+					name="layout"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Layout (opcional)</FormLabel>
+							<FormControl>
+								<select
+									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+									value={field.value ?? ''}
+									onChange={field.onChange}
+								>
+									<option value="">Selecione</option>
+									<option value="FIXO">Fixo</option>
+									<option value="MOVEL">Móvel</option>
+								</select>
 							</FormControl>
 							<FormMessage />
 						</FormItem>

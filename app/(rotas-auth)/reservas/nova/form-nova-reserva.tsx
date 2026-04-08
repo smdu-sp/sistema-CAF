@@ -195,16 +195,17 @@ export function FormNovaReserva({
             {salas.map((s) => {
               const partes = [s.nome];
               if (s.andar) partes.push(s.andar);
-              if (s.localizacao) partes.push(s.localizacao);
+              if (s.numero) partes.push(`Sala ${s.numero}`);
+              if (s.layout) partes.push(s.layout === "MOVEL" ? "Layout móvel" : "Layout fixo");
               const textoAndarLocal =
                 partes.length > 1 ? ` — ${partes.slice(1).join(", ")}` : "";
-              const capacidade =
-                s.capacidade != null ? ` (${s.capacidade} lugares)` : "";
+              const lotacaoTexto =
+                s.lotacao != null ? ` (${s.lotacao} lugares)` : "";
               return (
                 <option key={s.id} value={s.id}>
                   {s.nome}
                   {textoAndarLocal}
-                  {capacidade}
+                  {lotacaoTexto}
                 </option>
               );
             })}

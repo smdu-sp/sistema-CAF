@@ -19,9 +19,22 @@ export const columns: ColumnDef<SalaRow>[] = [
 		cell: ({ row }) => row.original.andar ?? '—',
 	},
 	{
-		accessorKey: 'localizacao',
-		header: 'Localização',
-		cell: ({ row }) => row.original.localizacao ?? '—',
+		accessorKey: 'numero',
+		header: 'Número',
+		cell: ({ row }) => row.original.numero ?? '—',
+	},
+	{
+		accessorKey: 'lotacao',
+		header: 'Lotação',
+		cell: ({ row }) => row.original.lotacao ?? '—',
+	},
+	{
+		accessorKey: 'layout',
+		header: 'Layout',
+		cell: ({ row }) => {
+			if (!row.original.layout) return '—';
+			return row.original.layout === 'MOVEL' ? 'Móvel' : 'Fixo';
+		},
 	},
 	{
 		accessorKey: 'ativo',

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { Layout } from "@prisma/client";
 
 export type ReservaResumo = {
   id: string;
@@ -15,8 +16,9 @@ export type SalaOption = {
   id: string;
   nome: string;
   andar: string | null;
-  localizacao: string | null;
-  capacidade: number | null;
+  numero: string | null;
+  lotacao: number | null;
+  layout: Layout | null;
 };
 
 export type CoordenadoriaOption = {
@@ -37,7 +39,7 @@ export async function listarSalasAtivas(): Promise<SalaOption[]> {
   const salas = await prisma.sala.findMany({
     where: { ativo: true },
     orderBy: { nome: "asc" },
-    select: { id: true, nome: true, andar: true, localizacao: true, capacidade: true },
+    select: { id: true, nome: true, andar: true, numero: true, lotacao: true, layout: true },
   });
   return salas;
 }

@@ -1,12 +1,3 @@
-generator client {
-    provider = "prisma-client-js"
-}
-
-datasource db {
-    provider  = "mysql"
-    url       = env("DATABASE_URL")
-}
-
 model Categoria {
     id                  Int         @id @default(autoincrement())
     nome                String      @unique
@@ -17,7 +8,7 @@ model Categoria {
 
     criterios  Criterio[]
 
-    @@map("categorias")
+    @@map("avaliacao_limpeza.categorias")
 }
 
 model Criterio {
@@ -32,10 +23,10 @@ model Criterio {
     categoria               Categoria      @relation(fields: [categoriaAvaliacaoId], references: [id])
     avaliacaoCriterios      AvaliacaoCriterio[]
 
-    @@map("criterios")
+    @@map("avaliacao_limpeza.criterios")
 }
 
-model Sala {
+model SalaAvaliacaoLimpeza {
     id                      Int                     @id @default(autoincrement())
     nome                    String
 
@@ -44,7 +35,7 @@ model Sala {
 
     avaliacoes              Avaliacao[]
 
-    @@map("salas")
+    @@map("avaliacao_limpeza.salas")
 }
 
 enum NotasAvaliacao {
@@ -64,12 +55,12 @@ model Avaliacao {
     criadoEm                DateTime                @default(now())
     atualizadoEm            DateTime                @default(now()) @updatedAt
 
-    sala                    Sala                    @relation(fields: [salaId], references: [id])
+    sala                    SalaAvaliacaoLimpeza    @relation(fields: [salaId], references: [id])
     avaliacaoCriterios      AvaliacaoCriterio[]
     arquivosAvaliacao       ArquivoAvaliacao[]
 
     @@unique([mes, ano, salaId])
-    @@map("avaliacoes")
+    @@map("avaliacao_limpeza.avaliacoes")
 }
 
 model AvaliacaoCriterio {
@@ -87,7 +78,7 @@ model AvaliacaoCriterio {
     arquivosAvaliacao       ArquivoAvaliacao[]
 
     @@unique([criterioAvaliacaoId, avaliacaoId])
-    @@map("avaliacoes_criterios")
+    @@map("avaliacao_limpeza.avaliacoes_criterios")
 }
 
 model ArquivoAvaliacao {
@@ -103,5 +94,5 @@ model ArquivoAvaliacao {
     avaliacaoCriterio       AvaliacaoCriterio       @relation(fields: [avaliacaoCriterioId], references: [id])
     avaliacao               Avaliacao               @relation(fields: [avaliacaoId], references: [id])
 
-    @@map("arquivos_avaliacao")
+    @@map("avaliacao_limpeza.arquivos_avaliacao")
 }

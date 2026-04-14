@@ -22,3 +22,6 @@ npm-debug.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+/generated/prisma
+/prisma/generated

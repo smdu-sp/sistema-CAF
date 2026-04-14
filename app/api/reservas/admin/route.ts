@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   const fimDia = new Date(y, m - 1, d, 19, 0, 0);
 
   const [salas, reservas] = await Promise.all([
-    prisma.sala.findMany({
+    prisma.salaReserva.findMany({
       where: { ativo: true },
       orderBy: { nome: "asc" },
       select: { id: true, nome: true, andar: true, numero: true },

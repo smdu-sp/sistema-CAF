@@ -23,7 +23,7 @@ export async function GET() {
   if (permissao !== "ADM" && permissao !== "DEV") {
     return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   }
-  const lista = await prisma.sala.findMany({
+  const lista = await prisma.salaReserva.findMany({
     orderBy: { nome: "asc" },
     select,
   });
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
-  const existente = await prisma.sala.findFirst({
+  const existente = await prisma.salaReserva.findFirst({
     where: { nome },
   });
   if (existente) {
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
   const layout: Layout | null =
     layoutRaw === "FIXO" || layoutRaw === "MOVEL" ? (layoutRaw as Layout) : null;
 
-  const sala = await prisma.sala.create({
+  const sala = await prisma.salaReserva.create({
     data: { nome, andar, numero, lotacao, layout },
     select,
   });

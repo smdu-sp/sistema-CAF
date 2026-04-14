@@ -34,7 +34,7 @@ export default async function SalasPage() {
 }
 
 async function SalasContent() {
-	const lista = await prisma.sala.findMany({
+	const lista = await prisma.salaReserva.findMany({
 		orderBy: { nome: 'asc' },
 		select: { id: true, nome: true, andar: true, numero: true, lotacao: true, layout: true, ativo: true },
 	});

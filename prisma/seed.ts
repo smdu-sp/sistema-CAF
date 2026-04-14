@@ -13,20 +13,20 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   await prisma.usuario.upsert({
-    where: { login: "d854440" },
+    where: { login: "x577989" },
     update: {
-      email: "blvieira@prefeitura.sp.gov.br",
+      email: "fmmarquessantos@prefeitura.sp.gov.br",
       permissao: "DEV",
-      nome: "d854440",
+      nome: "x577989",
     },
     create: {
-      login: "d854440",
-      nome: "d854440",
-      email: "blvieira@prefeitura.sp.gov.br",
+      login: "x577989",
+      nome: "x577989",
+      email: "fmmarquessantos@prefeitura.sp.gov.br",
       permissao: "DEV",
     },
   });
-  console.log("Seed: usuário d854440 (DEV) criado/atualizado.");
+  console.log("Seed: usuário x577989 (DEV) criado/atualizado.");
 }
 
 main()

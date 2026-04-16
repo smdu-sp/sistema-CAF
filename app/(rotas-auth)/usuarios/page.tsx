@@ -13,7 +13,7 @@ type CoordenadoriaOption = { id: string; nome: string };
 export default function UsuariosAdminPage() {
   const { data: session } = useSession();
   const [login, setLogin] = useState("");
-  const [resultado, setResultado] = useState<unknown>(null);
+  const [resultado, setResultado] = useState<any>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingLote, setLoadingLote] = useState(false);
@@ -73,10 +73,7 @@ export default function UsuariosAdminPage() {
     }
   }
 
-  const columns = useMemo(
-    () => getColumns(coordenadorias, alterarCoordenadoria),
-    [coordenadorias],
-  );
+  const columns = useMemo(() => getColumns(coordenadorias, alterarCoordenadoria), [coordenadorias]);
 
   async function importar() {
     setErro(null);
@@ -141,29 +138,17 @@ export default function UsuariosAdminPage() {
   return (
     <div className="w-full px-0 md:px-8 relative pb-20 md:pb-14 h-full md:container mx-auto">
       <h1 className="text-xl md:text-4xl font-bold">Usuários</h1>
-      <p className="text-sm text-muted-foreground mt-1">
-        Importar usuários do Active Directory e vincular coordenadorias.
-      </p>
+      <p className="text-sm text-muted-foreground mt-1">Importar usuários do Active Directory e vincular coordenadorias.</p>
       <div className="flex flex-col max-w-sm mx-auto md:max-w-full gap-3 my-5 w-full">
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-2 flex-1 min-w-[200px]">
             <Label htmlFor="login">Login de rede</Label>
-            <Input
-              id="login"
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
-              placeholder="Login para importar do AD"
-              className="w-full"
-            />
+            <Input id="login" value={login} onChange={(e) => setLogin(e.target.value)} placeholder="Login para importar do AD" className="w-full" />
           </div>
           <Button onClick={importar} disabled={!login || loading}>
             {loading ? "Importando..." : "Importar do AD"}
           </Button>
-          <Button
-            variant="outline"
-            onClick={importarLoteDeX}
-            disabled={loadingLote}
-          >
+          <Button variant="outline" onClick={importarLoteDeX} disabled={loadingLote}>
             {loadingLote ? "Importando..." : "Importar todos D e X do AD"}
           </Button>
         </div>
@@ -171,8 +156,12 @@ export default function UsuariosAdminPage() {
         {resultadoLote && (
           <div className="text-sm rounded-md border border-border bg-muted/30 p-3 space-y-1">
             <p className="font-medium">Importação em lote concluída</p>
-            <p>Login D*: {resultadoLote.importadosD} novos, {resultadoLote.atualizadosD} atualizados (permissão USR – podem reservar).</p>
-            <p>Login X*: {resultadoLote.importadosX} novos, {resultadoLote.atualizadosX} atualizados (permissão TEC – não podem reservar).</p>
+            <p>
+              Login D*: {resultadoLote.importadosD} novos, {resultadoLote.atualizadosD} atualizados (permissão USR – podem reservar).
+            </p>
+            <p>
+              Login X*: {resultadoLote.importadosX} novos, {resultadoLote.atualizadosX} atualizados (permissão TEC – não podem reservar).
+            </p>
             {resultadoLote.erros.length > 0 && (
               <div className="mt-2">
                 <p className="font-medium text-destructive">Erros:</p>
@@ -180,19 +169,13 @@ export default function UsuariosAdminPage() {
                   {resultadoLote.erros.slice(0, 10).map((e, i) => (
                     <li key={i}>{e}</li>
                   ))}
-                  {resultadoLote.erros.length > 10 && (
-                    <li>… e mais {resultadoLote.erros.length - 10} erros.</li>
-                  )}
+                  {resultadoLote.erros.length > 10 && <li>… e mais {resultadoLote.erros.length - 10} erros.</li>}
                 </ul>
               </div>
             )}
           </div>
         )}
-        {resultado && (
-          <pre className="bg-muted text-foreground text-xs p-3 rounded-md overflow-auto max-h-64 border border-border">
-            {JSON.stringify(resultado, null, 2)}
-          </pre>
-        )}
+        {resultado && <pre className="bg-muted text-foreground text-xs p-3 rounded-md overflow-auto max-h-64 border border-border">{JSON.stringify(resultado, null, 2)}</pre>}
         <DataTable columns={columns} data={usuarios} />
       </div>
     </div>

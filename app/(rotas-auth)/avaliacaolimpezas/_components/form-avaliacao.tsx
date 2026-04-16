@@ -28,16 +28,16 @@ const mockCriterios = [
 ];
 
 const formSchema = z.object({
-  salaId: z.coerce.number().int().positive("Sala é obrigatória"),
-  mes: z.coerce.number().int().min(1).max(12, "Mês inválido"),
-  ano: z.coerce.number().int().min(2000),
+  salaId: z.number().int().positive("Sala é obrigatória"),
+  mes: z.number().int().min(1).max(12, "Mês inválido"),
+  ano: z.number().int().min(2000),
   observacao: z.string().optional(),
   criterios: z
     .array(
       z.object({
-        criterioId: z.coerce.number().int(),
+        criterioId: z.number().int(),
         nota: z.enum(["RUIM", "REGULAR", "BOM", "OTIMO"], {
-          errorMap: () => ({ message: "Nota inválida" }),
+          message: "Nota inválida",
         }),
       }),
     )
@@ -90,7 +90,7 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
           render={({ field }) => (
             <FormItem>
               <FormLabel>Sala</FormLabel>
-              <Select value={String(field.value)} onValueChange={field.onChange}>
+              <Select value={String(field.value)} onValueChange={(val) => field.onChange(parseInt(val))}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma sala" />
@@ -115,7 +115,7 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
           render={({ field }) => (
             <FormItem>
               <FormLabel>Mês</FormLabel>
-              <Select value={String(field.value)} onValueChange={field.onChange}>
+              <Select value={String(field.value)} onValueChange={(val) => field.onChange(parseInt(val))}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue />

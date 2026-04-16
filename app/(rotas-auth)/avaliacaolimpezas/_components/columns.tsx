@@ -33,7 +33,7 @@ const getMediaNota = (notas: string[]) => {
         return 0;
     }
   });
-  const media = valores.reduce((a, b) => a + b, 0) / valores.length;
+  const media = valores.reduce((a: number, b: number) => a + b, 0) / valores.length;
   return media.toFixed(2);
 };
 

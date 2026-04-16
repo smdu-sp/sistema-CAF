@@ -12,9 +12,9 @@ const mockData = [
     criadoEm: new Date("2026-01-15"),
     sala: { nome: "Sala de Reuniões A" },
     avaliacaoCriterios: [
-      { id: 1, criterioAvaliacaoId: 1, nota: "BOM" },
-      { id: 2, criterioAvaliacaoId: 2, nota: "OTIMO" },
-      { id: 3, criterioAvaliacaoId: 3, nota: "BOM" },
+      { id: 1, criterioAvaliacaoId: 1, nota: "BOM" as const },
+      { id: 2, criterioAvaliacaoId: 2, nota: "OTIMO" as const },
+      { id: 3, criterioAvaliacaoId: 3, nota: "BOM" as const },
     ],
   },
   {
@@ -26,9 +26,9 @@ const mockData = [
     criadoEm: new Date("2026-01-14"),
     sala: { nome: "Sala de Reuniões B" },
     avaliacaoCriterios: [
-      { id: 4, criterioAvaliacaoId: 1, nota: "REGULAR" },
-      { id: 5, criterioAvaliacaoId: 2, nota: "BOM" },
-      { id: 6, criterioAvaliacaoId: 3, nota: "REGULAR" },
+      { id: 4, criterioAvaliacaoId: 1, nota: "REGULAR" as const },
+      { id: 5, criterioAvaliacaoId: 2, nota: "BOM" as const },
+      { id: 6, criterioAvaliacaoId: 3, nota: "REGULAR" as const },
     ],
   },
   {
@@ -40,9 +40,9 @@ const mockData = [
     criadoEm: new Date("2025-12-28"),
     sala: { nome: "Auditório Principal" },
     avaliacaoCriterios: [
-      { id: 7, criterioAvaliacaoId: 1, nota: "OTIMO" },
-      { id: 8, criterioAvaliacaoId: 2, nota: "OTIMO" },
-      { id: 9, criterioAvaliacaoId: 3, nota: "OTIMO" },
+      { id: 7, criterioAvaliacaoId: 1, nota: "OTIMO" as const },
+      { id: 8, criterioAvaliacaoId: 2, nota: "OTIMO" as const },
+      { id: 9, criterioAvaliacaoId: 3, nota: "OTIMO" as const },
     ],
   },
 ];

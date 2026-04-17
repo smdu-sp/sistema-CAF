@@ -76,7 +76,7 @@ export async function NavUser() {
 							<DropdownMenuItem
 								asChild
 								className='p-1 font-normal'>
-								<Link href='/dashboard'>
+								<Link href='/reserva-salas'>
 									<div className='flex items-center gap-2 px-1 py-1.5 text-left text-sm'>
 										<Avatar className='h-8 w-8 rounded-full'>
 											<AvatarImage src={usuario.avatar} />

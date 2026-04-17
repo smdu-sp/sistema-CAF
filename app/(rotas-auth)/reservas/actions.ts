@@ -108,8 +108,8 @@ export async function criarReserva(
   }
 
   revalidatePath("/reservas/minhas");
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/reserva-salas");
+  revalidatePath("/reserva-salas/admin");
   redirect("/reservas/minhas");
 }
 
@@ -143,7 +143,7 @@ export async function cancelarReserva(
 
   await prisma.reserva.delete({ where: { id: reservaId } });
   revalidatePath("/reservas/minhas");
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/reserva-salas");
+  revalidatePath("/reserva-salas/admin");
   return {};
 }

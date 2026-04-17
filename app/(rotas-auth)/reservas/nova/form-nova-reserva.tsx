@@ -427,7 +427,7 @@ export function FormNovaReserva({
           {isPending ? "Reservando..." : "Reservar"}
         </Button>
         <Button type="button" variant="outline" asChild>
-          <Link href="/dashboard">Voltar</Link>
+          <Link href="/reserva-salas">Voltar</Link>
         </Button>
       </div>
     </form>

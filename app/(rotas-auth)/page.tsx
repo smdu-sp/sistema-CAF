@@ -5,6 +5,10 @@ export default async function HomeAuth() {
   const session = await auth();
   if (!session) redirect("/login");
   const permissao = (session as any).usuario?.permissao;
-  if (permissao === "ADM") redirect("/dashboard/admin");
-  redirect("/dashboard");
+  if (permissao === "ADM") redirect("/reserva-salas/admin");
+  redirect("/home");
+  // TODO: Melhorar página inicial
+  // TODO: Fazer página de reservas de sala
+  // TODO: Fazer página de salas
+  // TODO: Fazer página de Agenda
 }

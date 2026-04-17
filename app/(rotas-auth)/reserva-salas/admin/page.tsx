@@ -7,7 +7,7 @@ export default async function AdminDashboard() {
   if (!session) redirect("/login");
   const usuario = (session as any).usuario;
   const isAdmin = usuario?.permissao === "ADM" || usuario?.permissao === "DEV";
-  if (!isAdmin) redirect("/dashboard");
+  if (!isAdmin) redirect("/reserva-salas");
 
   return (
     <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">

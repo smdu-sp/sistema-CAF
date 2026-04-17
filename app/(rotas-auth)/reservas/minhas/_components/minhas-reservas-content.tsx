@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { listarMinhasReservas } from "../../services/reservas";
 import { MinhasReservasTable } from "./minhas-reservas-table";
+import { Plus } from "lucide-react";
 
 interface MinhasReservasContentProps {
   usuarioLogin: string;
@@ -25,7 +26,9 @@ export async function MinhasReservasContent({ usuarioLogin }: MinhasReservasCont
         )}
         <div className="flex justify-end">
           <Button asChild>
-            <Link href="/reservas/nova">+</Link>
+            <Link href="/reservas/nova">
+              <Plus className="h-4 w-4" />
+            </Link>
           </Button>
         </div>
       </div>

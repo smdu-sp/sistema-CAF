@@ -9,9 +9,10 @@ interface TabsContainerProps {
   usuario: any;
   minhasReservasContent: ReactNode;
   salasContent: ReactNode;
+  agendaContent: ReactNode;
 }
 
-export function TabsContainer({ usuario, minhasReservasContent, salasContent }: TabsContainerProps) {
+export function TabsContainer({ usuario, minhasReservasContent, salasContent, agendaContent }: TabsContainerProps) {
   const [activeTab, setActiveTab] = useState("Reservas");
 
   const isAdmin = usuario?.permissao === "ADM" || usuario?.permissao === "DEV";
@@ -45,7 +46,7 @@ export function TabsContainer({ usuario, minhasReservasContent, salasContent }: 
       <div className="mt-6">
         {activeTab === "Reservas" && minhasReservasContent}
         {activeTab === "Salas" && salasContent}
-        {activeTab === "Agenda" && <div>Agenda component aqui</div>}
+        {activeTab === "Agenda" && agendaContent}
       </div>
     </div>
   );

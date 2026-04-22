@@ -7,8 +7,4 @@ export default async function HomeAuth() {
   const permissao = (session as any).usuario?.permissao;
   if (permissao === "ADM") redirect("/reserva-salas/admin");
   redirect("/home");
-  // TODO: Melhorar página inicial
-  // TODO: Fazer página de reservas de sala
-  // TODO: Fazer página de salas
-  // TODO: Fazer página de Agenda
 }

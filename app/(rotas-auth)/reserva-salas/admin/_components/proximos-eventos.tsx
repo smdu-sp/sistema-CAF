@@ -21,20 +21,9 @@ import {
 } from "@/components/ui/table";
 import { cancelarReserva } from "@/app/(rotas-auth)/reservas/actions";
 import { toast } from "sonner";
+import { ReservaAdmin } from "../../types";
 
 const LIMITE_PROXIMOS = 10;
-
-type ReservaAdmin = {
-  id: string;
-  salaId: string;
-  salaNome: string;
-  titulo: string | null;
-  usuarioNome: string | null;
-  usuarioLogin: string;
-  coordenadoriaNome: string | null;
-  inicio: string;
-  fim: string;
-};
 
 export function ProximosEventos() {
   const [proximos, setProximos] = useState<ReservaAdmin[]>([]);

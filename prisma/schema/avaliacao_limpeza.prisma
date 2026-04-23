@@ -50,12 +50,14 @@ model Avaliacao {
     mes                     Int
     ano                     Int
     salaId                  Int
+    avaliadoPor             String
     observacao              String?
 
     criadoEm                DateTime                @default(now())
     atualizadoEm            DateTime                @default(now()) @updatedAt
 
     sala                    SalaAvaliacaoLimpeza    @relation(fields: [salaId], references: [id])
+    avaliador               Usuario                 @relation("avaliador", fields: [avaliadoPor], references: [id])
     avaliacaoCriterios      AvaliacaoCriterio[]
     arquivosAvaliacao       ArquivoAvaliacao[]
 

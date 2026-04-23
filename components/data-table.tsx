@@ -33,14 +33,14 @@ export default function DataTable<TData, TValue>({
 		getCoreRowModel: getCoreRowModel(),
 	});
 	return (
-		<div className="rounded-md">
-			<Table className="bg-background dark:bg-muted/50 border">
+		<div className="w-full overflow-x-auto rounded-md border">
+			<Table className="bg-background dark:bg-muted/50 w-full min-w-full">
 				<TableHeader className="bg-primary hover:bg-primary">
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow className="hover:bg-primary" key={headerGroup.id}>
 							{headerGroup.headers.map((header) => (
 								<TableHead
-									className="text-white text-xs text-nowrap"
+									className="text-white text-xs sm:text-sm text-nowrap px-2 sm:px-4 py-2 sm:py-3"
 									key={header.id}
 								>
 									{header.isPlaceholder
@@ -58,14 +58,14 @@ export default function DataTable<TData, TValue>({
 					{table.getRowModel().rows?.length ? (
 						table.getRowModel().rows.map((row) => (
 							<TableRow
-								className="px-4"
+								className="hover:bg-muted/50 transition-colors"
 								key={row.id}
 								data-state={row.getIsSelected() ? 'selected' : undefined}
 							>
 								{row.getVisibleCells().map((cell) => (
 									<TableCell
 										key={cell.id}
-										className="text-sm px-4 text-nowrap font-light"
+										className="text-xs sm:text-sm px-2 sm:px-4 py-2 sm:py-3 font-light break-words"
 									>
 										{flexRender(
 											cell.column.columnDef.cell,
@@ -79,7 +79,7 @@ export default function DataTable<TData, TValue>({
 						<TableRow>
 							<TableCell
 								colSpan={columns.length}
-								className="h-24 text-center"
+								className="h-24 text-center text-muted-foreground"
 							>
 								Sem resultados.
 							</TableCell>

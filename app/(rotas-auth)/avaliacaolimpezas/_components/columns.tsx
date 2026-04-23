@@ -99,7 +99,7 @@ export const columns: ColumnDef<AvaliacaoRow>[] = [
       const variant = getVariant(media);
       const mensagem = getMensagemMedia(media);
       return (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex gap-2">
           <Badge variant={variant} className="text-xs">
             {getMediaNota(notas)}
           </Badge>

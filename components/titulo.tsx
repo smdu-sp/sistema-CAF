@@ -10,8 +10,8 @@ interface TituloProps {
 }
 
 export default function Titulo({ titulo, descricao, abas }: TituloProps) {
-    const pathname = usePathname();
-    const abaAtual = abas?.find(aba => pathname.startsWith(aba.url));
+    const pathname = usePathname().replace("/avaliacao-limpeza", "");
+    const abaAtual = abas?.find(aba => pathname == aba.url.replace("/avaliacao-limpeza", ""));
     const tituloFinal = abaAtual ? abaAtual.titulo : titulo ?? "";
     const descricaoFinal = abaAtual ? abaAtual.descricao ?? "" : descricao ?? "";
     return (

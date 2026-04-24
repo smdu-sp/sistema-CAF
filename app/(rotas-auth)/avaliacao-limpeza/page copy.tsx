@@ -5,6 +5,7 @@ import { useState } from "react";
 import ResponsiveAvaliacaoView from "./_components/responsive-avaliacao-view";
 import { TabsNav, type TabNav } from "@/components/tabs-nav";
 import { Plus } from "lucide-react";
+import { abasAvaliavaoLimpeza } from "./abas";
 
 type TabType = "avaliacoes" | "categorias" | "criterios" | "salas";
 
@@ -66,17 +67,6 @@ export default function AvaliacaoLimpezasPage() {
   // Botão aparece se NÃO for ADM (DEV e USR)
   const shouldShowButton = status === "authenticated" && !isAdmin;
 
-  // Abas condicionais baseadas na permissão
-  const tabs: TabNav[] = [
-    { id: "avaliacoes", label: "Avaliações" },
-    // Abas extras só para ADM
-    ...(isAdmin ? [
-      { id: "categorias", label: "Categorias" },
-      { id: "criterios", label: "Critérios" },
-      { id: "salas", label: "Salas" },
-    ] : []),
-  ];
-
   const data = mockDataAvaliacoes;
   const loading = false;
 
@@ -114,9 +104,9 @@ export default function AvaliacaoLimpezasPage() {
       <div className="w-full px-4 sm:px-6 md:px-8 py-6 md:py-8 relative pb-20 md:pb-14">
         {/* Abas - Centralizadas no topo */}
         <TabsNav 
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={(tabId) => setActiveTab(tabId as TabType)}
+          abas={abasAvaliavaoLimpeza}
+          // activeTab={activeTab}
+          // onTabChange={(tabId) => setActiveTab(tabId as TabType)}
         />
 
         {/* Botão Nova Avaliação - Responsivo */}

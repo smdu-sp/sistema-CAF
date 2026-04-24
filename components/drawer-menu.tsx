@@ -64,8 +64,8 @@ export function DrawerMenu() {
 		{
 			icone: ClipboardCheck,
 			titulo: 'Avaliação de Limpeza',
-			url: '/avaliacaolimpezas',
-			permissao: 'ADM',
+			url: '/avaliacao-limpeza',
+			permissao: 'avaliacao_limpeza_usuario',
 		}
 	];
 

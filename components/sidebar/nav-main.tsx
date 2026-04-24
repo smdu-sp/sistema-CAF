@@ -63,7 +63,7 @@ export async function NavMain() {
     {
       icone: ClipboardCheck,
       titulo: "Avaliação de Limpeza",
-      url: "/avaliacaolimpezas",
+      url: "/avaliacao-limpeza",
     },
   ];
 

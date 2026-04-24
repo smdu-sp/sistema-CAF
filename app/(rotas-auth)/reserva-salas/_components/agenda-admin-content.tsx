@@ -15,9 +15,7 @@ export function AgendaAdminContent({ usuario }: AgendaAdminContentProps) {
 
   if (!isAdmin) {
     return (
-      <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
-        <p>Somente administradores podem acessar esta página.</p>
-      </div>
+      <p>Somente administradores podem acessar esta página.</p>
     );
   }
 

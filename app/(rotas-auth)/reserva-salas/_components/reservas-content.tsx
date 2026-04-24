@@ -1,5 +1,7 @@
 import { MinhasReservasContent } from "../../reservas/minhas/_components/minhas-reservas-content";
 import { ProximosEventos } from "../admin/_components/proximos-eventos";
+import { ActionButton } from "@/components/action-button";
+import { Plus } from "lucide-react";
 
 interface UsuarioData {
   login: string;
@@ -13,9 +15,17 @@ interface ReservasContentProps {
 export async function ReservasContent({ usuario }: ReservasContentProps) {
   const isAdminOrDev = usuario?.permissao === "ADM" || usuario?.permissao === "DEV";
 
-  if (isAdminOrDev) {
-    return <ProximosEventos />;
-  }
-
-  return <MinhasReservasContent usuarioLogin={usuario.login} />;
+  return (
+    <div>
+      <div className="flex justify-center mb-6">
+        <ActionButton
+          title="Criar Reserva"
+          description="Agende uma nova sala para sua reunião ou evento"
+          href="/reservas/nova"
+          icon={Plus}
+        />
+      </div>
+      {isAdminOrDev ? <ProximosEventos /> : <MinhasReservasContent usuarioLogin={usuario.login} />}
+    </div>
+  );
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ResponsiveAvaliacaoView from "./_components/responsive-avaliacao-view";
+import { TabsNav, type TabNav } from "@/components/tabs-nav";
 import { Plus } from "lucide-react";
 
 type TabType = "avaliacoes" | "categorias" | "criterios" | "salas";
@@ -58,8 +59,6 @@ const mockDataAvaliacoes = [
 export default function AvaliacaoLimpezasPage() {
   const { data: session, status } = useSession();
   const [activeTab, setActiveTab] = useState<TabType>("avaliacoes");
-const data = mockDataAvaliacoes;
-const loading = false;
 
   const usuario = (session as any)?.usuario;
   const isAdmin = usuario?.permissao === "ADM";
@@ -67,12 +66,25 @@ const loading = false;
   // Botão aparece se NÃO for ADM (DEV e USR)
   const shouldShowButton = status === "authenticated" && !isAdmin;
 
+  // Abas condicionais baseadas na permissão
+  const tabs: TabNav[] = [
+    { id: "avaliacoes", label: "Avaliações" },
+    // Abas extras só para ADM
+    ...(isAdmin ? [
+      { id: "categorias", label: "Categorias" },
+      { id: "criterios", label: "Critérios" },
+      { id: "salas", label: "Salas" },
+    ] : []),
+  ];
+
+  const data = mockDataAvaliacoes;
+  const loading = false;
+
+  // Função que renderiza o conteúdo baseado na aba ativa
   const renderTabContent = () => {
     switch (activeTab) {
       case "avaliacoes":
-        return (
-          <ResponsiveAvaliacaoView data={data} loading={loading} />
-        );
+        return <ResponsiveAvaliacaoView data={data} loading={loading} />;
       case "categorias":
         return (
           <div className="flex items-center justify-center py-8">
@@ -96,20 +108,17 @@ const loading = false;
     }
   };
 
-  const tabs: { id: TabType; label: string }[] = [
-    { id: "avaliacoes", label: "Avaliações" },
-    // Abas extras só para ADM
-    ...(isAdmin ? [
-      { id: "categorias" as const, label: "Categorias" },
-      { id: "criterios" as const, label: "Critérios" },
-      { id: "salas" as const, label: "Salas" },
-    ] : []),
-  ];
-
   return (
     <div className="w-full h-full flex flex-col">
       {/* Container com padding responsivo */}
       <div className="w-full px-4 sm:px-6 md:px-8 py-6 md:py-8 relative pb-20 md:pb-14">
+        {/* Abas - Centralizadas no topo */}
+        <TabsNav 
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId as TabType)}
+        />
+
         {/* Botão Nova Avaliação - Responsivo */}
         {shouldShowButton && (
           <div className="flex justify-center mb-6">
@@ -141,26 +150,7 @@ const loading = false;
           </p>
         </div>
 
-        {/* Abas - Scroll horizontal em mobile */}
-        <div className="w-full overflow-x-auto -mx-4 sm:-mx-6 md:-mx-8 mb-6">
-          <div className="flex gap-2 sm:gap-4 border-b px-4 sm:px-6 md:px-8 min-w-min md:min-w-full">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
-                  activeTab === tab.id
-                    ? "border-b-2 border-blue-500 text-blue-500"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Conteúdo - Responsivo */}
+        {/* Conteúdo da Aba Ativa */}
         <div className="w-full">
           {renderTabContent()}
         </div>

@@ -49,6 +49,7 @@ model Usuario {
   coordenadoria Coordenadoria?   @relation(fields: [coordenadoriaId], references: [id], onDelete: SetNull)
   reservas      Reserva[]
   participacoes ReservaParticipante[]
+  avaliacoes    Avaliacao[] @relation("avaliador")
 
   @@map("principal.usuarios")
 }

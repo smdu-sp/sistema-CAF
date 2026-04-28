@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import ResponsiveAvaliacaoView from "./_components/responsive-avaliacao-view";
-import { TabsNav, type TabNav } from "@/components/tabs-nav";
+import { TabsNav } from "@/components/tabs-nav";
 import { Plus } from "lucide-react";
 import { abasAvaliavaoLimpeza } from "./abas";
 
@@ -62,10 +62,15 @@ export default function AvaliacaoLimpezasPage() {
   const [activeTab, setActiveTab] = useState<TabType>("avaliacoes");
 
   const usuario = (session as any)?.usuario;
-  const isAdmin = usuario?.permissao === "ADM";
+  const permissao = usuario?.permissao;
 
-  // Botão aparece se NÃO for ADM (DEV e USR)
-  const shouldShowButton = status === "authenticated" && !isAdmin;
+  // Define o comportamento por perfil
+  const isDevUser = permissao === "DEV";
+  const isUserProfile = permissao === "USR";
+  const isAdmin = permissao === "ADM";
+
+  const shouldShowButton = isUserProfile; // Botão só para USR
+  const shouldShowTabs = isAdmin || isUserProfile; // Abas para USR e ADM
 
   const data = mockDataAvaliacoes;
   const loading = false;
@@ -98,18 +103,27 @@ export default function AvaliacaoLimpezasPage() {
     }
   };
 
+  // Se for DEV, retorna apenas a tabela
+  if (isDevUser) {
+    return (
+      <div className="w-full h-full flex flex-col">
+        <div className="w-full px-4 sm:px-6 md:px-8 py-6 md:py-8 relative">
+          <ResponsiveAvaliacaoView data={data} loading={loading} />
+        </div>
+      </div>
+    );
+  }
+
+  // Para USR e ADM
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Container com padding responsivo */}
       <div className="w-full px-4 sm:px-6 md:px-8 py-6 md:py-8 relative pb-20 md:pb-14">
-        {/* Abas - Centralizadas no topo */}
-        <TabsNav 
-          abas={abasAvaliavaoLimpeza}
-          // activeTab={activeTab}
-          // onTabChange={(tabId) => setActiveTab(tabId as TabType)}
-        />
+        {/* Abas - Aparecem para USR e ADM */}
+        {shouldShowTabs && (
+          <TabsNav abas={abasAvaliavaoLimpeza} />
+        )}
 
-        {/* Botão Nova Avaliação - Responsivo */}
+        {/* Botão Nova Avaliação - Apenas para USR */}
         {shouldShowButton && (
           <div className="flex justify-center mb-6">
             <div className="border border-border rounded-lg p-4 sm:p-6 w-full sm:max-w-md flex flex-col sm:flex-row items-start sm:items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors">

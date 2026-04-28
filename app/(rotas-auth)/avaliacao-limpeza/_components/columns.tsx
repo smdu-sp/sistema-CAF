@@ -86,7 +86,7 @@ export const columns: ColumnDef<AvaliacaoRow>[] = [
     accessorKey: "mesAno",
     header: "Período",
     cell: ({ row }) => {
-      return <div className="text-xs sm:text-sm whitespace-nowrap">{formatarData(new Date(row.original.ano, row.original.mes - 1))}</div>;
+      return <div className="text-xs sm:text-sm whitespace-nowrap">{formatarData(new Date(row.original.ano, row.original.mes - 1), "mes-ano")}</div>;
     },
   },
 

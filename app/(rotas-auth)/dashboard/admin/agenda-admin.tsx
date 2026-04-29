@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -20,7 +29,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cancelarReserva } from "@/app/(rotas-auth)/reservas/actions";
+import {
+  aprovarReserva,
+  cancelarReserva,
+} from "@/app/(rotas-auth)/reservas/actions";
 import { toast } from "sonner";
 
 const LIMITE_PROXIMOS = 10;
@@ -47,7 +59,53 @@ type ReservaAdmin = {
   inicio: string;
   fim: string;
   layoutEscolhidoDescricao: string | null;
+  status?: string;
 };
+
+type SolicitacaoReserva = {
+  id: string;
+  criadoEm: string;
+  inicio: string;
+  fim: string;
+  titulo: string | null;
+  usuarioNome: string | null;
+  usuarioLogin: string;
+  emailContato: string | null;
+  telefoneRamal: string | null;
+  numeroParticipantes: number | null;
+  layoutEscolhidoDescricao: string | null;
+  sala: {
+    id: string;
+    nome: string;
+    andar: string | null;
+    numero: string | null;
+    lotacao: number | null;
+  };
+  coordenadoriaNome: string | null;
+  participantes: { nome: string; login: string; email: string }[];
+};
+
+function formatarDataHora(iso: string) {
+  return new Date(iso).toLocaleString("pt-BR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function LinhaDetalhe({ rotulo, children }: { rotulo: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 gap-0.5 py-2 sm:grid-cols-[minmax(0,140px)_1fr] sm:gap-3 sm:items-start border-b border-border/50 last:border-0">
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {rotulo}
+      </dt>
+      <dd className="text-sm text-foreground min-w-0 break-words">{children}</dd>
+    </div>
+  );
+}
 
 function minutosDesdeNoveHoras(d: Date): number {
   const h = d.getHours();
@@ -75,7 +133,11 @@ export function AgendaAdmin() {
   const [totalProximos, setTotalProximos] = useState(0);
   const [paginaProximos, setPaginaProximos] = useState(1);
   const [loadingProximos, setLoadingProximos] = useState(false);
-  const [abaAtiva, setAbaAtiva] = useState<"agenda" | "proximos">("agenda");
+  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoReserva[]>([]);
+  const [loadingSolicitacoes, setLoadingSolicitacoes] = useState(false);
+  const [solicitacaoAberta, setSolicitacaoAberta] = useState<SolicitacaoReserva | null>(null);
+  const [processandoSolicitacaoId, setProcessandoSolicitacaoId] = useState<string | null>(null);
+  const [abaAtiva, setAbaAtiva] = useState<"agenda" | "proximos" | "solicitacoes">("agenda");
 
   const dataStr = dataParaInput(data);
   const totalPaginasProximos = Math.max(1, Math.ceil(totalProximos / LIMITE_PROXIMOS));
@@ -120,6 +182,21 @@ export function AgendaAdmin() {
     carregarProximos();
   }, [carregarProximos]);
 
+  const carregarSolicitacoes = useCallback(() => {
+    setLoadingSolicitacoes(true);
+    fetch("/api/reservas/solicitacoes")
+      .then((r) => r.json())
+      .then((body) => {
+        setSolicitacoes(Array.isArray(body) ? body : []);
+      })
+      .catch(() => setSolicitacoes([]))
+      .finally(() => setLoadingSolicitacoes(false));
+  }, []);
+
+  useEffect(() => {
+    carregarSolicitacoes();
+  }, [carregarSolicitacoes]);
+
   function abrirModalCancelar(r: { id: string; titulo: string | null }) {
     setReservaParaCancelar({ id: r.id, titulo: r.titulo ?? "Sem título" });
     setMotivoCancelamento("");
@@ -132,20 +209,44 @@ export function AgendaAdmin() {
 
   async function confirmarCancelamento() {
     if (!reservaParaCancelar) return;
+    const motivo = motivoCancelamento.trim();
+    if (!motivo) {
+      toast.error("Informe o motivo do cancelamento.");
+      return;
+    }
     setCancelandoId(reservaParaCancelar.id);
-    const result = await cancelarReserva(
-      reservaParaCancelar.id,
-      motivoCancelamento.trim() || undefined
-    );
+    const result = await cancelarReserva(reservaParaCancelar.id, motivo);
     setCancelandoId(null);
     fecharModalCancelar();
     if (result.erro) {
       toast.error("Erro ao cancelar", { description: result.erro });
     } else {
       toast.success("Reserva cancelada.");
+      setSolicitacaoAberta(null);
       carregar();
       carregarProximos();
+      carregarSolicitacoes();
     }
+  }
+
+  async function handleAprovarSolicitacao(id: string) {
+    setProcessandoSolicitacaoId(id);
+    const result = await aprovarReserva(id);
+    setProcessandoSolicitacaoId(null);
+    if (result.erro) {
+      toast.error("Não foi possível aprovar", { description: result.erro });
+      return;
+    }
+    toast.success("Reserva aprovada.");
+    setSolicitacaoAberta(null);
+    carregarSolicitacoes();
+    carregar();
+    carregarProximos();
+  }
+
+  function abrirCancelarDesdeSolicitacao(s: SolicitacaoReserva) {
+    setSolicitacaoAberta(null);
+    abrirModalCancelar({ id: s.id, titulo: s.titulo });
   }
 
   const reservasPorSalaFiltradas = salas
@@ -194,6 +295,22 @@ export function AgendaAdmin() {
             }`}
           >
             Próximos eventos
+          </button>
+          <button
+            type="button"
+            onClick={() => setAbaAtiva("solicitacoes")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px flex items-center gap-2 ${
+              abaAtiva === "solicitacoes"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Solicitações
+            {solicitacoes.length > 0 && abaAtiva !== "solicitacoes" ? (
+              <span className="rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+                {solicitacoes.length}
+              </span>
+            ) : null}
           </button>
         </nav>
       </div>
@@ -430,21 +547,189 @@ export function AgendaAdmin() {
       </section>
       )}
 
+      {abaAtiva === "solicitacoes" && (
+        <section className="rounded-lg border bg-card overflow-hidden">
+          {loadingSolicitacoes ? (
+            <p className="text-sm text-muted-foreground p-4">Carregando solicitações...</p>
+          ) : solicitacoes.length === 0 ? (
+            <p className="text-sm text-muted-foreground p-4">
+              Nenhuma reserva aguardando aprovação.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="text-xs">Solicitado em</TableHead>
+                  <TableHead className="text-xs">Sala</TableHead>
+                  <TableHead className="text-xs">Período</TableHead>
+                  <TableHead className="text-xs">Solicitante</TableHead>
+                  <TableHead className="text-xs w-[100px] text-center">Detalhes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {solicitacoes.map((s) => (
+                  <TableRow key={s.id} className="cursor-pointer hover:bg-muted/30">
+                    <TableCell className="text-xs whitespace-nowrap">
+                      {formatarDataHora(s.criadoEm)}
+                    </TableCell>
+                    <TableCell className="text-xs font-medium">{s.sala.nome}</TableCell>
+                    <TableCell className="text-xs">
+                      {formatarDataHora(s.inicio)}
+                      <span className="text-muted-foreground"> → </span>
+                      {new Date(s.fim).toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </TableCell>
+                    <TableCell className="text-xs max-w-[180px] truncate">
+                      {s.usuarioNome ?? s.usuarioLogin}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => setSolicitacaoAberta(s)}
+                      >
+                        Ver
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </section>
+      )}
+
+      <Sheet
+        open={!!solicitacaoAberta}
+        onOpenChange={(open) => {
+          if (!open) setSolicitacaoAberta(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg"
+        >
+          {solicitacaoAberta ? (
+            <>
+              <SheetHeader className="space-y-1 text-left border-b pb-4">
+                <SheetTitle>Solicitação de reserva</SheetTitle>
+                <SheetDescription>
+                  Revise os dados e aprove ou cancele informando o motivo.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="flex-1 py-4">
+                <h3 className="text-sm font-semibold mb-2">Sala e horário</h3>
+                <dl>
+                  <LinhaDetalhe rotulo="Sala">{solicitacaoAberta.sala.nome}</LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Localização">
+                    {[solicitacaoAberta.sala.andar, solicitacaoAberta.sala.numero]
+                      .filter(Boolean)
+                      .join(" · ") || "—"}
+                  </LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Lotação">
+                    {solicitacaoAberta.sala.lotacao != null
+                      ? `${solicitacaoAberta.sala.lotacao} lugares`
+                      : "—"}
+                  </LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Início">
+                    {formatarDataHora(solicitacaoAberta.inicio)}
+                  </LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Término">
+                    {formatarDataHora(solicitacaoAberta.fim)}
+                  </LinhaDetalhe>
+                </dl>
+                <Separator className="my-4" />
+                <h3 className="text-sm font-semibold mb-2">Solicitante e reunião</h3>
+                <dl>
+                  <LinhaDetalhe rotulo="Nome">{solicitacaoAberta.usuarioNome ?? "—"}</LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Login">{solicitacaoAberta.usuarioLogin}</LinhaDetalhe>
+                  <LinhaDetalhe rotulo="E-mail">{solicitacaoAberta.emailContato ?? "—"}</LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Telefone / ramal">
+                    {solicitacaoAberta.telefoneRamal ?? "—"}
+                  </LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Coordenadoria">
+                    {solicitacaoAberta.coordenadoriaNome ?? "—"}
+                  </LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Título da reunião">
+                    {solicitacaoAberta.titulo ?? "—"}
+                  </LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Participantes (nº)">
+                    {solicitacaoAberta.numeroParticipantes ?? "—"}
+                  </LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Layout escolhido">
+                    {solicitacaoAberta.layoutEscolhidoDescricao ?? "—"}
+                  </LinhaDetalhe>
+                  <LinhaDetalhe rotulo="Solicitado em">
+                    {formatarDataHora(solicitacaoAberta.criadoEm)}
+                  </LinhaDetalhe>
+                </dl>
+                <Separator className="my-4" />
+                <h3 className="text-sm font-semibold mb-2">Participantes convidados</h3>
+                {solicitacaoAberta.participantes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum participante adicional.</p>
+                ) : (
+                  <ul className="space-y-2 text-sm">
+                    {solicitacaoAberta.participantes.map((p, i) => (
+                      <li
+                        key={`${p.login}-${i}`}
+                        className="rounded-md border bg-muted/30 px-3 py-2"
+                      >
+                        <span className="font-medium">{p.nome}</span>
+                        <span className="text-muted-foreground"> · {p.login}</span>
+                        <div className="text-xs text-muted-foreground truncate">{p.email}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <SheetFooter className="flex-col gap-2 border-t pt-4 sm:flex-col">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                  <Button
+                    type="button"
+                    className="w-full sm:flex-1"
+                    disabled={processandoSolicitacaoId === solicitacaoAberta.id}
+                    onClick={() => void handleAprovarSolicitacao(solicitacaoAberta.id)}
+                  >
+                    {processandoSolicitacaoId === solicitacaoAberta.id
+                      ? "Aprovando..."
+                      : "Aprovar reserva"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="w-full sm:flex-1"
+                    disabled={!!processandoSolicitacaoId}
+                    onClick={() => abrirCancelarDesdeSolicitacao(solicitacaoAberta)}
+                  >
+                    Cancelar solicitação
+                  </Button>
+                </div>
+              </SheetFooter>
+            </>
+          ) : null}
+        </SheetContent>
+      </Sheet>
+
       <Dialog open={!!reservaParaCancelar} onOpenChange={(open) => !open && fecharModalCancelar()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Cancelar reserva</DialogTitle>
             <DialogDescription>
               Tem certeza que deseja cancelar a reserva &quot;{reservaParaCancelar?.titulo}&quot;?
-              Informe o motivo do cancelamento (opcional).
+              O motivo é obrigatório e ficará registrado.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
-            <Label htmlFor="motivo-cancelamento">Motivo do cancelamento</Label>
+            <Label htmlFor="motivo-cancelamento">Motivo do cancelamento *</Label>
             <textarea
               id="motivo-cancelamento"
               className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="Ex: Reunião remarcada, sala em manutenção..."
+              placeholder="Descreva o motivo (obrigatório para administradores)..."
+              required
               value={motivoCancelamento}
               onChange={(e) => setMotivoCancelamento(e.target.value)}
               rows={3}

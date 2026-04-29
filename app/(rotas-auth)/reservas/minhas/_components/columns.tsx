@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cancelarReserva } from '../../actions';
 
 export type ReservaRow = {
@@ -14,6 +15,7 @@ export type ReservaRow = {
   fim: string;
   titulo: string | null;
   layoutEscolhidoDescricao: string | null;
+  status: 'SOLICITADO' | 'APROVADO' | 'CANCELADO';
 };
 
 function formatarData(d: string) {
@@ -30,6 +32,24 @@ function formatarHorario(d: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function BadgeStatus({ status }: { status: ReservaRow['status'] }) {
+  if (status === 'SOLICITADO') {
+    return (
+      <Badge variant="secondary" className="font-normal">
+        Aguardando aprovação
+      </Badge>
+    );
+  }
+  if (status === 'APROVADO') {
+    return (
+      <Badge variant="default" className="font-normal">
+        Aprovada
+      </Badge>
+    );
+  }
+  return <Badge variant="outline">{status}</Badge>;
 }
 
 function CelulaCancelar({ reservaId }: { reservaId: string }) {
@@ -67,6 +87,11 @@ export const columns: ColumnDef<ReservaRow>[] = [
   {
     accessorKey: 'salaNome',
     header: 'Sala',
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => <BadgeStatus status={row.original.status} />,
   },
   {
     accessorKey: 'inicio',

@@ -140,6 +140,7 @@ export async function criarReserva(
       numeroParticipantes,
       salaLayoutFotoId,
       layoutEscolhidoDescricao,
+      status: "SOLICITADO",
     },
   });
 
@@ -161,7 +162,7 @@ export async function criarReserva(
   revalidatePath("/reservas/minhas");
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/admin");
-  redirect("/reservas/minhas");
+  redirect("/reservas/minhas?criada=1");
 }
 
 export async function cancelarReserva(
@@ -183,16 +184,70 @@ export async function cancelarReserva(
   if (!reserva) {
     return { erro: "Reserva não encontrada." };
   }
+  if (reserva.status === "CANCELADO") {
+    return { erro: "Esta reserva já está cancelada." };
+  }
   const isAdmin = usuario?.permissao === "ADM" || usuario?.permissao === "DEV";
   if (!isAdmin && reserva.usuarioLogin !== usuario.login) {
     return { erro: "Você só pode cancelar suas próprias reservas." };
   }
-
-  if (motivo?.trim()) {
-    console.info("[cancelarReserva] Motivo:", motivo.trim(), "ReservaId:", reservaId);
+  if (isAdmin && !motivo?.trim()) {
+    return { erro: "Informe o motivo do cancelamento." };
   }
 
-  await prisma.reserva.delete({ where: { id: reservaId } });
+  const motivoGravar = motivo?.trim() || null;
+
+  await prisma.reserva.update({
+    where: { id: reservaId },
+    data: {
+      status: "CANCELADO",
+      motivoCancelamento: motivoGravar,
+    },
+  });
+  revalidatePath("/reservas/minhas");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/admin");
+  return {};
+}
+
+export async function aprovarReserva(reservaId: string): Promise<{ erro?: string }> {
+  const session = await auth();
+  if (!session?.user) {
+    return { erro: "Não autorizado." };
+  }
+  const usuario = (session as any).usuario;
+  const permissao = usuario?.permissao;
+  if (permissao !== "ADM" && permissao !== "DEV") {
+    return { erro: "Sem permissão para aprovar reservas." };
+  }
+
+  const reserva = await prisma.reserva.findUnique({
+    where: { id: reservaId },
+  });
+  if (!reserva) {
+    return { erro: "Reserva não encontrada." };
+  }
+  if (reserva.status !== "SOLICITADO") {
+    return { erro: "Só é possível aprovar solicitações pendentes." };
+  }
+
+  const conflito = await existeConflito(
+    reserva.salaId,
+    reserva.inicio,
+    reserva.fim,
+    reserva.id
+  );
+  if (conflito) {
+    return {
+      erro:
+        "Já existe outra reserva pendente ou aprovada neste horário. Cancele ou ajuste antes de aprovar.",
+    };
+  }
+
+  await prisma.reserva.update({
+    where: { id: reservaId },
+    data: { status: "APROVADO" },
+  });
   revalidatePath("/reservas/minhas");
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/admin");

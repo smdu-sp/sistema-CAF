@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     }),
     prisma.reserva.findMany({
       where: {
+        status: "APROVADO",
         inicio: { lt: fimDia },
         fim: { gt: inicioDia },
       },
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest) {
       inicio: r.inicio.toISOString(),
       fim: r.fim.toISOString(),
       layoutEscolhidoDescricao: r.layoutEscolhidoDescricao ?? null,
+      status: r.status,
     })),
   });
 }

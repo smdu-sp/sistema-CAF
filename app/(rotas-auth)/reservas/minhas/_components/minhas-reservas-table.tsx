@@ -13,6 +13,7 @@ type ReservaInput = {
   fim: string | Date;
   titulo: string | null;
   layoutEscolhidoDescricao?: string | null;
+  status: ReservaRow['status'];
 };
 
 function toRow(r: ReservaInput): ReservaRow {
@@ -24,6 +25,7 @@ function toRow(r: ReservaInput): ReservaRow {
     fim: typeof r.fim === 'string' ? r.fim : r.fim.toISOString(),
     titulo: r.titulo,
     layoutEscolhidoDescricao: r.layoutEscolhidoDescricao ?? null,
+    status: r.status,
   };
 }
 

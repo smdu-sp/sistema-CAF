@@ -23,10 +23,10 @@ export async function GET(request: NextRequest) {
 
   const [total, reservas] = await Promise.all([
     prisma.reserva.count({
-      where: { fim: { gte: agora } },
+      where: { fim: { gte: agora }, status: "APROVADO" },
     }),
     prisma.reserva.findMany({
-      where: { fim: { gte: agora } },
+      where: { fim: { gte: agora }, status: "APROVADO" },
       include: { sala: true, coordenadoria: true },
       orderBy: { inicio: "asc" },
       skip: offset,
@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
       inicio: r.inicio.toISOString(),
       fim: r.fim.toISOString(),
       layoutEscolhidoDescricao: r.layoutEscolhidoDescricao ?? null,
+      status: r.status,
     })),
     total,
     pagina,

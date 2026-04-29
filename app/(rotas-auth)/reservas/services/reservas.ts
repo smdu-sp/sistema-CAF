@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { Layout } from "@prisma/client";
+import type { Layout, StatusReserva } from "@prisma/client";
 
 export type ReservaResumo = {
   id: string;
@@ -12,6 +12,7 @@ export type ReservaResumo = {
   criadoEm: Date;
   /** Tipo de layout móvel escolhido na reserva, se houver. */
   layoutEscolhidoDescricao: string | null;
+  status: StatusReserva;
 };
 
 export type SalaLayoutFotoOption = {
@@ -76,6 +77,7 @@ export async function listarMinhasReservas(
     where: {
       usuarioLogin,
       fim: { gte: agora },
+      status: { not: "CANCELADO" },
     },
     include: { sala: true, coordenadoria: true },
     orderBy: { inicio: "asc" },
@@ -90,6 +92,7 @@ export async function listarMinhasReservas(
     titulo: r.titulo,
     criadoEm: r.criadoEm,
     layoutEscolhidoDescricao: r.layoutEscolhidoDescricao ?? null,
+    status: r.status,
   }));
 }
 
@@ -103,6 +106,7 @@ export async function existeConflito(
   const count = await prisma.reserva.count({
     where: {
       salaId,
+      status: { in: ["SOLICITADO", "APROVADO"] },
       id: excluirReservaId ? { not: excluirReservaId } : undefined,
       OR: [
         { inicio: { lte: inicio }, fim: { gt: inicio } },

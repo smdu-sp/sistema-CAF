@@ -22,6 +22,12 @@ enum Layout {
   FIXO
 }
 
+enum StatusReserva {
+  SOLICITADO
+  APROVADO
+  CANCELADO
+}
+
 model Coordenadoria {
   id           String    @id @default(uuid())
   nome         String    @db.VarChar(120)
@@ -133,6 +139,9 @@ model Reserva {
   telefoneRamal    String?  @db.VarChar(80)
   emailContato     String?  @db.VarChar(255)
   numeroParticipantes Int?
+  status           StatusReserva @default(SOLICITADO)
+  /// Preenchido ao cancelar (admin obrigatório; usuário opcional).
+  motivoCancelamento String?      @db.Text
   criadoEm         DateTime @default(now())
   atualizadoEm     DateTime @default(now()) @updatedAt
 
@@ -147,6 +156,7 @@ model Reserva {
   participantes  ReservaParticipante[]
 
   @@index([salaLayoutFotoId])
+  @@index([status])
   @@map("reservas")
 }
 

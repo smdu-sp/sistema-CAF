@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
   const reservas = await prisma.reserva.findMany({
     where: {
       salaId,
+      status: { in: ["SOLICITADO", "APROVADO"] },
       inicio: { lt: fimDia },
       fim: { gt: inicioDia },
     },

@@ -16,7 +16,7 @@ export async function SalasContent() {
                 <ActionButton
                     title="Criar Sala"
                     description="Adicione uma nova sala ao sistema de reservas"
-                    href="#"
+                    href="/salas"
                     icon={Plus}
                 />
             </div>

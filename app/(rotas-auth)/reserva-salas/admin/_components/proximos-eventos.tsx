@@ -23,7 +23,7 @@ import { cancelarReserva } from "@/app/(rotas-auth)/reservas/actions";
 import { toast } from "sonner";
 import { ReservaAdmin } from "../../types";
 
-const LIMITE_PROXIMOS = 10;
+const LIMITE_PROXIMOS = 4;
 
 export function ProximosEventos() {
   const [proximos, setProximos] = useState<ReservaAdmin[]>([]);

@@ -17,15 +17,18 @@ import {
 	TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
+	className?: string;
 }
 
 export default function DataTable<TData, TValue>({
 	columns,
 	data,
+	className
 }: DataTableProps<TData, TValue>) {
 	const table = useReactTable({
 		data,
@@ -33,7 +36,7 @@ export default function DataTable<TData, TValue>({
 		getCoreRowModel: getCoreRowModel(),
 	});
 	return (
-		<div className="w-full overflow-x-auto rounded-md border">
+		<div className={cn("w-full overflow-x-auto rounded-md border", className)}>
 			<Table className="bg-background dark:bg-muted/50 w-full min-w-full">
 				<TableHeader className="bg-primary hover:bg-primary">
 					{table.getHeaderGroups().map((headerGroup) => (

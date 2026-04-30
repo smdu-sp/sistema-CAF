@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { ColumnDef } from "@tanstack/react-table";
+import { formatarData } from "@/lib/utils";
 
 export type AvaliacaoRow = {
   id: number;
@@ -54,12 +55,28 @@ const getMensagemMedia = (media: number) => {
 
 export const columns: ColumnDef<AvaliacaoRow>[] = [
   {
+    accessorKey: "media",
+    header: "Avaliação",
+    cell: ({ row }) => {
+      const notas = row.original.avaliacaoCriterios.map((ac) => ac.nota);
+      const media = parseFloat(getMediaNota(notas));
+      const variant = getVariant(media);
+      return (
+        <div className="flex gap-2">
+          <Badge variant={variant} className="text-xs">
+            {getMediaNota(notas)}
+          </Badge>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "salaNome",
     header: "Sala",
     cell: ({ row }) => {
       const sala = row.original.sala?.nome ?? "—";
       return (
-        <div className="flex flex-col">
+        <div className="flex flex-col whitespace-nowrap">
           <span className="font-medium text-sm">{sala}</span>
         </div>
       );
@@ -69,60 +86,19 @@ export const columns: ColumnDef<AvaliacaoRow>[] = [
     accessorKey: "mesAno",
     header: "Período",
     cell: ({ row }) => {
-      const meses = [
-        "Jan",
-        "Fev",
-        "Mar",
-        "Abr",
-        "Mai",
-        "Jun",
-        "Jul",
-        "Ago",
-        "Set",
-        "Out",
-        "Nov",
-        "Dez",
-      ];
-      return (
-        <div className="text-sm">
-          {meses[row.original.mes - 1]} / {row.original.ano}
-        </div>
-      );
+      return <div className="text-xs sm:text-sm whitespace-nowrap">{formatarData(new Date(row.original.ano, row.original.mes - 1), "mes-ano")}</div>;
     },
   },
-  {
-    accessorKey: "media",
-    header: "Avaliação",
-    cell: ({ row }) => {
-      const notas = row.original.avaliacaoCriterios.map((ac) => ac.nota);
-      const media = parseFloat(getMediaNota(notas));
-      const variant = getVariant(media);
-      const mensagem = getMensagemMedia(media);
-      return (
-        <div className="flex gap-2">
-          <Badge variant={variant} className="text-xs">
-            {getMediaNota(notas)}
-          </Badge>
-          <span className="text-xs hidden sm:inline text-muted-foreground">
-            {mensagem}
-          </span>
-        </div>
-      );
-    },
-  },
+
   {
     accessorKey: "observacao",
     header: "Observação",
     cell: ({ row }) => {
       const obs = row.original.observacao;
       if (!obs) return <span className="text-muted-foreground">—</span>;
-      const truncated =
-        obs.length > 40 ? obs.substring(0, 40) + "..." : obs;
+      const truncated = obs.length > 40 ? obs.substring(0, 40) + "..." : obs;
       return (
-        <div
-          className="text-xs sm:text-sm max-w-xs truncate"
-          title={obs}
-        >
+        <div className="text-xs sm:text-sm max-w-xs truncate" title={obs}>
           {truncated}
         </div>
       );
@@ -132,13 +108,7 @@ export const columns: ColumnDef<AvaliacaoRow>[] = [
     accessorKey: "criadoEm",
     header: "Criado em",
     cell: ({ row }) => {
-      const data = new Date(row.original.criadoEm);
-      const formatoBr = data.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-      });
-      return <span className="text-xs sm:text-sm whitespace-nowrap">{formatoBr}</span>;
+      return <div className="text-xs sm:text-sm whitespace-nowrap">{formatarData(new Date(row.original.criadoEm))}</div>;
     },
   },
 ];

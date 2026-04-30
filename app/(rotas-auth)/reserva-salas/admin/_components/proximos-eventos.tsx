@@ -19,11 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Paginacao } from "@/components/paginacao";
 import { cancelarReserva } from "@/app/(rotas-auth)/reservas/actions";
 import { toast } from "sonner";
 import { ReservaAdmin } from "../../types";
 
-const LIMITE_PROXIMOS = 4;
+const LIMITE_PROXIMOS = 10;
 
 export function ProximosEventos() {
   const [proximos, setProximos] = useState<ReservaAdmin[]>([]);
@@ -155,34 +156,15 @@ export function ProximosEventos() {
                 ))}
               </TableBody>
             </Table>
-            <div className="flex items-center justify-between gap-2 px-4 py-2 border-t bg-muted/30 text-sm">
-              <span className="text-muted-foreground">
-                Página {paginaProximos} de {totalPaginasProximos} ({totalProximos}{" "}
-                {totalProximos === 1 ? "evento" : "eventos"})
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={paginaProximos <= 1}
-                  onClick={() => setPaginaProximos((p) => Math.max(1, p - 1))}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={paginaProximos >= totalPaginasProximos}
-                  onClick={() =>
-                    setPaginaProximos((p) =>
-                      Math.min(totalPaginasProximos, p + 1)
-                    )
-                  }
-                >
-                  Próxima
-                </Button>
-              </div>
-            </div>
+            {/* ✅ COMPONENTE REUTILIZÁVEL */}
+            <Paginacao
+              paginaAtual={paginaProximos}
+              totalPaginas={totalPaginasProximos}
+              totalItens={totalProximos}
+              labelItemSingular="evento"
+              labelItemPlural="eventos"
+              onPageChange={setPaginaProximos}
+            />
           </>
         )}
       </section>

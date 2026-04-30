@@ -18,23 +18,44 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Paginacao } from './paginacao';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
 	className?: string;
+	paginaAtual?: number;
+	totalPaginas?: number;
+	totalItens?: number;
+	labelItemSingular?: string;
+	labelItemPlural?: string;
 }
 
 export default function DataTable<TData, TValue>({
 	columns,
 	data,
-	className
+	className,
+	paginaAtual = 1,
+    totalPaginas = 1,
+    totalItens = 0,
+    labelItemSingular = "item",
+    labelItemPlural = "itens",
 }: DataTableProps<TData, TValue>) {
+	const router = useRouter();
+    const searchParams = useSearchParams();
+	
 	const table = useReactTable({
 		data,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
 	});
+
+	const handlePageChange = (novoNumero: number) => {
+		const params = new URLSearchParams(searchParams);
+		params.set('pagina', String(novoNumero));
+		router.push(`?${params.toString()}`);
+	}
 	return (
 		<div className={cn("w-full overflow-x-auto rounded-md border", className)}>
 			<Table className="bg-background dark:bg-muted/50 w-full min-w-full">
@@ -90,6 +111,16 @@ export default function DataTable<TData, TValue>({
 					)}
 				</TableBody>
 			</Table>
+			{totalPaginas > 1 && (
+                <Paginacao
+                    paginaAtual={paginaAtual}
+                    totalPaginas={totalPaginas}
+                    totalItens={totalItens}
+                    labelItemSingular={labelItemSingular}
+                    labelItemPlural={labelItemPlural}
+                    onPageChange={handlePageChange}
+                />
+            )}
 		</div>
 	);
 }

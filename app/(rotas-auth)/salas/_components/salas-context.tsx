@@ -4,7 +4,7 @@ import { columns } from './columns';
 import { ActionButton } from '@/components/action-button';
 import { Plus } from 'lucide-react';
  
-const LIMITE_SALAS = 1;
+const LIMITE_SALAS = 10;
  
 interface SalasContentProps {
     pagina?: number;

@@ -12,7 +12,7 @@ export default async function AgendaPage() {
   if (!isAdmin) redirect("/reserva-salas");
 
   return (
-    <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+    <main className="p-4 md:p-6 w-full mx-auto space-y-6">
       <section className="bg-card border border-border rounded-lg shadow-sm p-4 md:p-6 w-100%"> 
         <AgendaAdminContent usuario={usuario} />
       </section>

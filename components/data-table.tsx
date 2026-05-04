@@ -111,16 +111,14 @@ export default function DataTable<TData, TValue>({
 					)}
 				</TableBody>
 			</Table>
-			{totalPaginas > 1 && (
-                <Paginacao
-                    paginaAtual={paginaAtual}
-                    totalPaginas={totalPaginas}
-                    totalItens={totalItens}
-                    labelItemSingular={labelItemSingular}
-                    labelItemPlural={labelItemPlural}
-                    onPageChange={handlePageChange}
-                />
-            )}
+			<Paginacao
+                paginaAtual={paginaAtual}
+                totalPaginas={totalPaginas}
+                totalItens={totalItens}
+                labelItemSingular={labelItemSingular}
+                labelItemPlural={labelItemPlural}
+                onPageChange={handlePageChange}
+            />
 		</div>
 	);
 }

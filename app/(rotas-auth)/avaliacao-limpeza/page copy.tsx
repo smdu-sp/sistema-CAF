@@ -3,9 +3,9 @@
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import ResponsiveAvaliacaoView from "./_components/responsive-avaliacao-view";
-import { TabsNav, type TabNav } from "@/components/tabs-nav";
+import FormAvaliacao from "./_components/form-avaliacao";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { abasAvaliavaoLimpeza } from "./abas";
 
 type TabType = "avaliacoes" | "categorias" | "criterios" | "salas";
 
@@ -60,6 +60,7 @@ const mockDataAvaliacoes = [
 export default function AvaliacaoLimpezasPage() {
   const { data: session, status } = useSession();
   const [activeTab, setActiveTab] = useState<TabType>("avaliacoes");
+  const [openDialog, setOpenDialog] = useState(false);
 
   const usuario = (session as any)?.usuario;
   const isAdmin = usuario?.permissao === "ADM";
@@ -102,49 +103,38 @@ export default function AvaliacaoLimpezasPage() {
     <div className="w-full h-full flex flex-col">
       {/* Container com padding responsivo */}
       <div className="w-full px-4 sm:px-6 md:px-8 py-6 md:py-8 relative pb-20 md:pb-14">
-        {/* Abas - Centralizadas no topo */}
-        <TabsNav 
-          abas={abasAvaliavaoLimpeza}
-          // activeTab={activeTab}
-          // onTabChange={(tabId) => setActiveTab(tabId as TabType)}
-        />
-
         {/* Botão Nova Avaliação - Responsivo */}
         {shouldShowButton && (
           <div className="flex justify-center mb-6">
-            <div className="border border-border rounded-lg p-4 sm:p-6 w-full sm:max-w-md flex flex-col sm:flex-row items-start sm:items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors">
+            <div
+              onClick={() => setOpenDialog(true)}
+              className="border border-border rounded-lg p-4 sm:p-6 w-full sm:max-w-md flex flex-col sm:flex-row items-start sm:items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors"
+            >
               <div className="flex items-center justify-center flex-shrink-0">
                 <div className="flex items-center justify-center h-8 w-8 rounded-full border-2 border-border">
                   <Plus className="h-4 w-4" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base sm:text-lg font-semibold leading-tight">
-                  Fazer nova avaliação
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Realize uma nova avaliação de limpeza para as salas da instituição
-                </p>
+                <h3 className="text-base sm:text-lg font-semibold leading-tight">Fazer nova avaliação</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Realize uma nova avaliação de limpeza para as salas da instituição</p>
               </div>
             </div>
           </div>
         )}
-
-        {/* Título e Descrição - Responsivos */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
-            Avaliação de Limpezas
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-            Cadastre e gerencie avaliações de limpeza das salas da instituição.
-          </p>
-        </div>
-
         {/* Conteúdo da Aba Ativa */}
-        <div className="w-full">
-          {renderTabContent()}
-        </div>
+        <div className="w-full">{renderTabContent()}</div>
       </div>
+
+      {/* Dialog do Formulário */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="max-w-2xl duration-300">
+          <DialogHeader>
+            <DialogTitle>Nova Avaliação</DialogTitle>
+          </DialogHeader>
+          <FormAvaliacao isUpdating={false} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

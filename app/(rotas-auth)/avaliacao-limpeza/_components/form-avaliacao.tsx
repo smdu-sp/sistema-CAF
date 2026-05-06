@@ -2,18 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 import type { AvaliacaoRow } from "./columns";
 
-// Dados mockados (sem requisições)
+// Dados mockados
 const mockSalas = [
   { id: 1, nome: "Sala de Reuniões A" },
   { id: 2, nome: "Sala de Reuniões B" },
@@ -27,23 +25,6 @@ const mockCriterios = [
   { id: 3, nome: "Organização Geral" },
 ];
 
-const formSchema = z.object({
-  salaId: z.number().int().positive("Sala é obrigatória"),
-  mes: z.number().int().min(1).max(12, "Mês inválido"),
-  ano: z.number().int().min(2000),
-  observacao: z.string().optional(),
-  criterios: z
-    .array(
-      z.object({
-        criterioId: z.number().int(),
-        nota: z.enum(["RUIM", "REGULAR", "BOM", "OTIMO"], {
-          message: "Nota inválida",
-        }),
-      }),
-    )
-    .min(1, "Avalie pelo menos um critério"),
-});
-
 interface FormAvaliacaoProps {
   isUpdating: boolean;
   avaliacao?: Partial<AvaliacaoRow>;
@@ -51,30 +32,87 @@ interface FormAvaliacaoProps {
 
 export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoProps) {
   const [isPending, startTransition] = useTransition();
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm({
     defaultValues: {
-      salaId: avaliacao?.salaId ?? 0,
-      mes: avaliacao?.mes ?? new Date().getMonth() + 1,
-      ano: avaliacao?.ano ?? new Date().getFullYear(),
+      salaId: String(avaliacao?.salaId ?? ""),
+      mes: String(avaliacao?.mes ?? new Date().getMonth() + 1),
+      ano: String(avaliacao?.ano ?? new Date().getFullYear()),
       observacao: avaliacao?.observacao ?? "",
-      criterios:
-        avaliacao?.avaliacaoCriterios?.map((ac) => ({
-          criterioId: ac.criterioAvaliacaoId,
-          nota: ac.nota,
-        })) ??
-        mockCriterios.map((c) => ({
-          criterioId: c.id,
-          nota: "BOM" as const,
-        })),
+      criterios: mockCriterios.map((c) => ({
+        criterioId: c.id,
+        nota: avaliacao?.avaliacaoCriterios?.find((ac) => ac.criterioAvaliacaoId === c.id)?.nota || "BOM",
+      })),
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: any) {
+    // Limpar erros anteriores
+    const newErrors: Record<string, string> = {};
+
+    // Validação: Sala é obrigatória
+    if (!values.salaId || values.salaId === "") {
+      newErrors.salaId = "Selecione uma sala";
+    }
+
+    // Validação: Mês é obrigatório
+    if (!values.mes || values.mes === "") {
+      newErrors.mes = "Selecione um mês";
+    }
+
+    // Validação: Ano é obrigatório
+    if (!values.ano || values.ano === "") {
+      newErrors.ano = "Insira um ano";
+    } else {
+      const ano = parseInt(values.ano, 10);
+      if (isNaN(ano) || ano < 2000 || ano > new Date().getFullYear() + 1) {
+        newErrors.ano = `Ano deve estar entre 2000 e ${new Date().getFullYear() + 1}`;
+      }
+    }
+
+    // Validação: Observação é obrigatória
+    if (!values.observacao || values.observacao.trim() === "") {
+      newErrors.observacao = "Insira uma observação";
+    }
+
+    // Validação: Critérios são obrigatórios
+    if (!values.criterios || values.criterios.length === 0) {
+      newErrors.criterios = "Selecione notas para todos os critérios";
+    } else {
+      const todosCriteriosPreenchidos = values.criterios.every((c: any) => c.nota && c.nota !== "");
+      if (!todosCriteriosPreenchidos) {
+        newErrors.criterios = "Todos os critérios devem ter uma nota selecionada";
+      }
+    }
+
+    // Se houver erros, mostrar e retornar
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // Limpar erros se tudo OK
+    setErrors({});
+
+    const salaId = parseInt(values.salaId, 10);
+    const mes = parseInt(values.mes, 10);
+    const ano = parseInt(values.ano, 10);
+
+    const payload = {
+      salaId,
+      mes,
+      ano,
+      observacao: values.observacao,
+      criterios: values.criterios.map((c: any) => ({
+        criterioId: c.criterioId,
+        nota: c.nota,
+      })),
+    };
+
     startTransition(() => {
-      // Simula o processamento
       setTimeout(() => {
+        console.log("Avaliação para enviar:", payload);
         toast.success(isUpdating ? "Avaliação atualizada!" : "Avaliação cadastrada!");
         form.reset();
       }, 1000);
@@ -89,10 +127,10 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
           name="salaId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Sala</FormLabel>
-              <Select value={String(field.value)} onValueChange={(val) => field.onChange(parseInt(val))}>
+              <FormLabel>Sala <span className="text-red-500">*</span></FormLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.salaId ? "border-red-500" : ""}>
                     <SelectValue placeholder="Selecione uma sala" />
                   </SelectTrigger>
                 </FormControl>
@@ -104,7 +142,9 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
+              {errors.salaId && (
+                <p className="text-red-500 text-sm mt-1">{errors.salaId}</p>
+              )}
             </FormItem>
           )}
         />
@@ -114,10 +154,10 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
           name="mes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Mês</FormLabel>
-              <Select value={String(field.value)} onValueChange={(val) => field.onChange(parseInt(val))}>
+              <FormLabel>Mês <span className="text-red-500">*</span></FormLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.mes ? "border-red-500" : ""}>
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
@@ -129,7 +169,9 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
+              {errors.mes && (
+                <p className="text-red-500 text-sm mt-1">{errors.mes}</p>
+              )}
             </FormItem>
           )}
         />
@@ -139,11 +181,18 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
           name="ano"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Ano</FormLabel>
+              <FormLabel>Ano <span className="text-red-500">*</span></FormLabel>
               <FormControl>
-                <Input type="number" placeholder="2024" {...field} />
+                <Input
+                  type="number"
+                  placeholder="2024"
+                  {...field}
+                  className={errors.ano ? "border-red-500" : ""}
+                />
               </FormControl>
-              <FormMessage />
+              {errors.ano && (
+                <p className="text-red-500 text-sm mt-1">{errors.ano}</p>
+              )}
             </FormItem>
           )}
         />
@@ -153,17 +202,23 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
           name="observacao"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Observação (opcional)</FormLabel>
+              <FormLabel>Observação <span className="text-red-500">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="Observações sobre a avaliação" {...field} />
+                <Input
+                  placeholder="Observações sobre a avaliação"
+                  {...field}
+                  className={errors.observacao ? "border-red-500" : ""}
+                />
               </FormControl>
-              <FormMessage />
+              {errors.observacao && (
+                <p className="text-red-500 text-sm mt-1">{errors.observacao}</p>
+              )}
             </FormItem>
           )}
         />
 
         <div className="space-y-2">
-          <FormLabel>Critérios de Avaliação</FormLabel>
+          <FormLabel>Critérios de Avaliação <span className="text-red-500">*</span></FormLabel>
           {mockCriterios.map((criterio, idx) => (
             <FormField
               key={criterio.id}
@@ -174,7 +229,7 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
                   <FormLabel className="text-sm">{criterio.nome}</FormLabel>
                   <Select value={field.value || "BOM"} onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger className="h-8">
+                      <SelectTrigger className={`h-8 ${errors.criterios ? "border-red-500" : ""}`}>
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
@@ -185,11 +240,13 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
                       <SelectItem value="OTIMO">Ótimo</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
                 </FormItem>
               )}
             />
           ))}
+          {errors.criterios && (
+            <p className="text-red-500 text-sm mt-1">{errors.criterios}</p>
+          )}
         </div>
 
         <div className="flex gap-2 justify-end pt-4">

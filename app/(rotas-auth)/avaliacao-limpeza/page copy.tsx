@@ -3,11 +3,13 @@
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import ResponsiveAvaliacaoView from "./_components/responsive-avaliacao-view";
+import FormAvaliacao from "./_components/form-avaliacao";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 
 type TabType = "avaliacoes" | "categorias" | "criterios" | "salas";
 
-const mockDataAvaliacoes = [
+const initialMockData = [
   {
     id: 1,
     mes: 4,
@@ -58,6 +60,8 @@ const mockDataAvaliacoes = [
 export default function AvaliacaoLimpezasPage() {
   const { data: session, status } = useSession();
   const [activeTab, setActiveTab] = useState<TabType>("avaliacoes");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [avaliacoes, setAvaliacoes] = useState(initialMockData);
 
   const usuario = (session as any)?.usuario;
   const permissao = usuario?.permissao;
@@ -70,14 +74,43 @@ export default function AvaliacaoLimpezasPage() {
   const shouldShowButton = isUserProfile; // Botão só para USR
   const shouldShowTabs = isAdmin || isUserProfile; // Abas para USR e ADM
 
-  const data = mockDataAvaliacoes;
+  // Função para adicionar nova avaliação
+  const handleAddAvaliacao = (novaAvaliacao: any) => {
+    const salasFromMock = [
+      { id: 1, nome: "Sala de Reuniões A" },
+      { id: 2, nome: "Sala de Reuniões B" },
+      { id: 3, nome: "Auditório Principal" },
+      { id: 4, nome: "Sala de Treinamento" },
+    ];
+    const salaSelecionada = salasFromMock.find((s) => s.id === novaAvaliacao.salaId);
+
+    const avaliacaoFormatada = {
+      id: Math.max(...avaliacoes.map((a) => a.id), 0) + 1,
+      salaId: novaAvaliacao.salaId,
+      mes: novaAvaliacao.mes,
+      ano: novaAvaliacao.ano,
+      avaliadoPor: usuario?.login || "usuario",
+      observacao: novaAvaliacao.observacao,
+      criadoEm: new Date(),
+      sala: { nome: salaSelecionada?.nome || "Sem sala" },
+      avaliacaoCriterios: novaAvaliacao.criterios.map((c: any, idx: number) => ({
+        id: idx + 1,
+        criterioAvaliacaoId: c.criterioId,
+        nota: c.nota,
+      })),
+    };
+
+    setAvaliacoes([avaliacaoFormatada, ...avaliacoes]);
+    setOpenDialog(false);
+  };
+
   const loading = false;
 
   // Função que renderiza o conteúdo baseado na aba ativa
   const renderTabContent = () => {
     switch (activeTab) {
       case "avaliacoes":
-        return <ResponsiveAvaliacaoView data={data} loading={loading} />;
+        return <ResponsiveAvaliacaoView data={avaliacoes} loading={loading} />;
       case "categorias":
         return (
           <div className="flex items-center justify-center py-8">
@@ -116,9 +149,13 @@ export default function AvaliacaoLimpezasPage() {
   return (
     <div className="w-full h-full flex flex-col">
       <div className="w-full px-4 sm:px-6 md:px-8 py-6 md:py-8 relative pb-20 md:pb-14">
+        {/* Botão Nova Avaliação - Responsivo */}
         {shouldShowButton && (
           <div className="flex justify-center mb-6">
-            <div className="border border-border rounded-lg p-4 sm:p-6 w-full sm:max-w-md flex flex-col sm:flex-row items-start sm:items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors">
+            <div
+              onClick={() => setOpenDialog(true)}
+              className="border border-border rounded-lg p-4 sm:p-6 w-full sm:max-w-md flex flex-col sm:flex-row items-start sm:items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors"
+            >
               <div className="flex items-center justify-center flex-shrink-0">
                 <div className="flex items-center justify-center h-8 w-8 rounded-full border-2 border-border">
                   <Plus className="h-4 w-4" />
@@ -134,6 +171,16 @@ export default function AvaliacaoLimpezasPage() {
         {/* Conteúdo da Aba Ativa */}
         <div className="w-full">{renderTabContent()}</div>
       </div>
+
+      {/* Dialog do Formulário */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="max-w-2xl duration-300">
+          <DialogHeader>
+            <DialogTitle>Nova Avaliação</DialogTitle>
+          </DialogHeader>
+          <FormAvaliacao isUpdating={false} onSubmit={handleAddAvaliacao} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

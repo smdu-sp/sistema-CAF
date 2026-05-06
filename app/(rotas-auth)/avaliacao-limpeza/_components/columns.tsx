@@ -24,13 +24,13 @@ const getMediaNota = (notas: string[]) => {
   const valores = notas.map((nota) => {
     switch (nota) {
       case "RUIM":
-        return 1;
+        return 2.5;
       case "REGULAR":
-        return 2;
+        return 5;
       case "BOM":
-        return 3;
+        return 7.5;
       case "OTIMO":
-        return 4;
+        return 10;
       default:
         return 0;
     }
@@ -40,18 +40,13 @@ const getMediaNota = (notas: string[]) => {
 };
 
 const getVariant = (media: number): "default" | "secondary" | "outline" | "destructive" => {
-  if (media >= 3.5) return "default";
-  if (media >= 2.5) return "secondary";
-  if (media >= 1.5) return "outline";
+  if (media >= 8.5) return "default";
+  if (media >= 6) return "secondary";
+  if (media >= 3.5) return "outline";
   return "destructive";
 };
 
-const getMensagemMedia = (media: number) => {
-  if (media >= 3.5) return "Excelente";
-  if (media >= 2.5) return "Bom";
-  if (media >= 1.5) return "Regular";
-  return "Ruim";
-};
+
 
 export const columns: ColumnDef<AvaliacaoRow>[] = [
   {

@@ -26,13 +26,13 @@ const getMediaNota = (notas: string[]) => {
   const valores = notas.map((nota) => {
     switch (nota) {
       case "RUIM":
-        return 1;
+        return 2.5;
       case "REGULAR":
-        return 2;
+        return 5;
       case "BOM":
-        return 3;
+        return 7.5;
       case "OTIMO":
-        return 4;
+        return 10;
       default:
         return 0;
     }
@@ -42,16 +42,16 @@ const getMediaNota = (notas: string[]) => {
 };
 
 const getVariant = (media: number): "default" | "secondary" | "outline" | "destructive" => {
-  if (media >= 3.5) return "default";
-  if (media >= 2.5) return "secondary";
-  if (media >= 1.5) return "outline";
+  if (media >= 8.5) return "default";
+  if (media >= 6) return "secondary";
+  if (media >= 3.5) return "outline";
   return "destructive";
 };
 
 const getMensagemMedia = (media: number) => {
-  if (media >= 3.5) return "Excelente";
-  if (media >= 2.5) return "Bom";
-  if (media >= 1.5) return "Regular";
+  if (media >= 8.5) return "Excelente";
+  if (media >= 6) return "Bom";
+  if (media >= 3.5) return "Regular";
   return "Ruim";
 };
 
@@ -60,10 +60,7 @@ interface ResponsiveAvaliacaoViewProps {
   loading?: boolean;
 }
 
-export default function ResponsiveAvaliacaoView({
-  data,
-  loading = false,
-}: ResponsiveAvaliacaoViewProps) {
+export default function ResponsiveAvaliacaoView({ data, loading = false }: ResponsiveAvaliacaoViewProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -95,20 +92,7 @@ export default function ResponsiveAvaliacaoView({
           const variant = getVariant(media);
           const mensagem = getMensagemMedia(media);
           const avaliador = avaliacao.avaliador?.nome ?? avaliacao.avaliadoPor ?? "—";
-          const meses = [
-            "Jan",
-            "Fev",
-            "Mar",
-            "Abr",
-            "Mai",
-            "Jun",
-            "Jul",
-            "Ago",
-            "Set",
-            "Out",
-            "Nov",
-            "Dez",
-          ];
+          const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
           const data_criacao = new Date(avaliacao.criadoEm);
           const formatoBr = data_criacao.toLocaleDateString("pt-BR", {
             day: "2-digit",
@@ -120,9 +104,7 @@ export default function ResponsiveAvaliacaoView({
             <Card key={avaliacao.id} className="p-4 border border-border">
               {/* Header com Sala */}
               <div className="mb-3 pb-3 border-b border-border/50">
-                <h3 className="font-semibold text-base text-foreground">
-                  {avaliacao.sala?.nome ?? "—"}
-                </h3>
+                <h3 className="font-semibold text-base text-foreground">{avaliacao.sala?.nome ?? "—"}</h3>
                 <p className="text-xs text-muted-foreground mt-1">
                   {meses[avaliacao.mes - 1]} / {avaliacao.ano}
                 </p>
@@ -131,43 +113,30 @@ export default function ResponsiveAvaliacaoView({
               {/* Avaliação */}
               <div className="mb-3 pb-3 border-b border-border/50">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Avaliação
-                  </span>
+                  <span className="text-xs text-muted-foreground font-medium">Avaliação</span>
                   <div className="flex items-center gap-2">
                     <Badge variant={variant} className="text-xs">
                       {getMediaNota(notas)}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {mensagem}
-                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Avaliador */}
               <div className="mb-3 pb-3 border-b border-border/50">
-                <p className="text-xs text-muted-foreground font-medium mb-1">
-                  Avaliador
-                </p>
+                <p className="text-xs text-muted-foreground font-medium mb-1">Avaliador</p>
                 <p className="text-sm text-foreground">{avaliador}</p>
               </div>
 
               {/* Observação */}
               <div className="mb-3 pb-3 border-b border-border/50">
-                <p className="text-xs text-muted-foreground font-medium mb-1">
-                  Observação
-                </p>
-                <p className="text-sm text-foreground line-clamp-2">
-                  {avaliacao.observacao ?? "—"}
-                </p>
+                <p className="text-xs text-muted-foreground font-medium mb-1">Observação</p>
+                <p className="text-sm text-foreground line-clamp-2">{avaliacao.observacao ?? "—"}</p>
               </div>
 
               {/* Data */}
               <div>
-                <p className="text-xs text-muted-foreground font-medium mb-1">
-                  Criado em
-                </p>
+                <p className="text-xs text-muted-foreground font-medium mb-1">Criado em</p>
                 <p className="text-sm text-foreground">{formatoBr}</p>
               </div>
             </Card>

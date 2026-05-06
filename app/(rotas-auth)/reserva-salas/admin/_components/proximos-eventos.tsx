@@ -24,12 +24,11 @@ import { cancelarReserva } from "@/app/(rotas-auth)/reservas/actions";
 import { toast } from "sonner";
 import { ReservaAdmin } from "../../types";
 
-const LIMITE_PROXIMOS = 10;
-
 export function ProximosEventos() {
   const [proximos, setProximos] = useState<ReservaAdmin[]>([]);
   const [totalProximos, setTotalProximos] = useState(0);
   const [paginaProximos, setPaginaProximos] = useState(1);
+  const [limiteProximos, setLimiteProximos] = useState(10);
   const [loadingProximos, setLoadingProximos] = useState(false);
   const [cancelandoId, setCancelandoId] = useState<string | null>(null);
   const [reservaParaCancelar, setReservaParaCancelar] = useState<{
@@ -38,12 +37,12 @@ export function ProximosEventos() {
   } | null>(null);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
 
-  const totalPaginasProximos = Math.max(1, Math.ceil(totalProximos / LIMITE_PROXIMOS));
+  const totalPaginasProximos = Math.max(1, Math.ceil(totalProximos / limiteProximos));
 
   const carregarProximos = useCallback(() => {
     setLoadingProximos(true);
     fetch(
-      `/api/reservas/proximos?pagina=${paginaProximos}&limite=${LIMITE_PROXIMOS}`
+      `/api/reservas/proximos?pagina=${paginaProximos}&limite=${limiteProximos}`
     )
       .then((r) => r.json())
       .then((body) => {
@@ -55,11 +54,16 @@ export function ProximosEventos() {
         setTotalProximos(0);
       })
       .finally(() => setLoadingProximos(false));
-  }, [paginaProximos]);
+  }, [paginaProximos, limiteProximos]);
 
   useEffect(() => {
     carregarProximos();
   }, [carregarProximos]);
+
+  function handleLimiteChange(novoLimite: number) {
+    setLimiteProximos(novoLimite);
+    setPaginaProximos(1);
+  }
 
   function abrirModalCancelar(r: { id: string; titulo: string | null }) {
     setReservaParaCancelar({ id: r.id, titulo: r.titulo ?? "Sem título" });
@@ -156,14 +160,16 @@ export function ProximosEventos() {
                 ))}
               </TableBody>
             </Table>
-            {/* ✅ COMPONENTE REUTILIZÁVEL */}
+            
             <Paginacao
               paginaAtual={paginaProximos}
               totalPaginas={totalPaginasProximos}
               totalItens={totalProximos}
               labelItemSingular="evento"
               labelItemPlural="eventos"
+              limitePorPagina={limiteProximos}
               onPageChange={setPaginaProximos}
+              onLimiteChange={handleLimiteChange}
             />
           </>
         )}

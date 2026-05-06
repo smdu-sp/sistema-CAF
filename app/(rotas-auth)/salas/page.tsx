@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth/auth';
 import { Suspense } from 'react';
-import DataTable, { TableSkeleton } from '@/components/data-table';
+import DataTable from '@/components/data-table';
+import { Skeleton } from '@/components/ui/skeleton';
 import { prisma } from '@/lib/prisma';
 import { columns } from './_components/columns';
 import ModalUpdateAndCreate from './_components/modal-update-create';
@@ -27,7 +28,7 @@ export default async function SalasPage() {
     }
 
     return (
-        <Suspense fallback={<TableSkeleton />}>
+        <Suspense fallback={<Skeleton className="h-full w-full" />}>
             <SalasContente />
         </Suspense>
     );

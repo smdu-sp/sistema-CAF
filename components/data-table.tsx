@@ -2,6 +2,7 @@
 
 'use client';
 
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
 	type ColumnDef,
 	flexRender,
@@ -19,43 +20,62 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Paginacao } from './paginacao';
-import { useRouter, useSearchParams } from 'next/navigation';
 
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
 	className?: string;
-	paginaAtual?: number;
-	totalPaginas?: number;
 	totalItens?: number;
 	labelItemSingular?: string;
 	labelItemPlural?: string;
+	onLimiteChange?: (limite: number) => void;
 }
 
 export default function DataTable<TData, TValue>({
 	columns,
 	data,
 	className,
-	paginaAtual = 1,
-    totalPaginas = 1,
-    totalItens = 0,
-    labelItemSingular = "item",
-    labelItemPlural = "itens",
+	totalItens = 0,
+	labelItemSingular = "item",
+	labelItemPlural = "itens",
+	onLimiteChange,
 }: DataTableProps<TData, TValue>) {
-	const router = useRouter();
-    const searchParams = useSearchParams();
-	
+	const [paginaAtual, setPaginaAtual] = useState(1);
+	const [limitePorPagina, setLimitePorPagina] = useState(10);
+
+	const totalItensReal = totalItens || data.length;
+	const totalPaginas = Math.ceil(totalItensReal / limitePorPagina) || 1;
+
+	const dadosPaginados = useMemo(() => {
+		const indiceInicial = (paginaAtual - 1) * limitePorPagina;
+		const indiceFinal = indiceInicial + limitePorPagina;
+		return data.slice(indiceInicial, indiceFinal);
+	}, [data, paginaAtual, limitePorPagina]);
+
 	const table = useReactTable({
-		data,
+		data: dadosPaginados,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
 	});
 
-	const handlePageChange = (novoNumero: number) => {
-		const params = new URLSearchParams(searchParams);
-		params.set('pagina', String(novoNumero));
-		router.push(`?${params.toString()}`);
-	}
+	const handlePageChange = useCallback((novoNumero: number) => {
+		if (novoNumero >= 1 && novoNumero <= totalPaginas) {
+			setPaginaAtual(novoNumero);
+		}
+	}, [totalPaginas]);
+
+	const handleLimiteChange = useCallback((novoLimite: number) => {
+		setLimitePorPagina(novoLimite);
+		setPaginaAtual(1);
+		if (onLimiteChange) {
+			onLimiteChange(novoLimite);
+		}
+	}, [onLimiteChange]);
+
+	useEffect(() => {
+		setPaginaAtual(1);
+	}, [data]);
+
 	return (
 		<div className={cn("w-full overflow-x-auto rounded-md border", className)}>
 			<Table className="bg-background dark:bg-muted/50 w-full min-w-full">
@@ -112,17 +132,15 @@ export default function DataTable<TData, TValue>({
 				</TableBody>
 			</Table>
 			<Paginacao
-                paginaAtual={paginaAtual}
-                totalPaginas={totalPaginas}
-                totalItens={totalItens}
-                labelItemSingular={labelItemSingular}
-                labelItemPlural={labelItemPlural}
-                onPageChange={handlePageChange}
-            />
+				paginaAtual={paginaAtual}
+				totalPaginas={totalPaginas}
+				totalItens={totalItensReal}
+				limitePorPagina={limitePorPagina}
+				labelItemSingular={labelItemSingular}
+				labelItemPlural={labelItemPlural}
+				onPageChange={handlePageChange}
+				onLimiteChange={handleLimiteChange}
+			/>
 		</div>
 	);
-}
-
-export function TableSkeleton() {
-	return <Skeleton className="h-[240px] w-full rounded-xl" />;
 }

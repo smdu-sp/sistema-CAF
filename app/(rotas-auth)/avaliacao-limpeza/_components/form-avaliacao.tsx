@@ -28,9 +28,10 @@ const mockCriterios = [
 interface FormAvaliacaoProps {
   isUpdating: boolean;
   avaliacao?: Partial<AvaliacaoRow>;
+  onSubmit?: (data: any) => void;
 }
 
-export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoProps) {
+export default function FormAvaliacao({ isUpdating, avaliacao, onSubmit: onSubmitCallback }: FormAvaliacaoProps) {
   const [isPending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -113,6 +114,12 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
       setTimeout(() => {
         console.log("Avaliação para enviar:", payload);
         toast.success(isUpdating ? "Avaliação atualizada!" : "Avaliação cadastrada!");
+        
+        // Chamar a callback com os dados
+        if (onSubmitCallback) {
+          onSubmitCallback(payload);
+        }
+        
         form.reset();
       }, 1000);
     });

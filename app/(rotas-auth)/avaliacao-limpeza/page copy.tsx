@@ -9,7 +9,7 @@ import { Plus } from "lucide-react";
 
 type TabType = "avaliacoes" | "categorias" | "criterios" | "salas";
 
-const mockDataAvaliacoes = [
+const initialMockData = [
   {
     id: 1,
     mes: 4,
@@ -61,6 +61,7 @@ export default function AvaliacaoLimpezasPage() {
   const { data: session, status } = useSession();
   const [activeTab, setActiveTab] = useState<TabType>("avaliacoes");
   const [openDialog, setOpenDialog] = useState(false);
+  const [avaliacoes, setAvaliacoes] = useState(initialMockData);
 
   const usuario = (session as any)?.usuario;
   const isAdmin = usuario?.permissao === "ADM";
@@ -68,14 +69,43 @@ export default function AvaliacaoLimpezasPage() {
   // Botão aparece se NÃO for ADM (DEV e USR)
   const shouldShowButton = status === "authenticated" && !isAdmin;
 
-  const data = mockDataAvaliacoes;
+  // Função para adicionar nova avaliação
+  const handleAddAvaliacao = (novaAvaliacao: any) => {
+    const salasFromMock = [
+      { id: 1, nome: "Sala de Reuniões A" },
+      { id: 2, nome: "Sala de Reuniões B" },
+      { id: 3, nome: "Auditório Principal" },
+      { id: 4, nome: "Sala de Treinamento" },
+    ];
+    const salaSelecionada = salasFromMock.find((s) => s.id === novaAvaliacao.salaId);
+
+    const avaliacaoFormatada = {
+      id: Math.max(...avaliacoes.map((a) => a.id), 0) + 1,
+      salaId: novaAvaliacao.salaId,
+      mes: novaAvaliacao.mes,
+      ano: novaAvaliacao.ano,
+      avaliadoPor: usuario?.login || "usuario",
+      observacao: novaAvaliacao.observacao,
+      criadoEm: new Date(),
+      sala: { nome: salaSelecionada?.nome || "Sem sala" },
+      avaliacaoCriterios: novaAvaliacao.criterios.map((c: any, idx: number) => ({
+        id: idx + 1,
+        criterioAvaliacaoId: c.criterioId,
+        nota: c.nota,
+      })),
+    };
+
+    setAvaliacoes([avaliacaoFormatada, ...avaliacoes]);
+    setOpenDialog(false);
+  };
+
   const loading = false;
 
   // Função que renderiza o conteúdo baseado na aba ativa
   const renderTabContent = () => {
     switch (activeTab) {
       case "avaliacoes":
-        return <ResponsiveAvaliacaoView data={data} loading={loading} />;
+        return <ResponsiveAvaliacaoView data={avaliacoes} loading={loading} />;
       case "categorias":
         return (
           <div className="flex items-center justify-center py-8">
@@ -132,7 +162,7 @@ export default function AvaliacaoLimpezasPage() {
           <DialogHeader>
             <DialogTitle>Nova Avaliação</DialogTitle>
           </DialogHeader>
-          <FormAvaliacao isUpdating={false} />
+          <FormAvaliacao isUpdating={false} onSubmit={handleAddAvaliacao} />
         </DialogContent>
       </Dialog>
     </div>

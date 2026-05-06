@@ -23,13 +23,13 @@ const getMediaNota = (notas: string[]) => {
   const valores = notas.map((nota) => {
     switch (nota) {
       case "RUIM":
-        return 1;
+        return 2.5;
       case "REGULAR":
-        return 2;
+        return 5;
       case "BOM":
-        return 3;
+        return 7.5;
       case "OTIMO":
-        return 4;
+        return 10;
       default:
         return 0;
     }
@@ -39,18 +39,13 @@ const getMediaNota = (notas: string[]) => {
 };
 
 const getVariant = (media: number): "default" | "secondary" | "outline" | "destructive" => {
-  if (media >= 3.5) return "default";
-  if (media >= 2.5) return "secondary";
-  if (media >= 1.5) return "outline";
+  if (media >= 8.5) return "default";
+  if (media >= 6) return "secondary";
+  if (media >= 3.5) return "outline";
   return "destructive";
 };
 
-const getMensagemMedia = (media: number) => {
-  if (media >= 3.5) return "Excelente";
-  if (media >= 2.5) return "Bom";
-  if (media >= 1.5) return "Regular";
-  return "Ruim";
-};
+
 
 export const columns: ColumnDef<AvaliacaoRow>[] = [
   {
@@ -97,15 +92,11 @@ export const columns: ColumnDef<AvaliacaoRow>[] = [
       const notas = row.original.avaliacaoCriterios.map((ac) => ac.nota);
       const media = parseFloat(getMediaNota(notas));
       const variant = getVariant(media);
-      const mensagem = getMensagemMedia(media);
       return (
         <div className="flex gap-2">
           <Badge variant={variant} className="text-xs">
             {getMediaNota(notas)}
           </Badge>
-          <span className="text-xs hidden sm:inline text-muted-foreground">
-            {mensagem}
-          </span>
         </div>
       );
     },

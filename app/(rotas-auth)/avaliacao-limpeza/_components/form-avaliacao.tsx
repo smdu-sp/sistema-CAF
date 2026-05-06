@@ -42,7 +42,7 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
       observacao: avaliacao?.observacao ?? "",
       criterios: mockCriterios.map((c) => ({
         criterioId: c.id,
-        nota: avaliacao?.avaliacaoCriterios?.find((ac) => ac.criterioAvaliacaoId === c.id)?.nota || "BOM",
+        nota: avaliacao?.avaliacaoCriterios?.find((ac) => ac.criterioAvaliacaoId === c.id)?.nota || "",
       })),
     },
   });
@@ -76,14 +76,13 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
       newErrors.observacao = "Insira uma observação";
     }
 
-    // Validação: Critérios são obrigatórios
-    if (!values.criterios || values.criterios.length === 0) {
-      newErrors.criterios = "Selecione notas para todos os critérios";
-    } else {
-      const todosCriteriosPreenchidos = values.criterios.every((c: any) => c.nota && c.nota !== "");
-      if (!todosCriteriosPreenchidos) {
-        newErrors.criterios = "Todos os critérios devem ter uma nota selecionada";
-      }
+    // Validação: Critérios são obrigatórios (individualmente)
+    if (values.criterios && values.criterios.length > 0) {
+      values.criterios.forEach((criterio: any, idx: number) => {
+        if (!criterio.nota || criterio.nota === "") {
+          newErrors[`criterios.${idx}`] = "Selecione um critério";
+        }
+      });
     }
 
     // Se houver erros, mostrar e retornar
@@ -227,10 +226,10 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm">{criterio.nome}</FormLabel>
-                  <Select value={field.value || "BOM"} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger className={`h-8 ${errors.criterios ? "border-red-500" : ""}`}>
-                        <SelectValue />
+                      <SelectTrigger className={`h-8 ${errors[`criterios.${idx}`] ? "border-red-500" : ""}`}>
+                        <SelectValue placeholder="Selecione um critério" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -240,13 +239,13 @@ export default function FormAvaliacao({ isUpdating, avaliacao }: FormAvaliacaoPr
                       <SelectItem value="OTIMO">Ótimo</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors[`criterios.${idx}`] && (
+                    <p className="text-red-500 text-sm mt-1">{errors[`criterios.${idx}`]}</p>
+                  )}
                 </FormItem>
               )}
             />
           ))}
-          {errors.criterios && (
-            <p className="text-red-500 text-sm mt-1">{errors.criterios}</p>
-          )}
         </div>
 
         <div className="flex gap-2 justify-end pt-4">

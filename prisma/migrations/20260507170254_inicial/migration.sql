@@ -38,6 +38,7 @@ CREATE TABLE `avaliacao_limpeza.avaliacoes` (
     `mes` INTEGER NOT NULL,
     `ano` INTEGER NOT NULL,
     `salaId` INTEGER NOT NULL,
+    `avaliadoPor` VARCHAR(191) NOT NULL,
     `observacao` VARCHAR(191) NULL,
     `criadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `atualizadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -89,9 +90,47 @@ CREATE TABLE `reserva_sala.salas` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `reserva_sala.sala_layout_fotos` (
+    `id` VARCHAR(191) NOT NULL,
+    `salaId` VARCHAR(191) NOT NULL,
+    `descricao` VARCHAR(120) NOT NULL,
+    `imagemUrl` VARCHAR(512) NOT NULL,
+    `ordem` INTEGER NOT NULL DEFAULT 0,
+    `criadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `atualizadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `reserva_sala.sala_layout_fotos_salaId_idx`(`salaId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `reserva_sala.sala_mobiliarios` (
+    `id` VARCHAR(191) NOT NULL,
+    `salaId` VARCHAR(191) NOT NULL,
+    `nome` VARCHAR(120) NOT NULL,
+    `quantidade` INTEGER NOT NULL,
+    `criadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `atualizadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `reserva_sala.sala_midias` (
+    `id` VARCHAR(191) NOT NULL,
+    `salaId` VARCHAR(191) NOT NULL,
+    `nome` VARCHAR(120) NOT NULL,
+    `quantidade` INTEGER NOT NULL,
+    `criadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `atualizadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `reserva_sala.reservas` (
     `id` VARCHAR(191) NOT NULL,
-    `salaReservaId` VARCHAR(191) NOT NULL,
+    `salaId` VARCHAR(191) NOT NULL,
     `usuarioId` VARCHAR(191) NULL,
     `usuarioLogin` VARCHAR(60) NOT NULL,
     `usuarioNome` VARCHAR(255) NULL,
@@ -99,9 +138,18 @@ CREATE TABLE `reserva_sala.reservas` (
     `inicio` DATETIME(3) NOT NULL,
     `fim` DATETIME(3) NOT NULL,
     `titulo` VARCHAR(255) NULL,
+    `telefoneRamal` VARCHAR(80) NULL,
+    `emailContato` VARCHAR(255) NULL,
+    `numeroParticipantes` INTEGER NULL,
+    `status` ENUM('SOLICITADO', 'APROVADO', 'CANCELADO') NOT NULL DEFAULT 'SOLICITADO',
+    `motivoCancelamento` TEXT NULL,
     `criadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `atualizadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `layoutEscolhidoDescricao` VARCHAR(120) NULL,
+    `salaLayoutFotoId` VARCHAR(191) NULL,
 
+    INDEX `reserva_sala.reservas_salaLayoutFotoId_idx`(`salaLayoutFotoId`),
+    INDEX `reserva_sala.reservas_status_idx`(`status`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -154,6 +202,9 @@ ALTER TABLE `avaliacao_limpeza.criterios` ADD CONSTRAINT `avaliacao_limpeza.crit
 ALTER TABLE `avaliacao_limpeza.avaliacoes` ADD CONSTRAINT `avaliacao_limpeza.avaliacoes_salaId_fkey` FOREIGN KEY (`salaId`) REFERENCES `avaliacao_limpeza.salas`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `avaliacao_limpeza.avaliacoes` ADD CONSTRAINT `avaliacao_limpeza.avaliacoes_avaliadoPor_fkey` FOREIGN KEY (`avaliadoPor`) REFERENCES `principal.usuarios`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `avaliacao_limpeza.avaliacoes_criterios` ADD CONSTRAINT `avaliacao_limpeza.avaliacoes_criterios_criterioAvaliacaoId_fkey` FOREIGN KEY (`criterioAvaliacaoId`) REFERENCES `avaliacao_limpeza.criterios`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -166,7 +217,19 @@ ALTER TABLE `avaliacao_limpeza.arquivos_avaliacao` ADD CONSTRAINT `avaliacao_lim
 ALTER TABLE `avaliacao_limpeza.arquivos_avaliacao` ADD CONSTRAINT `avaliacao_limpeza.arquivos_avaliacao_avaliacaoId_fkey` FOREIGN KEY (`avaliacaoId`) REFERENCES `avaliacao_limpeza.avaliacoes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `reserva_sala.reservas` ADD CONSTRAINT `reserva_sala.reservas_salaReservaId_fkey` FOREIGN KEY (`salaReservaId`) REFERENCES `reserva_sala.salas`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `reserva_sala.sala_layout_fotos` ADD CONSTRAINT `reserva_sala.sala_layout_fotos_salaId_fkey` FOREIGN KEY (`salaId`) REFERENCES `reserva_sala.salas`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reserva_sala.sala_mobiliarios` ADD CONSTRAINT `reserva_sala.sala_mobiliarios_salaId_fkey` FOREIGN KEY (`salaId`) REFERENCES `reserva_sala.salas`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reserva_sala.sala_midias` ADD CONSTRAINT `reserva_sala.sala_midias_salaId_fkey` FOREIGN KEY (`salaId`) REFERENCES `reserva_sala.salas`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reserva_sala.reservas` ADD CONSTRAINT `reserva_sala.reservas_salaLayoutFotoId_fkey` FOREIGN KEY (`salaLayoutFotoId`) REFERENCES `reserva_sala.sala_layout_fotos`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reserva_sala.reservas` ADD CONSTRAINT `reserva_sala.reservas_salaId_fkey` FOREIGN KEY (`salaId`) REFERENCES `reserva_sala.salas`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `reserva_sala.reservas` ADD CONSTRAINT `reserva_sala.reservas_usuarioId_fkey` FOREIGN KEY (`usuarioId`) REFERENCES `principal.usuarios`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

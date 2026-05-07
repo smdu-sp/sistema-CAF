@@ -139,7 +139,7 @@ export default function AvaliacaoLimpezasPage() {
     return (
       <div className="w-full h-full flex flex-col">
         <div className="w-full px-4 sm:px-6 md:px-8 py-6 md:py-8 relative">
-          <ResponsiveAvaliacaoView data={data} loading={loading} />
+          <ResponsiveAvaliacaoView data={avaliacoes} loading={loading} />
         </div>
       </div>
     );

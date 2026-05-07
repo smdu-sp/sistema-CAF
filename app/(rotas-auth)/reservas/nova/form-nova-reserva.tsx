@@ -896,7 +896,7 @@ export function FormNovaReserva({
         </div>
         <div className="flex justify-center">
           <Button type="button" variant="ghost" size="sm" asChild>
-            <Link href="/dashboard">Voltar ao painel</Link>
+            <Link href="/reserva-salas">Voltar ao painel</Link>
           </Button>
         </div>
       </div>

@@ -95,7 +95,7 @@ export default {
       return token;
     },
     async session({ session, token }) {
-      if (token.usuario) (session as Record<string, unknown>).usuario = token.usuario;
+      if (token.usuario) (session as unknown as Record<string, unknown>).usuario = token.usuario;
       return session;
     },
   },

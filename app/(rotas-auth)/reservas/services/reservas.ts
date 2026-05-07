@@ -48,7 +48,7 @@ export async function listarCoordenadoriasAtivas(): Promise<CoordenadoriaOption[
 }
 
 export async function listarSalasAtivas(): Promise<SalaOption[]> {
-  const salas = await prisma.sala.findMany({
+  const salas = await prisma.salaReserva.findMany({
     where: { ativo: true },
     orderBy: { nome: "asc" },
     select: {

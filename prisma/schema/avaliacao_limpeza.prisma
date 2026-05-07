@@ -1,0 +1,100 @@
+model Categoria {
+    id                  Int         @id @default(autoincrement())
+    nome                String      @unique
+    descricao           String?
+
+    criadoEm            DateTime    @default(now())
+    atualizadoEm        DateTime    @default(now()) @updatedAt
+
+    criterios  Criterio[]
+
+    @@map("avaliacao_limpeza.categorias")
+}
+
+model Criterio {
+    id                      Int                     @id @default(autoincrement())
+    categoriaAvaliacaoId    Int
+    nome                    String
+    descricao               String?
+
+    criadoEm                DateTime                @default(now())
+    atualizadoEm            DateTime                @default(now()) @updatedAt
+
+    categoria               Categoria      @relation(fields: [categoriaAvaliacaoId], references: [id])
+    avaliacaoCriterios      AvaliacaoCriterio[]
+
+    @@map("avaliacao_limpeza.criterios")
+}
+
+model SalaAvaliacaoLimpeza {
+    id                      Int                     @id @default(autoincrement())
+    nome                    String
+
+    criadoEm                DateTime                @default(now())
+    atualizadoEm            DateTime                @default(now()) @updatedAt
+
+    avaliacoes              Avaliacao[]
+
+    @@map("avaliacao_limpeza.salas")
+}
+
+enum NotasAvaliacao {
+    RUIM
+    REGULAR
+    BOM
+    OTIMO
+}
+
+model Avaliacao {
+    id                      Int                     @id @default(autoincrement())
+    mes                     Int
+    ano                     Int
+    salaId                  Int
+    avaliadoPor             String
+    observacao              String?
+
+    criadoEm                DateTime                @default(now())
+    atualizadoEm            DateTime                @default(now()) @updatedAt
+
+    sala                    SalaAvaliacaoLimpeza    @relation(fields: [salaId], references: [id])
+    avaliador               Usuario                 @relation("avaliador", fields: [avaliadoPor], references: [id])
+    avaliacaoCriterios      AvaliacaoCriterio[]
+    arquivosAvaliacao       ArquivoAvaliacao[]
+
+    @@unique([mes, ano, salaId])
+    @@map("avaliacao_limpeza.avaliacoes")
+}
+
+model AvaliacaoCriterio {
+    id                      Int                     @id @default(autoincrement())
+    criterioAvaliacaoId     Int
+    avaliacaoId             Int
+    nota                    NotasAvaliacao
+    observacao              String?
+
+    criadoEm                DateTime                @default(now())
+    atualizadoEm            DateTime                @default(now()) @updatedAt
+
+    Criterio                Criterio                @relation(fields: [criterioAvaliacaoId], references: [id])
+    avaliacao               Avaliacao               @relation(fields: [avaliacaoId], references: [id])
+    arquivosAvaliacao       ArquivoAvaliacao[]
+
+    @@unique([criterioAvaliacaoId, avaliacaoId])
+    @@map("avaliacao_limpeza.avaliacoes_criterios")
+}
+
+model ArquivoAvaliacao {
+    id                      Int                     @id @default(autoincrement())
+    avaliacaoCriterioId     Int
+    avaliacaoId             Int
+    nome                    String
+    url                     String
+
+    criadoEm                DateTime                @default(now())
+    atualizadoEm            DateTime                @default(now()) @updatedAt
+
+    avaliacaoCriterio       AvaliacaoCriterio       @relation(fields: [avaliacaoCriterioId], references: [id])
+    avaliacao               Avaliacao               @relation(fields: [avaliacaoId], references: [id])
+
+    @@map("avaliacao_limpeza.arquivos_avaliacao")
+}

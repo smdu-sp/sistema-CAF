@@ -1,24 +1,17 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { DialogClose } from '@/components/ui/dialog';
-import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronLeft, ChevronRight, Loader2, Minus, Plus } from 'lucide-react';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { Button } from "@/components/ui/button";
+import { DialogClose } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronLeft, ChevronRight, Loader2, Minus, Plus } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { Resolver } from 'react-hook-form';
-import { useFieldArray, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { z } from 'zod';
-import type { Layout } from '@prisma/client';
+import { useFieldArray, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+import type { Layout } from "@prisma/client";
 import { cn } from '@/lib/utils';
 
 const STEPS = [
@@ -29,11 +22,11 @@ const STEPS = [
 ] as const;
 
 const formSchema = z.object({
-	nome: z.string().min(1, 'Nome da sala é obrigatório'),
-	andar: z.string().optional(),
-	numero: z.string().optional(),
-	lotacao: z.coerce.number().int().positive().optional(),
-	layout: z.enum(['FIXO', 'MOVEL']).optional(),
+  nome: z.string().min(1, "Nome da sala é obrigatório"),
+  andar: z.string().optional(),
+  numero: z.string().optional(),
+  lotacao: z.number().int().positive().optional(),
+  layout: z.enum(['FIXO', 'MOVEL']).optional(),
 	mobiliarios: z.array(
 		z.object({
 			nome: z.string(),
@@ -66,16 +59,16 @@ export type SalaLayoutFotoRow = {
 };
 
 export type SalaRow = {
-	id: string;
-	nome: string;
-	andar: string | null;
-	numero: string | null;
-	lotacao: number | null;
-	layout: Layout | null;
+  id: string;
+  nome: string;
+  andar: string | null;
+  numero: string | null;
+  lotacao: number | null;
+  layout: Layout | null;
 	layoutFotos: SalaLayoutFotoRow[];
 	mobiliarios: { id: string; nome: string; quantidade: number }[];
 	midias: { id: string; nome: string; quantidade: number }[];
-	ativo: boolean;
+  ativo: boolean;
 };
 
 type LayoutFotoLinha = {

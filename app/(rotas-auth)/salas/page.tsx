@@ -1,40 +1,41 @@
-import DataTable, { TableSkeleton } from '@/components/data-table';
 import { auth } from '@/lib/auth/auth';
-import { prisma } from '@/lib/prisma';
 import { Suspense } from 'react';
+import DataTable from '@/components/data-table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { prisma } from '@/lib/prisma';
 import { columns } from './_components/columns';
 import ModalUpdateAndCreate from './_components/modal-update-create';
 
 export default async function SalasPage() {
-	const session = await auth();
-	const usuario = (session as any)?.usuario;
-	const permissao = usuario?.permissao;
+    const session = await auth();
+    const usuario = (session as any)?.usuario;
+    const permissao = usuario?.permissao;
 
-	if (!session) {
-		return (
-			<div className="w-full px-0 md:px-8 pb-20 md:pb-14">
-				<p>Você precisa estar autenticado.</p>
-			</div>
-		);
-	}
+    if (!session) {
+        return (
+            <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
+                <p>Você precisa estar autenticado.</p>
+            </div>
+        );
+    }
 
-	if (permissao !== 'ADM' && permissao !== 'DEV') {
-		return (
-			<div className="w-full px-0 md:px-8 pb-20 md:pb-14">
-				<p>Somente administradores podem acessar esta página.</p>
-			</div>
-		);
-	}
+    if (permissao !== 'ADM' && permissao !== 'DEV') {
+        return (
+            <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
+                <p>Somente administradores podem acessar esta página.</p>
+            </div>
+        );
+    }
 
-	return (
-		<Suspense fallback={<TableSkeleton />}>
-			<SalasContent />
-		</Suspense>
-	);
+    return (
+        <Suspense fallback={<Skeleton className="h-full w-full" />}>
+            <SalasContente />
+        </Suspense>
+    );
 }
 
-async function SalasContent() {
-	const lista = await prisma.sala.findMany({
+async function SalasContente() {
+	const lista = await prisma.salaReserva.findMany({
 		orderBy: { nome: 'asc' },
 		select: {
 			id: true,

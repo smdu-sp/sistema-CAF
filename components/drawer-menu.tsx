@@ -11,6 +11,7 @@ import {
 	LucideProps,
 	Users,
 	X,
+	ClipboardCheck
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -52,14 +53,20 @@ export function DrawerMenu() {
 		{
 			icone: House,
 			titulo: 'Página Inicial',
-			url: '/',
+			url: '/home',
 		},
 
 		{
 			icone: CalendarSearch,
-			titulo: 'Reservas',
-			url: '/dashboard',
+			titulo: 'Reservas de Salas',
+			url: '/reserva-salas',
 		},
+		{
+			icone: ClipboardCheck,
+			titulo: 'Avaliação de Limpeza',
+			url: '/avaliacao-limpeza',
+			permissao: 'avaliacao_limpeza_usuario',
+		}
 	];
 
 	const menuAdmin: IMenu[] = [

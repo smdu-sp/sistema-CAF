@@ -1,0 +1,55 @@
+// Prisma schema – MySQL
+// https://pris.ly/d/mysql
+
+generator client {
+  provider = "prisma-client-js"
+  output = "../generated"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Permissao {
+  DEV
+  ADM
+  TEC
+  USR
+}
+
+model Coordenadoria {
+  id           String    @id @default(uuid())
+  nome         String    @db.VarChar(120)
+  ativo        Boolean   @default(true)
+
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @default(now()) @updatedAt
+
+  usuarios Usuario[]
+  reservas Reserva[]
+
+  @@map("principal.coordenadorias")
+}
+
+model Usuario {
+  id              String    @id @default(uuid())
+  nome            String
+  nomeSocial      String?
+  login           String    @unique
+  email           String    @unique
+  permissao       Permissao @default(USR)
+  status          Boolean   @default(true)
+  avatar          String?   @db.Text
+  coordenadoriaId String?
+
+  ultimoLogin   DateTime  @default(now())
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @default(now()) @updatedAt
+
+  coordenadoria Coordenadoria?   @relation(fields: [coordenadoriaId], references: [id], onDelete: SetNull)
+  reservas      Reserva[]
+  participacoes ReservaParticipante[]
+  avaliacoes    Avaliacao[] @relation("avaliador")
+
+  @@map("principal.usuarios")
+}

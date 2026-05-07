@@ -109,7 +109,7 @@ export async function PATCH(
   if (typeof body.nome === "string") {
     const nome = body.nome.trim();
     if (nome) {
-      const existente = await prisma.sala.findFirst({
+      const existente = await prisma.salaReserva.findFirst({
         where: { nome, id: { not: id } },
       });
       if (existente) {
@@ -186,7 +186,7 @@ export async function PATCH(
       { status: 400 }
     );
   }
-  const sala = await prisma.sala.update({
+  const sala = await prisma.salaReserva.update({
     where: { id },
     data,
     select,

@@ -43,7 +43,7 @@ model SalaLayoutFoto {
   reservas Reserva[]
 
   @@index([salaId])
-  @@map("sala_layout_fotos")
+  @@map("reserva_sala.sala_layout_fotos")
 }
 
 model SalaMobiliario {
@@ -56,7 +56,7 @@ model SalaMobiliario {
 
   sala SalaReserva @relation(fields: [salaId], references: [id], onDelete: Cascade)
 
-  @@map("sala_mobiliarios")
+  @@map("reserva_sala.sala_mobiliarios")
 }
 
 model SalaMidia {
@@ -69,7 +69,7 @@ model SalaMidia {
 
   sala SalaReserva @relation(fields: [salaId], references: [id], onDelete: Cascade)
 
-  @@map("sala_midias")
+  @@map("reserva_sala.sala_midias")
 }
  
 model Reserva {

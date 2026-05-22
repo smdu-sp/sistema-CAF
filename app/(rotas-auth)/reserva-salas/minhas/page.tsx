@@ -50,7 +50,7 @@ export default async function MinhasReservasPage({ searchParams }: PageProps) {
             </Link>
           </p>
         ) : (
-          <MinhasReservasTable reservas={reservas} />
+          <MinhasReservasTable reservas={reservas} totalItens={reservas.length} />
         )}
       </div>
     </div>

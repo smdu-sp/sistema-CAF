@@ -2,7 +2,7 @@ import DataTable from "@/components/data-table";
 
 import { prisma } from "@/lib/prisma";
 
-import { columns } from "../../../salas/_components/columns";
+import { columns } from "./columns";
 
 import { ActionButton } from "@/components/action-button";
 
@@ -63,9 +63,7 @@ export async function SalasContent({
           columns={columns}
           data={lista}
           paginaAtual={paginaAtual}
-          limitePorPagina={
-            limitePorPagina
-          }
+          limitePorPagina={limitePorPagina}
           totalItens={total}
           labelItemSingular="sala"
           labelItemPlural="salas"

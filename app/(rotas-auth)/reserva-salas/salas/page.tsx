@@ -3,9 +3,10 @@ import { SalasContent } from "./_components/salas-content";
 import { redirect } from "next/navigation";
 
 interface SalasPageProps {
-  searchParams: {
+  searchParams: Promise<{
     pagina?: string;
-  };
+    limite?: string;
+  }>;
 }
 
 export default async function SalasPage({
@@ -27,14 +28,21 @@ export default async function SalasPage({
     redirect("/reserva-salas");
   }
 
+  const params = await searchParams;
+
   const pagina = parseInt(
-    searchParams.pagina ?? "1",
+    params.pagina ?? "1",
+    10,
+  );
+
+  const limite = parseInt(
+    params.limite ?? "10",
     10,
   );
 
   return (
     <div className="flex items-center justify-center py-8">
-      <SalasContent pagina={pagina} />
+      <SalasContent pagina={pagina} limite={limite} />
     </div>
   );
 }

@@ -8,16 +8,15 @@ export default function Link({
   className,
   ...props
 }: LinkProps & React.HTMLAttributes<HTMLAnchorElement>) {
-  const pathname = usePathname().split("/")[1];
-  console.log("Pathname atual:", pathname);
-  const isCurrentPath = pathname === props.href.toString().split("/")[1];
+  const pathname = usePathname();
+  const isCurrentPath = pathname === props.href.toString();
   return (
     <SidebarMenuButton
       asChild
-      className={`transition-all ease-linear duration-200 active:shadow-lg ${
+      className={`transition-all ease-linear duration-200 ${
         isCurrentPath
-          ? "bg-primary hover:bg-primary/90 text-primary-foreground hover:text-primary-foreground active:bg-primary/90 active:primary-foreground active:text-primary-foreground"
-          : "bg-transparent"
+          ? "!bg-white/15 font-semibold"
+          : ""
       } ${className ?? ""}`}
     >
       <NextLink {...props} />

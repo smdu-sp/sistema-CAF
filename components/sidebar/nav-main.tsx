@@ -1,182 +1,146 @@
 /** @format */
 
 import {
+  ArrowLeftRight,
+  BarChart2,
+  Building,
   Building2,
   CalendarSearch,
-  ChevronRight,
-  House,
-  LucideProps,
-  Users,
   ClipboardCheck,
+  House,
+  LayoutDashboard,
+  Package,
+  TicketCheck,
+  Users,
 } from "lucide-react";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth/auth";
-import { ForwardRefExoticComponent, RefAttributes } from "react";
+import {
+  getCapacidadesHelpdesk,
+  podeAcessarAreaChamadosHelpdesk,
+  podeAcessarPatrimonioHelpdesk,
+  podeAdministrarSistema,
+} from "@/lib/permissoes";
 import Link from "../link";
 
 export async function NavMain() {
   const session = await auth();
   const usuario = (session as any)?.usuario ?? null;
   const permissao = usuario?.permissao?.toString?.() ?? "";
-  const mostraAdmin = permissao === "DEV" || permissao === "ADM";
-  interface IMenu {
-    icone: ForwardRefExoticComponent<
-      Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
-    >;
-    titulo: string;
-    url?: string;
-    permissao?: string;
-    subItens?: ISubMenu[];
-  }
-
-  interface ISubMenu {
-    titulo: string;
-    url: string;
-  }
-
-  const menuUsuario: IMenu[] = [
-    {
-      icone: House,
-      titulo: "Página Inicial",
-      url: "/home",
-    },
-    {
-      icone: CalendarSearch,
-      titulo: "Reservas de Salas",
-      url: "/reserva-salas",
-    },
-    {
-      icone: ClipboardCheck,
-      titulo: "Avaliação de Limpeza",
-      url: "/avaliacao-limpeza",
-    },
-  ];
-
-  const menuAdmin: IMenu[] = [
-    {
-      icone: Users,
-      titulo: "Usuários",
-      url: "/usuarios",
-      permissao: "ADM",
-    },
-    {
-      icone: Building2,
-      titulo: "Coordenadorias",
-      url: "/coordenadorias",
-      permissao: "ADM",
-    },
-  ];
+  const mostraAdmin = podeAdministrarSistema(permissao);
+  const hd = getCapacidadesHelpdesk(permissao);
+  const mostraHelpDesk =
+    podeAcessarAreaChamadosHelpdesk(permissao) ||
+    podeAcessarPatrimonioHelpdesk(permissao);
 
   return (
     <SidebarContent>
-      <SidebarGroup className="space-y-2">
-        {menuAdmin && mostraAdmin && (
-          <>
-            <SidebarGroupLabel>Administração</SidebarGroupLabel>
-            <SidebarMenu>
-              {menuAdmin.map((item) =>
-                item.subItens ? (
-                  <Collapsible
-                    key={item.titulo}
-                    asChild
-                    className="group/collapsible"
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton tooltip={item.titulo}>
-                          {item.icone && <item.icone />}
-                          <span>{item.titulo}</span>
-                          <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.subItens?.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.titulo}>
-                              <Link href={subItem.url}>
-                                <span>{subItem.titulo}</span>
-                              </Link>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem key={item.titulo} className="z-50">
-                    <Link href={item.url || "#"}>
-                      {item.icone && <item.icone />}
-                      <span>{item.titulo}</span>
-                    </Link>
-                  </SidebarMenuItem>
-                ),
-              )}
-            </SidebarMenu>
-          </>
-        )}
-
-        {menuUsuario && (
-          <>
-            <SidebarGroupLabel>Geral</SidebarGroupLabel>
-            <SidebarMenu>
-              {menuUsuario.map((item: IMenu) =>
-                item.subItens ? (
-                  <Collapsible
-                    key={item.titulo}
-                    asChild
-                    className="group/collapsible"
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton tooltip={item.titulo}>
-                          {item.icone && <item.icone />}
-                          <span>{item.titulo}</span>
-                          <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.subItens?.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.titulo}>
-                              <Link href={subItem.url}>
-                                <span>{subItem.titulo}</span>
-                              </Link>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem key={item.titulo} className="z-50">
-                    <Link href={item.url || "#"}>
-                      {item.icone && <item.icone />}
-                      <span>{item.titulo}</span>
-                    </Link>
-                  </SidebarMenuItem>
-                ),
-              )}
-            </SidebarMenu>
-          </>
-        )}
+      {mostraHelpDesk && (
+      <SidebarGroup>
+        <SidebarGroupLabel>Help Desk</SidebarGroupLabel>
+        <SidebarMenu>
+          {hd.abrirChamados || hd.atenderChamados ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk">
+              <LayoutDashboard className="size-4" />
+              <span>Dashboard</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.abrirChamados || hd.atenderChamados ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/chamados">
+              <TicketCheck className="size-4" />
+              <span>Chamados</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.patrimonio ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/patrimonio">
+              <Package className="size-4" />
+              <span>Patrimônio</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.patrimonio ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/transferencias">
+              <ArrowLeftRight className="size-4" />
+              <span>Transferências</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.unidades ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/unidades">
+              <Building className="size-4" />
+              <span>Unidades</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.relatorios ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/relatorios">
+              <BarChart2 className="size-4" />
+              <span>Relatórios</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+        </SidebarMenu>
       </SidebarGroup>
+      )}
+
+      <SidebarGroup>
+        <SidebarGroupLabel>Geral</SidebarGroupLabel>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <Link href="/home">
+              <House className="size-4" />
+              <span>Página Inicial</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/reserva-salas">
+              <CalendarSearch className="size-4" />
+              <span>Reservas de Salas</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/avaliacao-limpeza">
+              <ClipboardCheck className="size-4" />
+              <span>Avaliação de Limpeza</span>
+            </Link>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroup>
+
+      {mostraAdmin && (
+        <SidebarGroup>
+          <SidebarGroupLabel>Administração</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <Link href="/usuarios">
+                <Users className="size-4" />
+                <span>Usuários</span>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link href="/coordenadorias">
+                <Building2 className="size-4" />
+                <span>Coordenadorias</span>
+              </Link>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      )}
     </SidebarContent>
   );
 }

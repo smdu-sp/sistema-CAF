@@ -7,6 +7,7 @@ export type UsuarioRow = {
   nome: string;
   login: string;
   email: string;
+  telefone: string | null;
   permissao: string;
   coordenadoriaId: string | null;
   coordenadoria: { id: string; nome: string } | null;
@@ -36,6 +37,15 @@ export function getColumns(
     {
       accessorKey: 'email',
       header: 'E-mail',
+    },
+    {
+      accessorKey: 'telefone',
+      header: 'Telefone',
+      cell: ({ row }) => (
+        <span className="text-muted-foreground text-sm">
+          {row.original.telefone ?? '—'}
+        </span>
+      ),
     },
     {
       accessorKey: 'coordenadoriaId',

@@ -41,7 +41,7 @@ export async function POST() {
   };
 
   for (const { prefixo, permissao } of regras) {
-    let usuariosAD: { login: string; nome: string; email: string; avatar?: string }[];
+    let usuariosAD: { login: string; nome: string; email: string; telefone?: string; avatar?: string }[];
     try {
       usuariosAD = await listarUsuariosPorPrefixo(prefixo);
     } catch (e) {
@@ -67,6 +67,7 @@ export async function POST() {
             nome: u.nome,
             email: u.email,
             permissao,
+            telefone: u.telefone ?? null,
             ...(u.avatar ? { avatar: u.avatar } : {}),
           },
           create: {
@@ -75,6 +76,7 @@ export async function POST() {
             email: u.email,
             permissao,
             status: true,
+            telefone: u.telefone ?? null,
             ...(u.avatar ? { avatar: u.avatar } : {}),
           },
         });

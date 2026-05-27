@@ -14,6 +14,8 @@ enum Permissao {
   DEV
   ADM
   TEC
+  SUP
+  PAT
   USR
 }
 
@@ -42,6 +44,7 @@ model Usuario {
   avatar          String?   @db.Text
   coordenadoriaId String?
 
+  telefone      String?   @db.VarChar(30)
   ultimoLogin   DateTime  @default(now())
   criadoEm      DateTime  @default(now())
   atualizadoEm  DateTime  @default(now()) @updatedAt
@@ -50,6 +53,15 @@ model Usuario {
   reservas      Reserva[]
   participacoes ReservaParticipante[]
   avaliacoes    Avaliacao[] @relation("avaliador")
+
+  hdSolicitanteChamados HdChamado[]          @relation("hdSolicitanteChamados")
+  hdAbertoEmNomeDe      HdChamado[]          @relation("hdAbertoEmNomeDe")
+  hdChamadoUsuarios     HdChamadoUsuario[]   @relation("hdChamadoUsuarios")
+  hdAutorEventos        HdChamadoEvento[]    @relation("hdAutorEventos")
+  hdAutorMensagens      HdMensagem[]         @relation("hdAutorMensagens")
+  hdAutorAnexos         HdAnexo[]            @relation("hdAutorAnexos")
+  hdServidorItens       HdItemPatrimonio[]   @relation("hdServidorItens")
+  hdTransferencias      HdTransferenciaCabecalho[] @relation("hdUsuarioTransferencias")
 
   @@map("principal.usuarios")
 }

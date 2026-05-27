@@ -22,6 +22,7 @@ export function AppSidebar({
 	return (
 		<Sidebar
 			collapsible='icon'
+			className='border-r-0'
 			{...props}>
 			<SidebarHeader>
 				<SidebarMenu>
@@ -31,7 +32,7 @@ export function AppSidebar({
 				</SidebarMenu>
 			</SidebarHeader>
 			<NavMain />
-			<SidebarFooter>
+			<SidebarFooter className='p-0'>
 				<NavUser />
 			</SidebarFooter>
 			<SidebarRail />

@@ -14,16 +14,16 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   await prisma.usuario.upsert({
-    where: { login: "x577989" },
+    where: { login: "d854440" },
     update: {
-      email: "fmmarquessantos@prefeitura.sp.gov.br",
+      email: "blvieira@prefeitura.sp.gov.br",
       permissao: "DEV",
-      nome: "x577989",
+      nome: "Bruno Luiz Vieira",
     },
     create: {
-      login: "x577989",
-      nome: "x577989",
-      email: "fmmarquessantos@prefeitura.sp.gov.br",
+      login: "d854440",
+      nome: "Bruno Luiz Vieira",
+      email: "blvieira@prefeitura.sp.gov.br",
       permissao: "DEV",
     },
   });
@@ -41,7 +41,25 @@ async function main() {
       permissao: "USR",
     },
   });
-  console.log("Seed: usuário x577988 (DEV) criado/atualizado.");
+  console.log("Seed: usuário x577988 (USR) criado/atualizado.");
+
+  await prisma.usuario.upsert({
+    where: { login: "teste.chamados" },
+    update: {
+      email: "teste.chamados@prefeitura.sp.gov.br",
+      permissao: "USR",
+      nome: "Usuário Teste Chamados",
+      status: true,
+    },
+    create: {
+      login: "teste.chamados",
+      nome: "Usuário Teste Chamados",
+      email: "teste.chamados@prefeitura.sp.gov.br",
+      permissao: "USR",
+      status: true,
+    },
+  });
+  console.log("Seed: usuário teste.chamados (USR) criado/atualizado.");
 }
 
 main()

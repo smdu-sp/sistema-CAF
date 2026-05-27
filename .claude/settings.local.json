@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(cp webfetch-1779211615906-ym4qul.bin design.gz)",
+      "Bash(gunzip -f design.gz)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(admin\\\\\\))",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find \"/c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\(rotas-auth\\)/helpdesk\" -type f)",
+      "Bash(wc -l \"/c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\(rotas-auth\\)/helpdesk/_components/hd-app.tsx\")",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/_components/)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/chamados/)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/patrimonio/)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/transferencias/)",
+      "Bash(wc -l /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/_components/hd-app.tsx)",
+      "Bash(head -5 /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/_components/hd-app.tsx)",
+      "Bash(cat /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/chamados/[id]/page.tsx)",
+      "Bash(cat /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/page.tsx)",
+      "Bash(npx tsx *)",
+      "Bash(npx prisma *)",
+      "Bash(node -e ' *)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\d854440\\\\Sistemas\\\\salas-reuniao-fullstack\\\\app\\\\api\\\\helpdesk\\\\chamados\")",
+      "Bash(node -e \"const {PrismaClient} = require\\('./node_modules/.prisma/client'\\); const p = new PrismaClient\\(\\); p.hdChamado.findMany\\({take:1, include:{solicitante:true, abertoEmNomeDe:true, categoria:true, unidade:true}}\\).then\\(r => console.log\\('OK', JSON.stringify\\(r\\).slice\\(0,200\\)\\)\\).catch\\(e => console.error\\('ERR', e.message\\)\\)\")",
+      "Bash(npx next *)",
+      "Bash(Start-Sleep -Seconds 5)",
+      "Bash(Invoke-WebRequest -Uri \"http://localhost:3001/api/helpdesk/chamados\" -UseBasicParsing -TimeoutSec 10)",
+      "Bash(Select-Object -ExpandProperty Content)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\d854440\\Sistemas\\salas-reuniao-fullstack\\app\\api\\helpdesk"
+    ]
+  }
+}

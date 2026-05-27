@@ -1,0 +1,212 @@
+// Help Desk + Patrimônio de TI
+
+enum HdStatusChamado {
+  aberto
+  atendimento
+  aguardando
+  prodam
+  resolvido
+  fechado
+}
+
+enum HdPrioridade {
+  baixa
+  media
+  alta
+  urgente
+}
+
+enum HdTipoEvento {
+  abertura
+  atribuicao
+  resolucao
+  fechamento
+  reabertura
+  statusAlterado
+}
+
+enum HdPapelUsuario {
+  solicitante
+  observador
+  tecnico
+  participante
+}
+
+enum HdTipoMensagem {
+  publica
+  interna
+  solucao
+}
+
+model HdUnidade {
+  id       String  @id @default(uuid())
+  codigo   String  @unique @db.VarChar(20)
+  nome     String  @db.VarChar(200)
+  raiz     String  @db.VarChar(100)
+  sigla    String  @db.VarChar(100)
+  /// Sala física onde a equipe da unidade trabalha (ex.: "Sala 12")
+  sala     String? @db.VarChar(120)
+  ativo    Boolean @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+  chamados              HdChamado[]
+  itens                 HdItemPatrimonio[]
+  transferenciasDestino HdTransferenciaCabecalho[]
+  @@map("hd.unidades")
+}
+
+model HdCategoria {
+  id    Int     @id @default(autoincrement())
+  nome  String  @db.VarChar(200)
+  pai   String  @db.VarChar(100)
+  filho String? @db.VarChar(100)
+  ativo Boolean @default(true)
+  chamados HdChamado[]
+  @@map("hd.categorias")
+}
+
+model HdChamado {
+  id               Int             @id @default(autoincrement())
+  titulo           String          @db.VarChar(300)
+  descricao        String          @db.Text
+  status           HdStatusChamado @default(aberto)
+  prioridade       HdPrioridade    @default(media)
+  solicitanteId    String
+  abertoEmNomeDeId String?
+  telefone         String?         @db.VarChar(30)
+  unidadeId        String
+  categoriaId      Int
+  itemId           Int?
+  resolucao        String?         @db.Text
+  abertura         DateTime        @default(now())
+  dataResolucao    DateTime?
+  dataFechamento   DateTime?
+  criadoEm         DateTime        @default(now())
+  atualizadoEm     DateTime        @default(now()) @updatedAt
+
+  solicitante    Usuario           @relation("hdSolicitanteChamados", fields: [solicitanteId], references: [id])
+  abertoEmNomeDe Usuario?          @relation("hdAbertoEmNomeDe", fields: [abertoEmNomeDeId], references: [id])
+  unidade        HdUnidade         @relation(fields: [unidadeId], references: [id])
+  categoria      HdCategoria       @relation(fields: [categoriaId], references: [id])
+  item           HdItemPatrimonio? @relation(fields: [itemId], references: [idbem])
+  usuarios       HdChamadoUsuario[]
+  eventos        HdChamadoEvento[]
+  mensagens      HdMensagem[]
+  anexos         HdAnexo[]
+
+  @@map("hd.chamados")
+}
+
+// Relação N:N usuário <> chamado — controla papéis (solicitante, técnico, observador, participante)
+model HdChamadoUsuario {
+  id        Int            @id @default(autoincrement())
+  chamadoId Int
+  usuarioId String
+  papel     HdPapelUsuario
+  criadoEm  DateTime       @default(now())
+
+  chamado HdChamado @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  usuario Usuario   @relation("hdChamadoUsuarios", fields: [usuarioId], references: [id])
+
+  @@unique([chamadoId, usuarioId, papel])
+  @@map("hd.chamado_usuarios")
+}
+
+// Eventos de sistema: atribuições, mudanças de status, abertura, fechamento, etc.
+model HdChamadoEvento {
+  id        Int          @id @default(autoincrement())
+  chamadoId Int
+  tipo      HdTipoEvento
+  autorId   String
+  texto     String       @db.Text
+  criadoEm  DateTime     @default(now())
+
+  chamado HdChamado @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  autor   Usuario   @relation("hdAutorEventos", fields: [autorId], references: [id])
+
+  @@map("hd.chamado_eventos")
+}
+
+// Mensagens da conversa (followups) — separado dos eventos de sistema
+model HdMensagem {
+  id        Int            @id @default(autoincrement())
+  chamadoId Int
+  autorId   String
+  texto     String         @db.Text
+  tipo      HdTipoMensagem @default(publica)
+  criadoEm  DateTime       @default(now())
+
+  chamado HdChamado  @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  autor   Usuario    @relation("hdAutorMensagens", fields: [autorId], references: [id])
+  anexos  HdAnexo[]
+
+  @@map("hd.mensagens")
+}
+
+// Anexos (imagens e documentos) — vinculados ao chamado ou a uma mensagem específica
+model HdAnexo {
+  id          Int      @id @default(autoincrement())
+  chamadoId   Int
+  mensagemId  Int?
+  autorId     String
+  nomeArquivo String   @db.VarChar(255)
+  urlArquivo  String   @db.VarChar(500)
+  tipoMime    String   @db.VarChar(100)
+  tamanho     Int
+  criadoEm    DateTime @default(now())
+
+  chamado  HdChamado   @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  mensagem HdMensagem? @relation(fields: [mensagemId], references: [id])
+  autor    Usuario     @relation("hdAutorAnexos", fields: [autorId], references: [id])
+
+  @@map("hd.anexos")
+}
+
+model HdItemPatrimonio {
+  idbem      Int     @id @default(autoincrement())
+  patrimonio String  @unique @db.VarChar(50)
+  tipo       String  @db.VarChar(80)
+  descsbpm   String  @db.VarChar(300)
+  numserie   String? @db.VarChar(100)
+  marca      String? @db.VarChar(100)
+  modelo     String? @db.VarChar(100)
+  cimbpm     String? @db.VarChar(50)
+  /// Nome do computador na rede (quando tipo = Computador)
+  nomeRede   String? @db.VarChar(120)
+  statusitem String  @default("Ativo") @db.VarChar(50)
+  unidadeId  String?
+  servidorId String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+  unidade   HdUnidade? @relation(fields: [unidadeId], references: [id])
+  servidor  Usuario?   @relation("hdServidorItens", fields: [servidorId], references: [id])
+  chamados           HdChamado[]
+  transferenciaItens HdTransferenciaItem[]
+  @@map("hd.itens_patrimonio")
+}
+
+model HdTransferenciaCabecalho {
+  id                Int      @id @default(autoincrement())
+  cimbpm            String   @db.VarChar(50)
+  observacao        String?  @db.Text
+  dataTransferencia DateTime @default(now())
+  idUsuarioRegistro String
+  idUnidadeDestino  String
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+  usuarioRegistro Usuario   @relation("hdUsuarioTransferencias", fields: [idUsuarioRegistro], references: [id])
+  unidadeDestino  HdUnidade @relation(fields: [idUnidadeDestino], references: [id])
+  itens           HdTransferenciaItem[]
+  @@map("hd.transferencias_cabecalho")
+}
+
+model HdTransferenciaItem {
+  id               Int     @id @default(autoincrement())
+  cabecalhoId      Int
+  idItem           Int
+  servidorAnterior String? @db.VarChar(200)
+  servidorAtual    String? @db.VarChar(200)
+  cabecalho HdTransferenciaCabecalho @relation(fields: [cabecalhoId], references: [id], onDelete: Cascade)
+  item      HdItemPatrimonio         @relation(fields: [idItem], references: [idbem])
+  @@map("hd.transferencias_itens")
+}

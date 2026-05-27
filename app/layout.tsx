@@ -8,8 +8,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Reserva de Salas",
-  description: "Sistema de reserva de salas de reunião",
+  title: "Serviços - SMUL",
+  description: "Sistema de serviços internos da SMUL",
 };
 
 export default function RootLayout({

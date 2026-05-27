@@ -16,8 +16,10 @@ export interface IUsuario {
 
 export enum IPermissao {
   DEV,
-  TEC,
   ADM,
+  TEC,
+  SUP,
+  PAT,
   USR,
 }
 

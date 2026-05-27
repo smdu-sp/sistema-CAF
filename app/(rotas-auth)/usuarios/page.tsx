@@ -149,7 +149,7 @@ export default function UsuariosAdminPage() {
             {loading ? "Importando..." : "Importar do AD"}
           </Button>
           <Button variant="outline" onClick={importarLoteDeX} disabled={loadingLote}>
-            {loadingLote ? "Importando..." : "Importar todos D e X do AD"}
+            {loadingLote ? "Importando..." : "Importar todos do AD"}
           </Button>
         </div>
         {erro && <p className="text-sm text-destructive">{erro}</p>}

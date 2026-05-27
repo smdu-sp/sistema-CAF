@@ -5,8 +5,17 @@ import { Client } from "ldapts";
 export interface LdapUserInfo {
   nome: string;
   email: string;
+  telefone?: string;
   avatar?: string;
 }
+
+const ATRIBUTOS_TELEFONE_AD = ["telephoneNumber", "mobile", "ipPhone", "homePhone"] as const;
+const ATRIBUTOS_LDAP_USUARIO = [
+  "displayName",
+  "mail",
+  "thumbnailPhoto",
+  ...ATRIBUTOS_TELEFONE_AD,
+] as const;
 
 function criarCliente() {
   const url = process.env.LDAP_URL;
@@ -28,9 +37,18 @@ function valorString(field: unknown): string {
   return (field as string) ?? "";
 }
 
+function extrairTelefone(entry: Record<string, unknown>): string | undefined {
+  for (const attr of ATRIBUTOS_TELEFONE_AD) {
+    const valor = valorString(entry[attr]).trim();
+    if (valor) return valor.length > 30 ? valor.slice(0, 30) : valor;
+  }
+  return undefined;
+}
+
 function extrairInfo(entry: Record<string, unknown>, login: string, domain: string): LdapUserInfo {
   const nome = valorString(entry.displayName) || login;
   const email = valorString(entry.mail) || `${login}@${domain}`;
+  const telefone = extrairTelefone(entry);
 
   let avatar: string | undefined;
   const foto = entry.thumbnailPhoto;
@@ -39,7 +57,7 @@ function extrairInfo(entry: Record<string, unknown>, login: string, domain: stri
     if (buf.length > 0) avatar = `data:image/jpeg;base64,${buf.toString("base64")}`;
   }
 
-  return { nome, email, avatar };
+  return { nome, email, ...(telefone ? { telefone } : {}), avatar };
 }
 
 /** Autentica o usuário diretamente com suas próprias credenciais. */
@@ -62,7 +80,7 @@ export async function autenticarLDAP(
     const { searchEntries } = await client.search(baseDn, {
       scope: "sub",
       filter: `(sAMAccountName=${login})`,
-      attributes: ["displayName", "mail", "thumbnailPhoto"],
+      attributes: [...ATRIBUTOS_LDAP_USUARIO],
     });
 
     await client.unbind();
@@ -99,7 +117,7 @@ export async function buscarUsuarioNoAD(loginAlvo: string): Promise<LdapUserInfo
     const { searchEntries } = await client.search(baseDn, {
       scope: "sub",
       filter: `(sAMAccountName=${loginAlvo})`,
-      attributes: ["displayName", "mail", "thumbnailPhoto"],
+      attributes: [...ATRIBUTOS_LDAP_USUARIO],
     });
 
     await client.unbind();
@@ -116,6 +134,7 @@ export type UsuarioADPorPrefixo = {
   login: string;
   nome: string;
   email: string;
+  telefone?: string;
   avatar?: string;
 };
 
@@ -147,7 +166,7 @@ export async function listarUsuariosPorPrefixo(prefixo: string): Promise<Usuario
     const { searchEntries } = await client.search(importDn, {
       scope: "sub",
       filter: filtro,
-      attributes: ["sAMAccountName", "displayName", "mail", "thumbnailPhoto"],
+      attributes: ["sAMAccountName", ...ATRIBUTOS_LDAP_USUARIO],
       paged: { pageSize: 500 },
     });
 
@@ -158,7 +177,13 @@ export async function listarUsuariosPorPrefixo(prefixo: string): Promise<Usuario
       const raw = e.sAMAccountName;
       const login = (Array.isArray(raw) ? raw[0] : raw) as string ?? "";
       const info = extrairInfo(e, login, domain);
-      return { login: String(login), nome: info.nome, email: info.email, avatar: info.avatar };
+      return {
+        login: String(login),
+        nome: info.nome,
+        email: info.email,
+        ...(info.telefone ? { telefone: info.telefone } : {}),
+        avatar: info.avatar,
+      };
     }).filter((u) => u.login.length > 0);
   } catch (err) {
     try { await client.unbind(); } catch { /* silencia */ }

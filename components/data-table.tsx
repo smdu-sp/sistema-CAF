@@ -144,3 +144,7 @@ export default function DataTable<TData, TValue>({
 		</div>
 	);
 }
+
+export function TableSkeleton() {
+	return <Skeleton className="h-[240px] w-full rounded-xl" />;
+}

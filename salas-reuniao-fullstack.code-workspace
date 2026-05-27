@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../Downloads/Sistema de chamados E controle de iventário"
+		}
+	],
+	"settings": {
+		"WillLuke.nextjs.hasPrompted": true
+	}
+}

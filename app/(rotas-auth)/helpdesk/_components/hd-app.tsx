@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, type ReactNode } from 'react';
 import type { Chamado, ItemPatrimonio, Transferencia, StatusChamado, Prioridade, TipoEvento, Mensagem, Anexo, Usuario, Unidade, Categoria } from '../_types';
 import { STATUS_META, PRIORIDADE_META } from '../_types';
 import { formatEventoHistorico } from '@/lib/helpdesk/eventos';
@@ -198,6 +198,120 @@ function Avatar({ nome, size = 32, bg = '#0A328D' }: { nome: string; size?: numb
       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     }}>
       {iniciais(nome)}
+    </div>
+  );
+}
+
+function UsuarioInfoLinha({
+  tipo, texto, href,
+}: {
+  tipo: 'email' | 'telefone' | 'unidade';
+  texto: string;
+  href?: string;
+}) {
+  const iconPaths: Record<typeof tipo, ReactNode> = {
+    email: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A8499" strokeWidth="2">
+        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <path d="m2 7 10 7 10-7" />
+      </svg>
+    ),
+    telefone: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A8499" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+      </svg>
+    ),
+    unidade: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A8499" strokeWidth="2">
+        <path d="M3 21h18" />
+        <path d="M5 21V7l8-4v18" />
+        <path d="M19 21V11l-6-3" />
+      </svg>
+    ),
+  };
+
+  const conteudo = href ? (
+    <a href={href} style={{ fontSize: 12, color: '#0A328D', textDecoration: 'none', wordBreak: 'break-all' }}
+      onClick={e => e.stopPropagation()}>
+      {texto}
+    </a>
+  ) : (
+    <span style={{ fontSize: 12, color: '#0A328D', wordBreak: 'break-word' }}>{texto}</span>
+  );
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 5 }}>
+      <span style={{ flexShrink: 0, marginTop: 1 }}>{iconPaths[tipo]}</span>
+      {conteudo}
+    </div>
+  );
+}
+
+/** Nome na tabela + ícone “i” com card de informações ao passar o mouse (estilo GLPI). */
+function UsuarioInfoPopover({ usuario, unidade }: { usuario: Usuario; unidade?: string }) {
+  const [hover, setHover] = useState(false);
+
+  return (
+    <div
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, maxWidth: '100%' }}
+      onClick={e => e.stopPropagation()}
+    >
+      <span
+        style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        title={usuario.nome}
+      >
+        {nomePrimeiroUltimo(usuario.nome)}
+      </span>
+      <div
+        style={{ position: 'relative', flexShrink: 0 }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        <button
+          type="button"
+          aria-label={`Informações de ${usuario.nome}`}
+          style={{
+            width: 16, height: 16, padding: 0, border: 'none', background: 'transparent',
+            color: '#0A328D', fontSize: 13, fontWeight: 700, fontStyle: 'italic',
+            cursor: 'help', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          i
+        </button>
+        {hover && (
+          <>
+            <div style={{
+              position: 'absolute', left: 4, top: '100%', zIndex: 201,
+              width: 0, height: 0,
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderBottom: '6px solid #D0D5DD',
+            }} />
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 5px)', left: -8, zIndex: 200,
+              minWidth: 300, maxWidth: 360, background: '#fff', border: '1px solid #D0D5DD',
+              borderRadius: 6, boxShadow: '0 4px 14px rgba(20,30,55,0.14)',
+              padding: 12, display: 'flex', gap: 12,
+            }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 4, background: '#D4B896',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 15, fontWeight: 700, color: '#4A5468', flexShrink: 0,
+              }}>
+                {iniciais(usuario.nome)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#1B2336', marginBottom: 8, lineHeight: 1.35 }}>
+                  {usuario.nome}
+                </div>
+                <UsuarioInfoLinha tipo="email" texto={usuario.email} href={`mailto:${usuario.email}`} />
+                <UsuarioInfoLinha tipo="telefone" texto={usuario.telefone?.trim() || '—'} />
+                <UsuarioInfoLinha tipo="unidade" texto={unidade?.trim() || '—'} />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -850,7 +964,7 @@ function ViewDashboard({ navTo, chamados, transferencias, usuarioPorId, capacida
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
-        <KpiCard label="Abertos" value={abertos} cor="#5CC9BD" sub="Aguardando atribuição" />
+        <KpiCard label="Novos" value={abertos} cor="#5CC9BD" sub="Aguardando atribuição" />
         <KpiCard label="Em atendimento" value={emAtend} cor="#E56E14" sub="Em andamento" />
         <KpiCard label="Aguardando" value={aguard} cor="#EDBA94" sub="Aguardando resposta" />
         <KpiCard label="Aguardando PRODAM" value={aguardandoProdam} cor="#9A68C0" sub="Dependência externa" />
@@ -1010,8 +1124,8 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
   };
 
   const tabsTecnico: Array<{ key: StatusChamado | 'abertos_atribuidos'; label: string }> = [
-    { key: 'abertos_atribuidos', label: 'Abertos + Atribuídos' },
-    { key: 'aberto', label: 'Abertos' },
+    { key: 'abertos_atribuidos', label: 'Novos + Atribuídos' },
+    { key: 'aberto', label: 'Novos' },
     { key: 'atendimento', label: 'Em atendimento' },
     { key: 'aguardando', label: 'Aguardando' },
     { key: 'prodam', label: 'Aguardando PRODAM' },
@@ -1021,7 +1135,7 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
 
   const tabsUsuario: Array<{ key: TabChamadosUsuario; label: string }> = [
     { key: 'todos', label: 'Todos' },
-    { key: 'aberto', label: 'Abertos' },
+    { key: 'aberto', label: 'Novos' },
     { key: 'em_andamento', label: 'Em andamento' },
     { key: 'aguardando_nota', label: 'Aguardando nota' },
     { key: 'resolvido', label: 'Resolvidos' },
@@ -1052,7 +1166,7 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
 
       {isTecnico && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-          <KpiCard label="Abertos + Atribuídos" value={countsTecnico.abertos_atribuidos || 0} cor="#5CC9BD" />
+          <KpiCard label="Novos + Atribuídos" value={countsTecnico.abertos_atribuidos || 0} cor="#5CC9BD" />
           <KpiCard label="Em atendimento" value={countsTecnico.atendimento || 0} cor="#E56E14" />
           <KpiCard label="Aguardando" value={countsTecnico.aguardando || 0} cor="#EDBA94" />
           <KpiCard label="Resolvidos + Fechados" value={(countsTecnico.resolvido || 0) + (countsTecnico.fechado || 0)} cor="#0A328D" />
@@ -1112,6 +1226,7 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
                 ...(isTecnico ? ['Solicitante'] : []),
                 'Técnico',
                 'Abertura',
+                'Data de solução',
                 ...(isTecnico ? ['Horas PRODAM'] : []),
                 ...(!isTecnico ? ['Avaliação'] : []),
               ].map(h => (
@@ -1121,7 +1236,7 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={isTecnico ? 9 : 8} style={{ textAlign: 'center', padding: 32, color: '#7A8499', fontSize: 14 }}>Nenhum chamado encontrado.</td></tr>
+              <tr><td colSpan={isTecnico ? 10 : 9} style={{ textAlign: 'center', padding: 32, color: '#7A8499', fontSize: 14 }}>Nenhum chamado encontrado.</td></tr>
             )}
             {chamadosPaginados.map(c => {
               const sol = usuarioPorId(c.solicitante);
@@ -1140,33 +1255,25 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
                   <td style={{ padding: '10px 14px' }}><StatusBadge status={c.status} /></td>
                   <td style={{ padding: '10px 14px' }}><PrioridadeBadge prioridade={c.prioridade} /></td>
                   {isTecnico && (
-                    <td style={{ padding: '10px 14px' }}>
+                    <td style={{ padding: '10px 14px' }} onClick={e => e.stopPropagation()}>
                       {sol ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                          <Avatar nome={sol.nome} size={26} />
-                          <span style={{ fontSize: 12 }} title={sol.nome}>{nomePrimeiroUltimo(sol.nome)}</span>
-                        </div>
+                        <UsuarioInfoPopover usuario={sol} unidade={c.unidade} />
                       ) : '—'}
                     </td>
                   )}
-                  <td style={{ padding: '10px 14px' }}>
+                  <td style={{ padding: '10px 14px' }} onClick={e => e.stopPropagation()}>
                     {tecs.length > 0 ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {tecs.slice(0, 2).map(tec => tec && (
-                          <div key={tec.id} title={tec.nome}>
-                            <Avatar nome={tec.nome} size={26} bg="#1B2336" />
-                          </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+                        {tecs.map(tec => tec && (
+                          <UsuarioInfoPopover key={tec.id} usuario={tec} />
                         ))}
-                        {tecs.length > 2 && (
-                          <span style={{ fontSize: 11, color: '#7A8499', marginLeft: 2 }}>+{tecs.length - 2}</span>
-                        )}
-                        {tecs.length === 1 && tecs[0] && (
-                          <span style={{ fontSize: 12, marginLeft: 4 }} title={tecs[0].nome}>{nomePrimeiroUltimo(tecs[0].nome)}</span>
-                        )}
                       </div>
                     ) : <span style={{ fontSize: 12, color: '#7A8499' }}>—</span>}
                   </td>
                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#7A8499', whiteSpace: 'nowrap' }}>{fmtData(c.abertura)}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, color: '#7A8499', whiteSpace: 'nowrap' }}>
+                    {c.dataResolucao ? fmtData(c.dataResolucao) : '—'}
+                  </td>
                   {isTecnico && (
                     <td style={{ padding: '10px 14px', fontSize: 12, color: '#7A8499', whiteSpace: 'nowrap' }}>
                       {c.status === 'prodam' ? horasDesde(inicioAguardandoProdam(c)) : '—'}

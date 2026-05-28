@@ -117,7 +117,7 @@ export interface Transferencia {
 }
 
 export const STATUS_META: Record<StatusChamado, { label: string; cor: string; corBg: string; corText: string }> = {
-  aberto:      { label: "Aberto",         cor: "#5CC9BD", corBg: "#D1EBE8", corText: "#0F4F4A" },
+  aberto:      { label: "Novo",           cor: "#5CC9BD", corBg: "#D1EBE8", corText: "#0F4F4A" },
   atendimento: { label: "Em atendimento", cor: "#E56E14", corBg: "#FCE5D0", corText: "#7A3A0B" },
   aguardando:  { label: "Aguardando",     cor: "#EDBA94", corBg: "#FBEAD9", corText: "#6E4520" },
   prodam:      { label: "Aguardando PRODAM", cor: "#9A68C0", corBg: "#EEE2F7", corText: "#4F2A70" },

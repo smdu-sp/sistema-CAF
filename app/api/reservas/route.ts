@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /** GET: lista reservas de uma sala em um dia (horário do prédio 9h–19h). */

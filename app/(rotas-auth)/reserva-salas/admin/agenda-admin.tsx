@@ -34,7 +34,7 @@ import {
   cancelarReserva,
 } from "@/app/(rotas-auth)/reservas/actions";
 import { toast } from "sonner";
-import { SalaAdmin, ReservaAdmin } from "../types";
+// import { SalaAdmin, ReservaAdmin } from "../types";
 
 const HORA_INICIO = 9;
 const HORA_FIM = 19;

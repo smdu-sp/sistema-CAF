@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { SalasContent } from "../../salas/_components/salas-context";
 import { redirect } from "next/navigation";
 
@@ -7,14 +7,6 @@ interface SalasPageProps {
 }
 
 export default async function SalasPage({ searchParams }: SalasPageProps) {
-  const session = await auth();
-  if (!session) redirect("/login");
-
-  const usuario = (session as any).usuario;
-  const isAdmin = usuario?.permissao === "ADM" || usuario?.permissao === "DEV";
-
-  if (!isAdmin) redirect("/reserva-salas");
-
   const params = await searchParams
   const pagina = parseInt(params.pagina || "1", 10);
 

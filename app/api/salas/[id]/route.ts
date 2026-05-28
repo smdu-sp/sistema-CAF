@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Layout } from "@prisma/client";
 import { isCaminhoUploadSalaSeguro, removerArquivoLayoutImagem } from "@/lib/sala-layout-imagem";

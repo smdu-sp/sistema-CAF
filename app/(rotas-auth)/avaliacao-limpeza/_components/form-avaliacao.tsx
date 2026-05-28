@@ -112,7 +112,6 @@ export default function FormAvaliacao({ isUpdating, avaliacao, onSubmit: onSubmi
 
     startTransition(() => {
       setTimeout(() => {
-        console.log("Avaliação para enviar:", payload);
         toast.success(isUpdating ? "Avaliação atualizada!" : "Avaliação cadastrada!");
         
         // Chamar a callback com os dados

@@ -27,8 +27,6 @@ export default function UsuariosAdminPage() {
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
   const [coordenadorias, setCoordenadorias] = useState<CoordenadoriaOption[]>([]);
 
-  const permissao = (session as any)?.usuario?.permissao;
-
   async function carregarUsuarios() {
     try {
       const res = await fetch("/api/usuarios");
@@ -52,13 +50,6 @@ export default function UsuariosAdminPage() {
       setCoordenadorias([]);
     }
   }
-
-  useEffect(() => {
-    if (session && (permissao === "ADM" || permissao === "DEV")) {
-      carregarUsuarios();
-      carregarCoordenadorias();
-    }
-  }, [session, permissao]);
 
   async function alterarCoordenadoria(usuarioId: string, coordenadoriaId: string | null) {
     try {
@@ -117,22 +108,6 @@ export default function UsuariosAdminPage() {
     } finally {
       setLoadingLote(false);
     }
-  }
-
-  if (!session) {
-    return (
-      <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
-        <p>Você precisa estar autenticado.</p>
-      </div>
-    );
-  }
-
-  if (permissao !== "ADM" && permissao !== "DEV") {
-    return (
-      <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
-        <p>Somente administradores podem acessar esta página.</p>
-      </div>
-    );
   }
 
   return (

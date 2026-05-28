@@ -63,7 +63,7 @@ export function LoginForm() {
 			}
 			toast.success('Login realizado com sucesso.');
 			router.refresh();
-			router.push('/home');
+			router.push('/');
 		} catch (e) {
 			toast.error('Não foi possível realizar o login.');
 		}

@@ -15,7 +15,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { auth } from '@/lib/auth/auth';
+import { auth } from '@/lib/auth';
 import Link from 'next/link';
 import BtnSignOut from '../btn-signout';
 // import { useRouter } from "next/navigation";

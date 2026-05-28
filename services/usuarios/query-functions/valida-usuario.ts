@@ -1,6 +1,6 @@
 /** @format */
 
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { IRespostaUsuario, IUsuario } from "@/types/usuario";
 import { redirect } from "next/navigation";
 

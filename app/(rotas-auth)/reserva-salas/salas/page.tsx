@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth/auth";
-import { SalasContent } from "./_components/salas-content";
+import { auth } from "@/lib/auth";
+import { SalasContent } from "../../salas/_components/salas-context";
 import { redirect } from "next/navigation";
 
 interface SalasPageProps {

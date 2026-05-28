@@ -56,7 +56,6 @@ export default {
               login: usuario.login,
               nome: ldapUser.nome || usuario.nome,
               email: ldapUser.email || usuario.email,
-              permissao: usuario.permissao as string,
               nomeSocial: usuario.nomeSocial ?? undefined,
               avatar: ldapUser.avatar || usuario.avatar || undefined,
               coordenadoriaId: usuario.coordenadoriaId ?? undefined,
@@ -73,7 +72,6 @@ export default {
             login: usuario.login,
             nome: usuario.nome,
             email: usuario.email,
-            permissao: usuario.permissao as string,
             nomeSocial: usuario.nomeSocial ?? undefined,
             avatar: usuario.avatar || undefined,
             coordenadoriaId: usuario.coordenadoriaId ?? undefined,
@@ -95,7 +93,7 @@ export default {
       return token;
     },
     async session({ session, token }) {
-      if (token.usuario) (session as unknown as Record<string, unknown>).usuario = token.usuario;
+      if (token.usuario) session.usuario = token.usuario;
       return session;
     },
   },

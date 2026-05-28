@@ -195,22 +195,6 @@ export default function UsuariosAdminPage() {
     }
   }
 
-  if (!session) {
-    return (
-      <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
-        <p>Você precisa estar autenticado.</p>
-      </div>
-    );
-  }
-
-  if (permissao !== "ADM" && permissao !== "DEV") {
-    return (
-      <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
-        <p>Somente administradores podem acessar esta página.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full px-0 md:px-8 relative pb-20 md:pb-14 h-full md:container mx-auto">
       <h1 className="text-xl md:text-4xl font-bold">Usuários</h1>

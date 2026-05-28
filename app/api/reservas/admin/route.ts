@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /** GET: lista todas as salas ativas e reservas do dia (9h–19h) para painel admin. Apenas ADM/DEV. */

@@ -9,7 +9,6 @@ export default function Link({
   ...props
 }: LinkProps & React.HTMLAttributes<HTMLAnchorElement>) {
   const pathname = usePathname().split("/")[1];
-  console.log("Pathname atual:", pathname);
   const isCurrentPath = pathname === props.href.toString().split("/")[1];
   return (
     <SidebarMenuButton

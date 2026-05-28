@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { listarCoordenadoriasAtivas, listarSalasAtivas } from "../services/reservas";
 import { NovaReservaLayout } from "./nova-reserva-layout";

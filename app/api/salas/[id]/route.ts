@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Layout } from "@prisma/client";
 import { isCaminhoUploadSalaSeguro, removerArquivoLayoutImagem } from "@/lib/sala-layout-imagem";
@@ -70,7 +70,7 @@ export async function PATCH(
     return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
   }
 
-  const salaExiste = await prisma.sala.findUnique({
+  const salaExiste = await prisma.salaReserva.findUnique({
     where: { id },
     select: { id: true },
   });

@@ -21,7 +21,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import {
   getCapacidadesHelpdesk,
   podeAcessarAreaChamadosHelpdesk,
@@ -29,6 +29,7 @@ import {
   podeAdministrarSistema,
 } from "@/lib/permissoes";
 import Link from "../link";
+import { listarPermissoes, verificarDesenvolvedor } from "@/services/permissoes/";
 
 export async function NavMain() {
   const session = await auth();

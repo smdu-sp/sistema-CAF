@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ReservasContent } from "./_components/reservas-content";
 

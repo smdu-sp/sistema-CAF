@@ -1,17 +1,17 @@
-"use client";
-
-import { useSession } from "next-auth/react";
 import { TabsNav } from "@/components/tabs-nav";
-import { abasAvaliavaoLimpeza } from "./abas";
+import { abasAvaliacaoLimpeza } from "./abas";
 import Titulo from "@/components/titulo";
+import { redirect } from "next/navigation";
+import { validarPermissao } from "@/services/permissoes";
 
-export default function LayoutAvaliacaoLimpeza({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
-
+export default async function LayoutAvaliacaoLimpeza({ children }: { children: React.ReactNode }) {
+  const permissao = "avaliacao_limpeza.avaliacoes.visualizar";
+  const temPermissao = await validarPermissao(permissao);
+  if (!temPermissao) redirect("/");
   return (
     <div className="w-full h-full flex flex-col">
-      <TabsNav abas={abasAvaliavaoLimpeza} session={session} />
-      <Titulo abas={abasAvaliavaoLimpeza} />
+      <TabsNav abas={abasAvaliacaoLimpeza} modulo="avaliacao_limpeza" />
+      <Titulo abas={abasAvaliacaoLimpeza} />
       {children}
     </div>
   );

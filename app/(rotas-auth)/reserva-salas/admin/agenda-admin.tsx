@@ -32,9 +32,9 @@ import {
 import {
   aprovarReserva,
   cancelarReserva,
-} from "@/app/(rotas-auth)/reservas/actions";
+} from "@/app/(rotas-auth)/reserva-salas/actions";
 import { toast } from "sonner";
-import { SalaAdmin, ReservaAdmin } from "../types";
+// import { SalaAdmin, ReservaAdmin } from "../types";
 
 const HORA_INICIO = 9;
 const HORA_FIM = 19;

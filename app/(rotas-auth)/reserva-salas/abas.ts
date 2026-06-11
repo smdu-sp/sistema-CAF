@@ -5,18 +5,18 @@ export const abasReservaSalas: IAba[] = [
     url: "/reserva-salas",
     titulo: "Reservas",
     descricao: "Gerencie suas reservas de salas.",
-    permissoes: ["USR", "DEV", "ADM"],
+    permissao: "reserva_salas.reservas.visualizar",
   },
   {
     url: "/reserva-salas/salas",
     titulo: "Salas",
     descricao: "Visualize as salas disponíveis.",
-    permissoes: ["DEV", "ADM"],
+    permissao: "reserva_salas.salas_reserva.visualizar",
   },
   {
     url: "/reserva-salas/agenda",
     titulo: "Agenda",
     descricao: "Visualize a agenda das salas.",
-    permissoes: ["DEV", "ADM"],
+    permissao: "reserva_salas.agenda.visualizar",
   },
 ];

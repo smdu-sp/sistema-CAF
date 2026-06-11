@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth/auth';
+import { auth } from '@/lib/auth';
 import { Suspense } from 'react';
 import DataTable from '@/components/data-table';
 import { Skeleton } from '@/components/ui/skeleton';

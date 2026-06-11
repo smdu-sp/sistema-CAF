@@ -10,15 +10,6 @@ datasource db {
   provider = "mysql"
 }
 
-enum Permissao {
-  DEV
-  ADM
-  TEC
-  SUP
-  PAT
-  USR
-}
-
 model Coordenadoria {
   id           String    @id @default(uuid())
   nome         String    @db.VarChar(120)
@@ -40,10 +31,10 @@ model Usuario {
   nomeSocial      String?
   login           String    @unique
   email           String    @unique
-  permissao       Permissao @default(USR)
   status          Boolean   @default(true)
   avatar          String?   @db.Text
   coordenadoriaId String?
+  desenvolvedor   Boolean   @default(false)
 
   telefone      String?   @db.VarChar(30)
   ultimoLogin   DateTime  @default(now())
@@ -69,6 +60,40 @@ model Usuario {
   hdPontoFocalUnidades  HdPontoFocalUnidade[]             @relation("hdPontoFocalUnidades")
   hdBeneficiarioAcesso  HdSolicitacaoAcesso[]             @relation("hdBeneficiarioAcesso")
   hdNegadorAcesso       HdSolicitacaoAcesso[]             @relation("hdNegadorAcesso")
+  permissoes    UsuarioPermissao[]
 
   @@map("principal.usuarios")
+}
+
+enum Modulo {
+  reserva_salas
+  avaliacao_limpeza
+}
+
+model Permissao {
+  id             String    @id @default(uuid())
+  nome           String    @db.VarChar(50) //modulo.categoria.acao - exemplo: reserva_sala.sala_reserva.criar
+  descricao      String?   @db.Text
+  modulo         Modulo
+
+  criadoEm       DateTime  @default(now())
+  atualizadoEm   DateTime  @default(now()) @updatedAt
+
+  usuarios       UsuarioPermissao[]
+
+  @@map("principal.permissoes")
+}
+
+model UsuarioPermissao {
+  usuarioId      String
+  permissaoId    String
+
+  criadoEm       DateTime  @default(now())
+  atualizadoEm   DateTime  @default(now()) @updatedAt
+
+  usuario        Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  permissao      Permissao @relation(fields: [permissaoId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, permissaoId])
+  @@map("principal.usuario_permissoes")
 }

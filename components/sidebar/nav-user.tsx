@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
 import BtnSignOut from "../btn-signout";
 

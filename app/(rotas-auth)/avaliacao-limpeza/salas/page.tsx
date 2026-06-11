@@ -1,13 +1,27 @@
-export default function Salas() {
-  return (<></>);
+import { SalasContent } from "./_components/salas-content";
+
+interface PageProps {
+  searchParams: Promise<{
+    pagina?: string;
+    limite?: string;
+  }>;
 }
 
-// import SalasPage from "../../reserva-salas/salas/page";
+export default async function Page({
+  searchParams,
+}: PageProps) {
+  const { pagina, limite } = await searchParams;
 
-// interface SalasPageProps {
-//   searchParams: { pagina?: string };
-// }
-  
-// export default function Salas({ searchParams }: SalasPageProps) {
-//   return (<SalasPage searchParams={searchParams} />);
-// }
+  const paginaNum =
+    Number(pagina) || 1;
+
+  const limiteNum =
+    Number(limite) || 10;
+
+  return (
+    <SalasContent
+      pagina={paginaNum}
+      limite={limiteNum}
+    />
+  );
+}

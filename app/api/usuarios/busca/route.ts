@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /** GET /api/usuarios/busca?q=termo — Busca usuários por nome, nomeSocial, login ou email (qualquer usuário logado). */

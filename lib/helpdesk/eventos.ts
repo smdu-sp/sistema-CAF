@@ -4,7 +4,8 @@ export type TipoEventoHistorico =
   | "resolucao"
   | "fechamento"
   | "reabertura"
-  | "statusAlterado";
+  | "statusAlterado"
+  | "encaminhamento";
 
 export type EventoHistoricoInput = {
   tipo: TipoEventoHistorico;
@@ -53,6 +54,26 @@ export function textoStatusProdam(nomeAutor: string): string {
   return `${nomeAutor} alterou o status para Aguardando PRODAM`;
 }
 
+export function textoStatusAtendimento(nomeAutor: string): string {
+  return `${nomeAutor} alterou o status para Em atendimento`;
+}
+
+export function textoStatusAberto(nomeAutor: string): string {
+  return `${nomeAutor} alterou o status para Novo`;
+}
+
+export function textoEncaminhamento(
+  nomeAutor: string,
+  areaDeLabel: string,
+  areaParaLabel: string
+): string {
+  return `${nomeAutor} encaminhou o chamado de ${areaDeLabel} para ${areaParaLabel}`;
+}
+
+export function textoMotivoEncaminhamento(motivo: string): string {
+  return `Motivo do encaminhamento: ${motivo}`;
+}
+
 export function textoConfirmacaoSolucao(nomeAutor: string): string {
   return `${nomeAutor} confirmou que o chamado foi solucionado`;
 }
@@ -68,6 +89,10 @@ export function textoAvaliacao(nomeAutor: string, estrelas: number): string {
 
 export function textoFechamentoAutomatico(): string {
   return "Sistema fechou o chamado automaticamente após 7 dias sem retorno do solicitante";
+}
+
+export function textoAutorizacaoAcessoAutomatica(): string {
+  return "Sistema autorizou a solicitação de acesso automaticamente após 7 dias sem negativa do coordenador/diretor";
 }
 
 const AVALIACAO_NOVO = /avaliou o chamado com (\d) estrela/i;

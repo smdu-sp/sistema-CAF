@@ -50,7 +50,21 @@ export const USUARIOS: Usuario[] = [
   { id: 10, usuario: "tatiana.duarte", nome: "Tatiana Duarte",  permissao: 3, perfil: "USR", email: "tatiana.duarte@prefeitura.gov",  telefone: "(11) 3396-2220", statususer: "Inativo" }
 ];
 
-export const CHAMADOS: Chamado[] = [
+function areaMockPorCategoria(categoria: string): Chamado['areaAtual'] {
+  const c = categoria.toLowerCase();
+  if (c.includes('liberação') || c.includes('senha') || c.includes('login') || c.includes('usuário')) {
+    return 'acesso_sistemas';
+  }
+  if (c.includes('internet') || c.includes('rede')) {
+    return 'rede_conectividade';
+  }
+  if (c.includes('mudança de equipamento')) {
+    return 'reparos_infraestrutura';
+  }
+  return 'suporte_tecnico';
+}
+
+const CHAMADOS_BASE: Omit<Chamado, 'areaOrigem' | 'areaAtual' | 'encaminhamentos'>[] = [
   {
     id: 4821, titulo: "Computador não liga após queda de energia",
     categoria: "Computador > Não liga", status: "aberto", prioridade: "alta",
@@ -189,6 +203,16 @@ export const CHAMADOS: Chamado[] = [
     mensagens: [],
   }
 ];
+
+export const CHAMADOS: Chamado[] = CHAMADOS_BASE.map((c) => {
+  const area = areaMockPorCategoria(c.categoria);
+  return {
+    ...c,
+    areaOrigem: area,
+    areaAtual: area,
+    encaminhamentos: [],
+  };
+});
 
 export const ITENS: ItemPatrimonio[] = [
   { idbem: 1,  patrimonio: "2024-001847", tipo: "Computador", descsbpm: "Desktop Dell OptiPlex 7090",           numserie: "DL7090X12849",   marca: "Dell",     modelo: "OptiPlex 7090",         localizacao: "CAP > ARTHUR SABOYA", servidor: "Joana Ribeiro",  servidorId: 4,  cimbpm: "CIM-89421", statusitem: "Ativo" },

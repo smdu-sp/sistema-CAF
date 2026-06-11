@@ -18,14 +18,20 @@ export async function SalasContent({ pagina = 1 }: SalasContentProps) {
     const [lista, total] = await Promise.all([
         prisma.salaReserva.findMany({
             orderBy: { nome: 'asc' },
-            select: { 
-                id: true, 
-                nome: true, 
-                andar: true, 
-                numero: true, 
-                lotacao: true, 
-                layout: true, 
-                ativo: true 
+            select: {
+                id: true,
+                nome: true,
+                andar: true,
+                numero: true,
+                lotacao: true,
+                layout: true,
+                ativo: true,
+                layoutFotos: {
+                    select: { id: true, descricao: true, imagemUrl: true, ordem: true },
+                    orderBy: [{ ordem: 'asc' }, { criadoEm: 'asc' }],
+                },
+                mobiliarios: { select: { id: true, nome: true, quantidade: true }, orderBy: { nome: 'asc' } },
+                midias: { select: { id: true, nome: true, quantidade: true }, orderBy: { nome: 'asc' } },
             },
             skip,
             take: LIMITE_SALAS,

@@ -96,7 +96,7 @@ export async function criarReserva(
     return { erro: "Já existe uma reserva nesta sala no horário escolhido." };
   }
 
-  const salaReserva = await prisma.sala.findFirst({
+  const salaReserva = await prisma.salaReserva.findFirst({
     where: { id: salaId, ativo: true },
     select: {
       id: true,

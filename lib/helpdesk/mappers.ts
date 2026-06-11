@@ -24,6 +24,18 @@ export const chamadoInclude = {
     include: { autor: true, anexos: true },
     orderBy: { criadoEm: "asc" as const },
   },
+  encaminhamentos: {
+    include: { autor: true },
+    orderBy: { criadoEm: "asc" as const },
+  },
+  solicitacaoAcesso: {
+    include: {
+      sistema: true,
+      permissao: true,
+      unidade: true,
+      coordenadoria: true,
+    },
+  },
 } satisfies Prisma.HdChamadoInclude;
 
 export type ChamadoComRelacoes = Prisma.HdChamadoGetPayload<{
@@ -48,6 +60,7 @@ export function collectUserIdsFromChamados(chamados: ChamadoComRelacoes[]): Set<
     if (c.abertoEmNomeDeId) ids.add(c.abertoEmNomeDeId);
     c.usuarios.forEach((u) => ids.add(u.usuarioId));
     c.eventos.forEach((e) => ids.add(e.autorId));
+    (c.encaminhamentos ?? []).forEach((e) => ids.add(e.autorId));
     c.mensagens.forEach((m) => {
       ids.add(m.autorId);
       m.anexos.forEach((a) => ids.add(a.autorId));
@@ -93,6 +106,39 @@ export function mapChamadoApi(
     id: c.id,
     titulo: c.titulo,
     categoria: categoriaLabel,
+    areaOrigem: c.areaOrigem as string,
+    areaAtual: c.areaAtual as string,
+    encaminhamentos: (c.encaminhamentos ?? []).map((e) => ({
+      id: e.id,
+      areaDe: e.areaDe as string,
+      areaPara: e.areaPara as string,
+      motivo: e.motivo,
+      autor: uuidToNum.get(e.autorId)!,
+      data: e.criadoEm.toISOString(),
+    })),
+    solicitacaoAcesso: c.solicitacaoAcesso
+      ? {
+          id: c.solicitacaoAcesso.id,
+          nomeBeneficiario: c.solicitacaoAcesso.nomeBeneficiario,
+          rfBeneficiario: c.solicitacaoAcesso.rfBeneficiario,
+          sistema: c.solicitacaoAcesso.sistema.nome,
+          sistemaId: c.solicitacaoAcesso.sistemaId,
+          permissao: c.solicitacaoAcesso.permissao.nome,
+          permissaoId: c.solicitacaoAcesso.permissaoId,
+          unidade: c.solicitacaoAcesso.unidade.nome,
+          coordenadoria: c.solicitacaoAcesso.coordenadoria?.nome ?? null,
+          observacao: c.solicitacaoAcesso.observacao ?? undefined,
+          paraSiMesmo: c.solicitacaoAcesso.paraSiMesmo,
+          statusAutorizacao: c.solicitacaoAcesso.statusAutorizacao as string,
+          responsavelAutorizacao: c.solicitacaoAcesso.responsavelAutorizacaoId
+            ? uuidToNum.get(c.solicitacaoAcesso.responsavelAutorizacaoId)
+            : undefined,
+          responsavelAutorizacaoNome:
+            c.solicitacaoAcesso.responsavelAutorizacaoNome ?? undefined,
+          motivoNegacao: c.solicitacaoAcesso.motivoNegacao ?? undefined,
+          dataAutorizacao: c.solicitacaoAcesso.dataAutorizacao?.toISOString(),
+        }
+      : undefined,
     status: c.status as string,
     prioridade: c.prioridade as string,
     solicitante: uuidToNum.get(c.solicitanteId)!,

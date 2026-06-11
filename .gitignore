@@ -11,6 +11,9 @@
 /.next/
 /out/
 
+# logs de cron (fallback local)
+/logs/
+
 # misc
 .DS_Store
 *.pem

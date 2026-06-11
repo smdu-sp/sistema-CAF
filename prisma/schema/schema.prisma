@@ -29,6 +29,7 @@ model Coordenadoria {
 
   usuarios Usuario[]
   reservas Reserva[]
+  solicitacoesAcesso HdSolicitacaoAcesso[]
 
   @@map("principal.coordenadorias")
 }
@@ -60,8 +61,14 @@ model Usuario {
   hdAutorEventos        HdChamadoEvento[]    @relation("hdAutorEventos")
   hdAutorMensagens      HdMensagem[]         @relation("hdAutorMensagens")
   hdAutorAnexos         HdAnexo[]            @relation("hdAutorAnexos")
+  hdAutorEncaminhamentos HdChamadoEncaminhamento[] @relation("hdAutorEncaminhamentos")
   hdServidorItens       HdItemPatrimonio[]   @relation("hdServidorItens")
   hdTransferencias      HdTransferenciaCabecalho[] @relation("hdUsuarioTransferencias")
+  hdBaixasPatrimonio    HdBaixaPatrimonio[]        @relation("hdUsuarioBaixas")
+  hdStatusPatrimonio    HdItemPatrimonioStatusHistorico[] @relation("hdUsuarioStatusPatrimonio")
+  hdPontoFocalUnidades  HdPontoFocalUnidade[]             @relation("hdPontoFocalUnidades")
+  hdBeneficiarioAcesso  HdSolicitacaoAcesso[]             @relation("hdBeneficiarioAcesso")
+  hdNegadorAcesso       HdSolicitacaoAcesso[]             @relation("hdNegadorAcesso")
 
   @@map("principal.usuarios")
 }

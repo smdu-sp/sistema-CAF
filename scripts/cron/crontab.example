@@ -1,0 +1,9 @@
+# Help Desk — autorização automática de acessos (7 dias sem negativa)
+#
+# 1) Defina CRON_SECRET no .env do projeto (mesmo valor usado pela API).
+# 2) Ajuste PROJECT_ROOT para o caminho real no servidor Linux.
+# 3) Instale com: bash scripts/cron/instalar-cron.sh
+#    Ou cole manualmente no crontab: crontab -e
+#
+# Todo dia às 06:00 (horário do servidor)
+0 6 * * * PROJECT_ROOT=/opt/salas-reuniao-fullstack bash /opt/salas-reuniao-fullstack/scripts/cron/autorizar-acesso-pendentes.sh

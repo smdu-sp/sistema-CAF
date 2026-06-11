@@ -31,7 +31,7 @@ export async function POST(
     return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
   }
 
-  const sala = await prisma.sala.findUnique({
+  const sala = await prisma.salaReserva.findUnique({
     where: { id: salaId },
     select: { id: true, layout: true },
   });

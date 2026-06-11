@@ -4,9 +4,25 @@ enum HdStatusChamado {
   aberto
   atendimento
   aguardando
+  aguardando_autorizacao
   prodam
   resolvido
   fechado
+}
+
+enum HdStatusAutorizacaoAcesso {
+  aguardando
+  negado
+  autorizado
+}
+
+enum HdSistemaAcessoCodigo {
+  sisacoe
+  sei
+  aprova_digital
+  slce
+  portal_licenciamento
+  simproc
 }
 
 enum HdPrioridade {
@@ -16,6 +32,14 @@ enum HdPrioridade {
   urgente
 }
 
+enum HdTipoChamado {
+  suporte_tecnico
+  telefonia_voip
+  acesso_sistemas
+  rede_conectividade
+  reparos_infraestrutura
+}
+
 enum HdTipoEvento {
   abertura
   atribuicao
@@ -23,6 +47,7 @@ enum HdTipoEvento {
   fechamento
   reabertura
   statusAlterado
+  encaminhamento
 }
 
 enum HdPapelUsuario {
@@ -52,6 +77,8 @@ model HdUnidade {
   chamados              HdChamado[]
   itens                 HdItemPatrimonio[]
   transferenciasDestino HdTransferenciaCabecalho[]
+  pontosFocais          HdPontoFocalUnidade[]
+  solicitacoesAcesso    HdSolicitacaoAcesso[]
   @@map("hd.unidades")
 }
 
@@ -77,6 +104,10 @@ model HdChamado {
   unidadeId        String
   categoriaId      Int
   itemId           Int?
+  /// Área em que o chamado foi aberto (não muda após encaminhamentos)
+  areaOrigem       HdTipoChamado   @default(suporte_tecnico)
+  /// Área responsável pelo atendimento no momento
+  areaAtual        HdTipoChamado   @default(suporte_tecnico)
   resolucao        String?         @db.Text
   abertura         DateTime        @default(now())
   dataResolucao    DateTime?
@@ -91,10 +122,109 @@ model HdChamado {
   item           HdItemPatrimonio? @relation(fields: [itemId], references: [idbem])
   usuarios       HdChamadoUsuario[]
   eventos        HdChamadoEvento[]
-  mensagens      HdMensagem[]
-  anexos         HdAnexo[]
+  mensagens         HdMensagem[]
+  anexos            HdAnexo[]
+  encaminhamentos   HdChamadoEncaminhamento[]
+  solicitacaoAcesso HdSolicitacaoAcesso?
 
+  @@index([areaAtual])
   @@map("hd.chamados")
+}
+
+/// Catálogo de sistemas para solicitação de acesso
+model HdSistemaAcesso {
+  id         Int                   @id @default(autoincrement())
+  codigo     HdSistemaAcessoCodigo @unique
+  nome       String                @db.VarChar(120)
+  ativo      Boolean               @default(true)
+  criadoEm   DateTime              @default(now())
+  permissoes HdSistemaPermissao[]
+  solicitacoes HdSolicitacaoAcesso[]
+
+  @@map("hd.sistemas_acesso")
+}
+
+/// Tipos de permissão por sistema (cadastro dos admins de liberação)
+model HdSistemaPermissao {
+  id          Int     @id @default(autoincrement())
+  sistemaId   Int
+  nome        String  @db.VarChar(200)
+  descricao   String? @db.VarChar(500)
+  ativo       Boolean @default(true)
+  criadoEm    DateTime @default(now())
+  sistema     HdSistemaAcesso @relation(fields: [sistemaId], references: [id], onDelete: Cascade)
+  solicitacoes HdSolicitacaoAcesso[]
+
+  @@unique([sistemaId, nome])
+  @@map("hd.sistemas_permissoes")
+}
+
+/// Ponto focal da unidade — único perfil autorizado a abrir solicitações de acesso
+model HdPontoFocalUnidade {
+  id        Int      @id @default(autoincrement())
+  unidadeId String
+  usuarioId String
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+
+  unidade HdUnidade @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+  usuario Usuario    @relation("hdPontoFocalUnidades", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([unidadeId, usuarioId])
+  @@map("hd.pontos_focais_unidade")
+}
+
+/// Dados específicos da solicitação de acesso a sistemas (1:1 com chamado)
+model HdSolicitacaoAcesso {
+  id                    Int                       @id @default(autoincrement())
+  chamadoId             Int                       @unique
+  nomeBeneficiario      String                    @db.VarChar(250)
+  rfBeneficiario        String                    @db.VarChar(20)
+  sistemaId             Int
+  permissaoId           Int
+  unidadeId             String
+  coordenadoriaId       String?
+  observacao            String?                   @db.Text
+  paraSiMesmo           Boolean                   @default(true)
+  beneficiarioUsuarioId String?
+  statusAutorizacao     HdStatusAutorizacaoAcesso @default(aguardando)
+  responsavelAutorizacaoId String?
+  responsavelAutorizacaoNome String?              @db.VarChar(250)
+  responsavelAutorizacaoEmail String?             @db.VarChar(250)
+  negadoPorId           String?
+  motivoNegacao         String?                   @db.Text
+  dataAutorizacao       DateTime?
+  emailEnviadoEm        DateTime?
+  criadoEm              DateTime                  @default(now())
+  atualizadoEm          DateTime                  @default(now()) @updatedAt
+
+  chamado       HdChamado          @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  sistema       HdSistemaAcesso    @relation(fields: [sistemaId], references: [id])
+  permissao     HdSistemaPermissao @relation(fields: [permissaoId], references: [id])
+  unidade       HdUnidade          @relation(fields: [unidadeId], references: [id])
+  coordenadoria Coordenadoria?     @relation(fields: [coordenadoriaId], references: [id], onDelete: SetNull)
+  beneficiario  Usuario?           @relation("hdBeneficiarioAcesso", fields: [beneficiarioUsuarioId], references: [id], onDelete: SetNull)
+  negadoPor     Usuario?           @relation("hdNegadorAcesso", fields: [negadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([statusAutorizacao])
+  @@index([unidadeId])
+  @@map("hd.solicitacoes_acesso")
+}
+
+/// Histórico de encaminhamentos entre áreas do help desk
+model HdChamadoEncaminhamento {
+  id        Int           @id @default(autoincrement())
+  chamadoId Int
+  areaDe    HdTipoChamado
+  areaPara  HdTipoChamado
+  motivo    String        @db.Text
+  autorId   String
+  criadoEm  DateTime      @default(now())
+
+  chamado HdChamado @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  autor   Usuario   @relation("hdAutorEncaminhamentos", fields: [autorId], references: [id])
+
+  @@map("hd.chamado_encaminhamentos")
 }
 
 // Relação N:N usuário <> chamado — controla papéis (solicitante, técnico, observador, participante)
@@ -163,17 +293,21 @@ model HdAnexo {
 }
 
 model HdItemPatrimonio {
-  idbem      Int     @id @default(autoincrement())
-  patrimonio String  @unique @db.VarChar(50)
-  tipo       String  @db.VarChar(80)
-  descsbpm   String  @db.VarChar(300)
-  numserie   String? @db.VarChar(100)
-  marca      String? @db.VarChar(100)
-  modelo     String? @db.VarChar(100)
-  cimbpm     String? @db.VarChar(50)
+  idbem       Int     @id @default(autoincrement())
+  patrimonio  String? @unique @db.VarChar(50)
+  tipo        String? @db.VarChar(240)
+  descsbpm    String? @db.VarChar(300)
+  numserie    String? @db.VarChar(240)
+  tiposbpm    String? @db.VarChar(240)
+  marca       String? @db.VarChar(100)
+  modelo      String? @db.VarChar(240)
+  localizacao String? @db.VarChar(240)
+  numprocesso String? @db.VarChar(300)
+  cimbpm      String? @db.VarChar(240)
   /// Nome do computador na rede (quando tipo = Computador)
-  nomeRede   String? @db.VarChar(120)
+  nomeRede   String? @db.VarChar(240)
   statusitem String  @default("Ativo") @db.VarChar(50)
+  excluido   Boolean @default(false)
   unidadeId  String?
   servidorId String?
   criadoEm     DateTime @default(now())
@@ -182,7 +316,42 @@ model HdItemPatrimonio {
   servidor  Usuario?   @relation("hdServidorItens", fields: [servidorId], references: [id])
   chamados           HdChamado[]
   transferenciaItens HdTransferenciaItem[]
+  baixas             HdBaixaPatrimonio[]
+  historicoStatus    HdItemPatrimonioStatusHistorico[]
   @@map("hd.itens_patrimonio")
+}
+
+/// Histórico de alterações de status do item patrimonial
+model HdItemPatrimonioStatusHistorico {
+  id             Int      @id @default(autoincrement())
+  idItem         Int
+  statusAnterior String?  @db.VarChar(50)
+  statusNovo     String   @db.VarChar(50)
+  motivo         String   @db.Text
+  idUsuario      String
+  criadoEm       DateTime @default(now())
+
+  item    HdItemPatrimonio @relation(fields: [idItem], references: [idbem])
+  usuario Usuario          @relation("hdUsuarioStatusPatrimonio", fields: [idUsuario], references: [id])
+
+  @@map("hd.itens_patrimonio_status_historico")
+}
+
+/// Registro formal de baixa patrimonial (descarte / retirada de uso)
+model HdBaixaPatrimonio {
+  id             Int      @id @default(autoincrement())
+  idItem         Int
+  dataBaixa      DateTime @default(now())
+  idUsuarioBaixa String
+  /// Documento/processo no sistema de bens da prefeitura (ex.: 001.002987/2022)
+  documentoSbpm  String   @db.VarChar(200)
+  observacao     String?  @db.Text
+  criadoEm       DateTime @default(now())
+
+  item         HdItemPatrimonio @relation(fields: [idItem], references: [idbem])
+  usuarioBaixa Usuario          @relation("hdUsuarioBaixas", fields: [idUsuarioBaixa], references: [id])
+
+  @@map("hd.baixas_patrimonio")
 }
 
 model HdTransferenciaCabecalho {

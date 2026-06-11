@@ -1,7 +1,7 @@
-import { HdApp } from '../_components/hd-app';
 import { verificarAcessoPaginaHelpdesk } from '@/lib/helpdesk/verificar-acesso-pagina';
+import { redirect } from 'next/navigation';
 
 export default async function ChamadosPage() {
   await verificarAcessoPaginaHelpdesk('chamados');
-  return <HdApp initialView="chamados" />;
+  redirect('/helpdesk/chamados/suporte-tecnico');
 }

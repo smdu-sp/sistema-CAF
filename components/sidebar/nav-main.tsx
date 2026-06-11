@@ -7,12 +7,18 @@ import {
   Building2,
   CalendarSearch,
   ClipboardCheck,
+  FileText,
   House,
+  KeyRound,
   LayoutDashboard,
+  Network,
   Package,
+  Phone,
   TicketCheck,
   Users,
+  Wrench,
 } from "lucide-react";
+import { rotaChamadosArea } from "@/lib/helpdesk/tipos-chamado";
 
 import {
   SidebarContent,
@@ -55,12 +61,60 @@ export async function NavMain() {
           </SidebarMenuItem>
           ) : null}
           {hd.abrirChamados || hd.atenderChamados ? (
+          <>
           <SidebarMenuItem>
-            <Link href="/helpdesk/chamados">
+            <Link href={rotaChamadosArea("suporte_tecnico")}>
               <TicketCheck className="size-4" />
-              <span>Chamados</span>
+              <span>Suporte Técnico</span>
             </Link>
           </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href={rotaChamadosArea("telefonia_voip")}>
+              <Phone className="size-4" />
+              <span>Telefonia VoIP</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href={rotaChamadosArea("acesso_sistemas")}>
+              <KeyRound className="size-4" />
+              <span>Acesso a Sistemas</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/helpdesk/chamados/acesso-sistemas/autorizacoes">
+              <KeyRound className="size-4 opacity-60" />
+              <span>Autorizações de acesso</span>
+            </Link>
+          </SidebarMenuItem>
+          {hd.gerenciarAcessoSistemas ? (
+          <>
+          <SidebarMenuItem>
+            <Link href="/helpdesk/acesso-sistemas/permissoes">
+              <KeyRound className="size-4 opacity-60" />
+              <span>Permissões de sistemas</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/helpdesk/acesso-sistemas/pontos-focais">
+              <KeyRound className="size-4 opacity-60" />
+              <span>Pontos focais</span>
+            </Link>
+          </SidebarMenuItem>
+          </>
+          ) : null}
+          <SidebarMenuItem>
+            <Link href={rotaChamadosArea("rede_conectividade")}>
+              <Network className="size-4" />
+              <span>Rede e Conectividade</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href={rotaChamadosArea("reparos_infraestrutura")}>
+              <Wrench className="size-4" />
+              <span>Reparos de Infraestrutura</span>
+            </Link>
+          </SidebarMenuItem>
+          </>
           ) : null}
           {hd.patrimonio ? (
           <SidebarMenuItem>
@@ -72,9 +126,17 @@ export async function NavMain() {
           ) : null}
           {hd.patrimonio ? (
           <SidebarMenuItem>
-            <Link href="/helpdesk/transferencias">
+            <Link href="/helpdesk/movimentacoes">
               <ArrowLeftRight className="size-4" />
-              <span>Transferências</span>
+              <span>Movimentações</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.patrimonio ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/termos">
+              <FileText className="size-4" />
+              <span>Termos</span>
             </Link>
           </SidebarMenuItem>
           ) : null}

@@ -1,16 +1,24 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect, type ReactNode } from 'react';
-import type { Chamado, ItemPatrimonio, Transferencia, StatusChamado, Prioridade, TipoEvento, Mensagem, Anexo, Usuario, Unidade, Categoria } from '../_types';
-import { STATUS_META, PRIORIDADE_META } from '../_types';
+import { Fragment, useState, useMemo, useRef, useEffect, type ReactNode } from 'react';
+import {
+  buildUnidadeOptions,
+  buildUsuarioOptions,
+  InventarioItemAcoes,
+  PatrimonioNovoItemButton,
+} from './item-patrimonio/inventario-acoes';
+import { ViewTermos } from './termos-patrimonio/view-termos';
+import type { BaixaPatrimonio, Chamado, ItemPatrimonio, StatusHistoricoPatrimonio, Transferencia, StatusChamado, Prioridade, TipoEvento, Mensagem, Anexo, Usuario, Unidade, Categoria, TipoChamado } from '../_types';
+import { STATUS_META, PRIORIDADE_META, TIPO_CHAMADO_META, TIPOS_CHAMADO, labelTipoChamado, exigeComputadorNaAbertura } from '../_types';
+import { categoriaCompativelComArea } from '@/lib/helpdesk/tipos-chamado';
 import { formatEventoHistorico } from '@/lib/helpdesk/eventos';
+import { metaStatusItem, normalizarStatusItem } from '@/lib/helpdesk/item-patrimonio';
+import { FILTROS_STATUS_INVENTARIO } from '@/lib/helpdesk/status-historico-patrimonio';
 import { isMensagemMotivoProdam } from '@/lib/helpdesk/prodam';
+import { formatarDuracaoMs, metricasTempoAtendimento } from '@/lib/helpdesk/tempo-atendimento';
 import type { CapacidadesHelpdesk } from '@/lib/permissoes';
 import {
-  CHAMADOS as CHAMADOS_INIT,
   ITENS,
-  TRANSFERENCIAS as TRANSF_INIT,
-  USUARIOS,
   fmtData,
   fmtDataCurta,
   tempoRelativo,
@@ -18,15 +26,25 @@ import {
   isMensagemSolucao,
   iniciais,
   nomePrimeiroUltimo,
-  itemPorId,
 } from '../_data/constants';
 
 function itemPorIdFrom(itens: ItemPatrimonio[], id: number): ItemPatrimonio | null {
   return itens.find(i => i.idbem === id) ?? null;
 }
 
-function isTipoComputador(tipo: string): boolean {
-  return tipo.trim().toLowerCase() === 'computador';
+function textoMarcaModelo(item: Pick<ItemPatrimonio, 'tipo' | 'marca' | 'modelo'>): string {
+  return [item.tipo, item.marca, item.modelo].filter(Boolean).join(' ') || '—';
+}
+
+function rotuloEquipamentoTransferencia(item: ItemPatrimonio | null): string {
+  if (!item) return '—';
+  const marcaModelo = textoMarcaModelo(item);
+  if (marcaModelo !== '—') return marcaModelo;
+  return item.descsbpm || '—';
+}
+
+function isTipoComputador(tipo: string | null | undefined): boolean {
+  return (tipo ?? '').trim().toLowerCase() === 'computador';
 }
 
 function horasDesde(dataIso?: string): string {
@@ -73,6 +91,7 @@ const CAPACIDADES_VAZIAS: CapacidadesHelpdesk = {
   patrimonio: false,
   unidades: false,
   relatorios: false,
+  gerenciarAcessoSistemas: false,
 };
 
 function resolveCategoriaId(categorias: Categoria[], pai: string, filho: string): number | null {
@@ -807,20 +826,26 @@ function DonutChart({ segments, total, size = 140 }: { segments: { nome: string;
   );
 }
 
-type View = 'dashboard' | 'chamados' | 'chamado-detalhe' | 'novo-chamado' | 'inventario' | 'item-detalhe' | 'transferencias' | 'nova-transferencia' | 'usuarios' | 'relatorios';
+type View = 'dashboard' | 'chamados' | 'chamado-detalhe' | 'novo-chamado' | 'inventario' | 'item-detalhe' | 'movimentacoes' | 'nova-transferencia' | 'termos' | 'usuarios' | 'relatorios';
+type AbaMovimentacao = 'transferencia' | 'baixa' | 'status';
 
 interface HdAppProps {
   initialView?: View;
   initialId?: number;
+  initialArea?: TipoChamado;
+  initialAbaMovimentacao?: AbaMovimentacao;
 }
 
 // ─── Main HdApp Component ─────────────────────────────────────────────────────
 
-export function HdApp({ initialView = 'dashboard', initialId }: HdAppProps) {
+export function HdApp({ initialView = 'dashboard', initialId, initialArea, initialAbaMovimentacao }: HdAppProps) {
   const [view, setView] = useState<View>(initialView);
   const [activeId, setActiveId] = useState<number | undefined>(initialId);
+  const [areaContext, setAreaContext] = useState<TipoChamado | undefined>(initialArea);
   const [chamados, setChamados] = useState<Chamado[]>([]);
-  const [transferencias, setTransferencias] = useState<Transferencia[]>(TRANSF_INIT);
+  const [transferencias, setTransferencias] = useState<Transferencia[]>([]);
+  const [baixas, setBaixas] = useState<BaixaPatrimonio[]>([]);
+  const [statusHistorico, setStatusHistorico] = useState<StatusHistoricoPatrimonio[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<number | null>(null);
   const [perfilLogado, setPerfilLogado] = useState<'ADM' | 'TEC' | 'USR'>('USR');
@@ -829,6 +854,7 @@ export function HdApp({ initialView = 'dashboard', initialId }: HdAppProps) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriasPai, setCategoriasPai] = useState<string[]>([]);
   const [itensPatrimonio, setItensPatrimonio] = useState<ItemPatrimonio[]>([]);
+  const [numToUuid, setNumToUuid] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [erroApi, setErroApi] = useState<string | null>(null);
 
@@ -849,6 +875,10 @@ export function HdApp({ initialView = 'dashboard', initialId }: HdAppProps) {
         setCategorias(data.categorias ?? []);
         setCategoriasPai(data.categoriasPai ?? []);
         setItensPatrimonio(data.itens ?? []);
+        setTransferencias(data.transferencias ?? []);
+        setBaixas(data.baixas ?? []);
+        setStatusHistorico(data.statusHistorico ?? []);
+        setNumToUuid(data.numToUuid ?? {});
       })
       .catch(err => setErroApi(String(err)))
       .finally(() => setLoading(false));
@@ -863,9 +893,11 @@ export function HdApp({ initialView = 'dashboard', initialId }: HdAppProps) {
   }
 
   const viewProps = {
-    view, navTo, chamados, setChamados, transferencias, setTransferencias, activeId,
+    view, navTo, chamados, setChamados, transferencias, setTransferencias, baixas, statusHistorico, activeId,
     usuarios, usuarioPorId: usuarioPorIdLocal, usuarioLogadoId, perfilLogado, capacidades,
-    unidades, categorias, categoriasPai, itensPatrimonio,
+    unidades, categorias, categoriasPai, itensPatrimonio, numToUuid, initialAbaMovimentacao,
+    areaFiltro: areaContext,
+    setAreaContext,
   };
 
   if (loading) return (
@@ -888,8 +920,9 @@ export function HdApp({ initialView = 'dashboard', initialId }: HdAppProps) {
       {view === 'novo-chamado' && <ViewNovoChamado {...viewProps} />}
       {view === 'inventario' && capacidades.patrimonio && <ViewInventario {...viewProps} />}
       {view === 'item-detalhe' && capacidades.patrimonio && <ViewItemDetalhe {...viewProps} />}
-      {view === 'transferencias' && capacidades.patrimonio && <ViewTransferencias {...viewProps} />}
+      {view === 'movimentacoes' && capacidades.patrimonio && <ViewMovimentacoes {...viewProps} />}
       {view === 'nova-transferencia' && capacidades.patrimonio && <ViewNovaTransferencia {...viewProps} />}
+      {view === 'termos' && capacidades.patrimonio && <ViewTermos itensPatrimonio={itensPatrimonio} />}
       {view === 'usuarios' && <ViewUsuarios {...viewProps} />}
       {view === 'relatorios' && <ViewRelatorios {...viewProps} />}
     </div>
@@ -905,6 +938,8 @@ interface ViewProps {
   setChamados: React.Dispatch<React.SetStateAction<Chamado[]>>;
   transferencias: Transferencia[];
   setTransferencias: React.Dispatch<React.SetStateAction<Transferencia[]>>;
+  baixas: BaixaPatrimonio[];
+  statusHistorico: StatusHistoricoPatrimonio[];
   activeId?: number;
   usuarios: Usuario[];
   usuarioPorId: (id: number) => Usuario | null;
@@ -915,9 +950,38 @@ interface ViewProps {
   categorias: Categoria[];
   categoriasPai: string[];
   itensPatrimonio: ItemPatrimonio[];
+  numToUuid: Record<string, string>;
+  initialAbaMovimentacao?: AbaMovimentacao;
+  areaFiltro?: TipoChamado;
+  setAreaContext?: React.Dispatch<React.SetStateAction<TipoChamado | undefined>>;
 }
 
 // ─── Page header ─────────────────────────────────────────────────────────────
+
+function StatusItemBadge({ status }: { status: string }) {
+  const meta = metaStatusItem(status);
+  return (
+    <span style={{
+      fontSize: 12, fontWeight: 600, borderRadius: 20, padding: '3px 10px',
+      background: meta.corBg, color: meta.corText,
+    }}>
+      {normalizarStatusItem(status)}
+    </span>
+  );
+}
+
+function AreaBadge({ area }: { area: TipoChamado }) {
+  const meta = TIPO_CHAMADO_META[area];
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '3px 10px',
+      background: meta.corBg, color: meta.corText,
+      border: '1px solid transparent',
+    }}>
+      {meta.label}
+    </span>
+  );
+}
 
 function PageHeader({ title, sub, action }: { title: string; sub?: string; action?: React.ReactNode }) {
   return (
@@ -1029,7 +1093,7 @@ function ViewDashboard({ navTo, chamados, transferencias, usuarioPorId, capacida
       <div style={CARD_STYLE}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontWeight: 700, fontSize: 15 }}>Transferências Recentes</span>
-          <button style={{ ...BTN_GHOST, padding: '5px 12px', fontSize: 12 }} onClick={() => navTo('transferencias')}>Ver todas</button>
+          <button style={{ ...BTN_GHOST, padding: '5px 12px', fontSize: 12 }} onClick={() => navTo('movimentacoes')}>Ver todas</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {transferencias.slice(0, 4).map(t => {
@@ -1055,7 +1119,7 @@ function ViewDashboard({ navTo, chamados, transferencias, usuarioPorId, capacida
 // ─── VIEW: Chamados ───────────────────────────────────────────────────────────
 
 type TabChamadosUsuario = 'todos' | 'aberto' | 'em_andamento' | 'aguardando_nota' | 'resolvido' | 'fechado';
-const STATUS_EM_ANDAMENTO: StatusChamado[] = ['atendimento', 'aguardando', 'prodam'];
+const STATUS_EM_ANDAMENTO: StatusChamado[] = ['atendimento', 'aguardando', 'aguardando_autorizacao', 'prodam'];
 
 function chamadoAguardandoNota(c: Chamado): boolean {
   return c.status === 'fechado' && !c.avaliacao;
@@ -1069,8 +1133,13 @@ function matchFiltroChamadoUsuario(c: Chamado, tab: TabChamadosUsuario): boolean
   return c.status === tab;
 }
 
-function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps) {
+function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado, areaFiltro }: ViewProps) {
   const isTecnico = perfilLogado === 'TEC' || perfilLogado === 'ADM';
+  const areaMeta = areaFiltro ? TIPO_CHAMADO_META[areaFiltro] : null;
+  const chamadosDaArea = useMemo(
+    () => (areaFiltro ? chamados.filter(c => c.areaAtual === areaFiltro) : chamados),
+    [chamados, areaFiltro],
+  );
   const [search, setSearch] = useState('');
   const [tabTecnico, setTabTecnico] = useState<StatusChamado | 'abertos_atribuidos'>('abertos_atribuidos');
   const [tabUsuario, setTabUsuario] = useState<TabChamadosUsuario>('todos');
@@ -1078,7 +1147,7 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
   const [paginaAtual, setPaginaAtual] = useState(1);
 
   const filtered = useMemo(() => {
-    return chamados.filter(c => {
+    return chamadosDaArea.filter(c => {
       const matchSearch = !search || c.titulo.toLowerCase().includes(search.toLowerCase()) ||
         String(c.id).includes(search) || c.unidade.toLowerCase().includes(search.toLowerCase());
       const matchStatus = isTecnico
@@ -1088,7 +1157,7 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
         : matchFiltroChamadoUsuario(c, tabUsuario);
       return matchSearch && matchStatus;
     });
-  }, [chamados, search, tabTecnico, tabUsuario, isTecnico]);
+  }, [chamadosDaArea, search, tabTecnico, tabUsuario, isTecnico]);
 
   useEffect(() => {
     setPaginaAtual(1);
@@ -1108,19 +1177,19 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
   }, [filtered, paginaAtual, itensPorPagina]);
 
   const countsTecnico: Record<string, number> = {
-    abertos_atribuidos: chamados.filter(c => c.status === 'aberto' || c.status === 'atendimento').length,
+    abertos_atribuidos: chamadosDaArea.filter(c => c.status === 'aberto' || c.status === 'atendimento').length,
   };
-  (['aberto', 'atendimento', 'aguardando', 'prodam', 'resolvido', 'fechado'] as StatusChamado[]).forEach(s => {
-    countsTecnico[s] = chamados.filter(c => c.status === s).length;
+  (['aberto', 'atendimento', 'aguardando', 'aguardando_autorizacao', 'prodam', 'resolvido', 'fechado'] as StatusChamado[]).forEach(s => {
+    countsTecnico[s] = chamadosDaArea.filter(c => c.status === s).length;
   });
 
   const countsUsuario: Record<TabChamadosUsuario, number> = {
-    todos: chamados.length,
-    aberto: chamados.filter(c => c.status === 'aberto').length,
-    em_andamento: chamados.filter(c => STATUS_EM_ANDAMENTO.includes(c.status)).length,
-    aguardando_nota: chamados.filter(chamadoAguardandoNota).length,
-    resolvido: chamados.filter(c => c.status === 'resolvido').length,
-    fechado: chamados.filter(c => c.status === 'fechado').length,
+    todos: chamadosDaArea.length,
+    aberto: chamadosDaArea.filter(c => c.status === 'aberto').length,
+    em_andamento: chamadosDaArea.filter(c => STATUS_EM_ANDAMENTO.includes(c.status)).length,
+    aguardando_nota: chamadosDaArea.filter(chamadoAguardandoNota).length,
+    resolvido: chamadosDaArea.filter(c => c.status === 'resolvido').length,
+    fechado: chamadosDaArea.filter(c => c.status === 'fechado').length,
   };
 
   const tabsTecnico: Array<{ key: StatusChamado | 'abertos_atribuidos'; label: string }> = [
@@ -1128,6 +1197,7 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
     { key: 'aberto', label: 'Novos' },
     { key: 'atendimento', label: 'Em atendimento' },
     { key: 'aguardando', label: 'Aguardando' },
+    { key: 'aguardando_autorizacao', label: 'Aguardando autorização' },
     { key: 'prodam', label: 'Aguardando PRODAM' },
     { key: 'resolvido', label: 'Resolvidos' },
     { key: 'fechado', label: 'Fechados' },
@@ -1154,13 +1224,25 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
   return (
     <div style={{ padding: 24 }}>
       <PageHeader
-        title="Chamados"
-        sub={`${chamados.length} chamados no total`}
+        title={areaMeta?.label ?? 'Chamados'}
+        sub={areaMeta ? `${areaMeta.descricao} · ${chamadosDaArea.length} chamados nesta área` : `${chamadosDaArea.length} chamados no total`}
         action={
+          areaFiltro === 'acesso_sistemas' ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <a href="/helpdesk/chamados/acesso-sistemas/novo" style={{ ...BTN_PRIMARY, textDecoration: 'none' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
+                Nova solicitação
+              </a>
+              <a href="/helpdesk/chamados/acesso-sistemas/autorizacoes" style={{ ...BTN_GHOST, textDecoration: 'none' }}>
+                Autorizações
+              </a>
+            </div>
+          ) : (
           <button style={BTN_PRIMARY} onClick={() => navTo('novo-chamado')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
             Novo Chamado
           </button>
+          )
         }
       />
 
@@ -1327,7 +1409,7 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado }: ViewProps
 
 // ─── VIEW: Chamado Detalhe ────────────────────────────────────────────────────
 
-function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPorId, usuarioLogadoId, usuarios, itensPatrimonio, capacidades }: ViewProps) {
+function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPorId, usuarioLogadoId, usuarios, itensPatrimonio, capacidades, areaFiltro }: ViewProps) {
   const chamado = chamados.find(c => c.id === activeId);
   const usuarioLogado = usuarioLogadoId ? usuarioPorId(usuarioLogadoId) : null;
   const isTecnico = usuarioLogado?.perfil === 'TEC' || usuarioLogado?.perfil === 'ADM';
@@ -1335,13 +1417,16 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
   const [anexosPendentes, setAnexosPendentes] = useState<Anexo[]>([]);
   const [arquivosPendentes, setArquivosPendentes] = useState<File[]>([]);
   const [tipoMensagem, setTipoMensagem] = useState<'publica' | 'interna'>('publica');
-  const [modoAcao, setModoAcao] = useState<'responder' | 'solucao' | 'prodam' | null>(null);
+  const [modoAcao, setModoAcao] = useState<'responder' | 'solucao' | 'prodam' | 'encaminhar' | null>(null);
+  const [areaEncaminhar, setAreaEncaminhar] = useState<TipoChamado | ''>('');
   const [textoAcao, setTextoAcao] = useState('');
   const [menuAcaoAberto, setMenuAcaoAberto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
   const [notaSelecionada, setNotaSelecionada] = useState<number>(chamado?.avaliacao ?? 0);
   const [abaDetalhe, setAbaDetalhe] = useState<'chamado' | 'historico'>('chamado');
+  const [modoNegarAcesso, setModoNegarAcesso] = useState(false);
+  const [motivoNegacaoAcesso, setMotivoNegacaoAcesso] = useState('');
   const menuAcaoRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1515,6 +1600,32 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
     }
   }
 
+  async function encaminharParaArea() {
+    if (!textoAcao.trim() || !areaEncaminhar) return;
+    setEnviando(true);
+    setErroAcao(null);
+    try {
+      const r = await fetch(`/api/helpdesk/chamados/${chamado!.id}/encaminhar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ areaPara: areaEncaminhar, motivo: textoAcao.trim() }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.error ?? `HTTP ${r.status}`);
+      if (data.chamado) {
+        setChamados(prev => prev.map(c => (c.id === chamado!.id ? data.chamado : c)));
+      }
+      setTextoAcao('');
+      setAreaEncaminhar('');
+      setModoAcao(null);
+      setMenuAcaoAberto(false);
+    } catch (e) {
+      setErroAcao(e instanceof Error ? e.message : String(e));
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   async function enviarParaProdam() {
     if (!textoAcao.trim()) return;
     setEnviando(true);
@@ -1564,6 +1675,39 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
     }
   }
 
+  const solicitacaoAcesso = chamado.solicitacaoAcesso;
+  const podeNegarAcesso =
+    solicitacaoAcesso?.statusAutorizacao === 'aguardando' &&
+    !!usuarioLogadoId &&
+    solicitacaoAcesso.responsavelAutorizacao === usuarioLogadoId;
+
+  async function negarSolicitacaoAcesso() {
+    if (!motivoNegacaoAcesso.trim()) {
+      setErroAcao('Informe o motivo da negativa');
+      return;
+    }
+    setEnviando(true);
+    setErroAcao(null);
+    try {
+      const r = await fetch(`/api/helpdesk/acesso-sistemas/chamados/${chamado!.id}/negar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo: motivoNegacaoAcesso }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.error ?? `HTTP ${r.status}`);
+      if (data.chamado) {
+        setChamados(prev => prev.map(c => (c.id === chamado!.id ? data.chamado : c)));
+      }
+      setModoNegarAcesso(false);
+      setMotivoNegacaoAcesso('');
+    } catch (e) {
+      setErroAcao(e instanceof Error ? e.message : String(e));
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   async function enviarAvaliacao(avaliacao: number) {
     if (avaliacao < 1 || avaliacao > 5) return;
     setEnviando(true);
@@ -1591,7 +1735,7 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <button style={BTN_GHOST} onClick={() => navTo('chamados')}>← Voltar</button>
-        <span style={{ fontSize: 13, color: '#7A8499' }}>Chamados</span>
+        <span style={{ fontSize: 13, color: '#7A8499' }}>{areaFiltro ? labelTipoChamado(areaFiltro) : 'Chamados'}</span>
         <span style={{ fontSize: 13, color: '#7A8499' }}>/</span>
         <span style={{ fontSize: 13, fontWeight: 600 }}>#{chamado.id}</span>
       </div>
@@ -1607,6 +1751,12 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   <StatusBadge status={chamado.status} />
                   <PrioridadeBadge prioridade={chamado.prioridade} />
+                  <AreaBadge area={chamado.areaAtual} />
+                  {chamado.areaOrigem !== chamado.areaAtual && (
+                    <span style={{ fontSize: 11, color: '#7A8499' }}>
+                      (aberto em {labelTipoChamado(chamado.areaOrigem)})
+                    </span>
+                  )}
                   <span style={{ fontSize: 12, color: '#7A8499' }}>#{chamado.id}</span>
                   <span style={{ fontSize: 12, color: '#7A8499' }}>·</span>
                   <span style={{ fontSize: 12, color: '#7A8499' }}>{fmtData(chamado.abertura)}</span>
@@ -1621,6 +1771,15 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
             {!isTecnico && chamado.status === 'resolvido' && isResponsavelChamado && (
               <div style={{ marginTop: 10, fontSize: 12, color: '#0A328D', background: '#EAF0FE', border: '1px solid #D2DDF9', borderRadius: 10, padding: '8px 12px' }}>
                 Aguardando sua confirmação da solução. {prazoConfirmacao ?? ''}
+              </div>
+            )}
+            {solicitacaoAcesso?.statusAutorizacao === 'aguardando' && (
+              <div style={{ marginTop: 10, fontSize: 12, color: '#7A5700', background: '#FEF3CD', border: '1px solid #F5D76E', borderRadius: 10, padding: '8px 12px' }}>
+                Aguardando autorização de{' '}
+                <strong>{solicitacaoAcesso.responsavelAutorizacaoNome ?? 'coordenador/diretor'}</strong>.
+                {podeNegarAcesso
+                  ? ' Você pode negar abaixo se não autorizar; sem negativa em 7 dias, a solicitação será autorizada automaticamente.'
+                  : ' Sem negativa do responsável em 7 dias, a solicitação será autorizada automaticamente.'}
               </div>
             )}
           </div>
@@ -1718,7 +1877,7 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
                         color: isSolucao ? GLPI_SOLUCAO.fg : isProdam ? prodamMeta.corText : isInterna ? '#5C4000' : bolhaAzulTecnico ? '#fff' : '#1B2336',
                         border: isSolucao ? `1px solid ${GLPI_SOLUCAO.border}` : isProdam ? `1px solid #DCC7EE` : isInterna ? '1px dashed #F5D76E' : bolhaAzulTecnico ? 'none' : isMensagemInicialSolicitante ? '1px solid #e2f2e3' : '1px solid #E8EBF1',
                         borderRadius: isSolucao || isProdam ? 14 : alinhamentoDireita ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                        padding: '10px 14px', fontSize: 13, lineHeight: 1.5,
+                        padding: '10px 14px', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap',
                       }}>
                         {item.texto}
                         {item.anexos && item.anexos.length > 0 && (
@@ -1835,6 +1994,54 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
                   </>
                 )}
 
+                {modoAcao === 'encaminhar' && (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1B2336' }}>Encaminhar para outra área</div>
+                    <p style={{ fontSize: 12, color: '#7A8499', margin: 0, lineHeight: 1.5 }}>
+                      Use quando o chamado foi aberto na área errada ou precisar de atuação de outra equipe.
+                      Área atual: <strong>{labelTipoChamado(chamado.areaAtual)}</strong>.
+                    </p>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#4A5468' }}>
+                      Área de destino
+                      <select
+                        value={areaEncaminhar}
+                        onChange={e => setAreaEncaminhar(e.target.value as TipoChamado | '')}
+                        style={{ ...INPUT_STYLE, width: '100%', marginTop: 6 }}
+                      >
+                        <option value="">Selecione a área...</option>
+                        {TIPOS_CHAMADO.filter(t => t !== chamado.areaAtual).map(t => (
+                          <option key={t} value={t}>{TIPO_CHAMADO_META[t].label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <textarea
+                      value={textoAcao}
+                      onChange={e => setTextoAcao(e.target.value)}
+                      placeholder="Descreva o motivo do encaminhamento..."
+                      rows={4}
+                      autoFocus
+                      style={{ ...INPUT_STYLE, resize: 'vertical', fontFamily: 'inherit', background: '#F4F5F9' }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <button type="button" style={BTN_GHOST} onClick={() => { setModoAcao(null); setTextoAcao(''); setAreaEncaminhar(''); }}>
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={encaminharParaArea}
+                        disabled={!textoAcao.trim() || !areaEncaminhar || enviando}
+                        style={{
+                          ...BTN_PRIMARY,
+                          background: '#4A5468',
+                          opacity: textoAcao.trim() && areaEncaminhar && !enviando ? 1 : 0.5,
+                        }}
+                      >
+                        {enviando ? 'Encaminhando...' : 'Confirmar encaminhamento'}
+                      </button>
+                    </div>
+                  </>
+                )}
+
                 {modoAcao === 'prodam' && (
                   <>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#1B2336' }}>Enviar para Aguardando PRODAM</div>
@@ -1919,6 +2126,28 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
                       background: '#fff', border: '1px solid #E8EBF1', borderRadius: 8,
                       boxShadow: '0 4px 16px rgba(20,30,55,0.12)', overflow: 'hidden',
                     }}>
+                      {!isClosed && chamado.status !== 'resolvido' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuAcaoAberto(false);
+                            setModoAcao('encaminhar');
+                            setTextoAcao('');
+                            setAreaEncaminhar('');
+                          }}
+                          style={{
+                            width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '11px 14px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                            background: '#EEF2F7', color: '#1B2336', fontSize: 13, fontWeight: 600,
+                          }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A5468" strokeWidth="2.5">
+                            <path d="m17 2 4 4-4 4" /><path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+                            <path d="m7 22-4-4 4-4" /><path d="M21 13v1a4 4 0 0 1-4 4H3" />
+                          </svg>
+                          Encaminhar para outra área
+                        </button>
+                      )}
                       {chamado.status !== 'prodam' && (
                         <button
                           type="button"
@@ -2079,9 +2308,21 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
           <div style={CARD_STYLE}>
             <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Informações</div>
             {[
-              { label: 'Categoria', value: chamado.categoria },
-              { label: 'Unidade', value: chamado.unidade },
-              { label: 'Abertura', value: fmtData(chamado.abertura) },
+            ...(solicitacaoAcesso ? [
+              { label: 'Beneficiário', value: `${solicitacaoAcesso.nomeBeneficiario} (RF ${solicitacaoAcesso.rfBeneficiario})` },
+              { label: 'Sistema', value: solicitacaoAcesso.sistema },
+              { label: 'Permissão', value: solicitacaoAcesso.permissao },
+              { label: 'Coord./Divisão', value: solicitacaoAcesso.coordenadoria ?? solicitacaoAcesso.unidade },
+              ...(solicitacaoAcesso.observacao ? [{ label: 'Observação', value: solicitacaoAcesso.observacao }] : []),
+              { label: 'Responsável', value: solicitacaoAcesso.responsavelAutorizacaoNome ?? '—' },
+              { label: 'Autorização', value: solicitacaoAcesso.statusAutorizacao === 'aguardando' ? 'Aguardando' : solicitacaoAcesso.statusAutorizacao === 'negado' ? 'Negada' : 'Autorizada' },
+              ...(solicitacaoAcesso.motivoNegacao ? [{ label: 'Motivo negativa', value: solicitacaoAcesso.motivoNegacao }] : []),
+            ] : []),
+            { label: 'Área atual', value: labelTipoChamado(chamado.areaAtual) },
+            { label: 'Área de abertura', value: labelTipoChamado(chamado.areaOrigem) },
+            { label: 'Categoria', value: chamado.categoria },
+            { label: 'Unidade', value: chamado.unidade },
+            { label: 'Abertura', value: fmtData(chamado.abertura) },
             ].map(row => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F2F4F8', fontSize: 13 }}>
                 <span style={{ color: '#7A8499', fontWeight: 500 }}>{row.label}</span>
@@ -2095,7 +2336,71 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
                 <div style={{ fontSize: 13, color: '#1B2336', lineHeight: 1.5 }}>{chamado.resolucao}</div>
               </div>
             )}
+
+            {podeNegarAcesso && (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #F2F4F8' }}>
+                {!modoNegarAcesso ? (
+                  <button
+                    type="button"
+                    style={{ ...BTN_GHOST, width: '100%', justifyContent: 'center', color: '#B42318', borderColor: '#FECDCA' }}
+                    onClick={() => setModoNegarAcesso(true)}
+                  >
+                    Negar solicitação
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <textarea
+                      value={motivoNegacaoAcesso}
+                      onChange={e => setMotivoNegacaoAcesso(e.target.value)}
+                      placeholder="Motivo da negativa (obrigatório)"
+                      rows={3}
+                      style={{ ...INPUT_STYLE, resize: 'vertical', fontFamily: 'inherit' }}
+                    />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        style={{ ...BTN_GHOST, flex: 1, justifyContent: 'center' }}
+                        onClick={() => { setModoNegarAcesso(false); setMotivoNegacaoAcesso(''); }}
+                        disabled={enviando}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        style={{ ...BTN_PRIMARY, flex: 1, justifyContent: 'center', background: '#B42318', opacity: enviando ? 0.7 : 1 }}
+                        onClick={() => negarSolicitacaoAcesso()}
+                        disabled={enviando}
+                      >
+                        Confirmar negativa
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          {(chamado.encaminhamentos?.length ?? 0) > 0 && (
+            <div style={CARD_STYLE}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Encaminhamentos</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[...(chamado.encaminhamentos ?? [])].reverse().map(enc => {
+                  const autorEnc = usuarioPorId(enc.autor);
+                  return (
+                    <div key={enc.id} style={{ background: '#FAFBFD', borderRadius: 8, padding: 12, fontSize: 12 }}>
+                      <div style={{ fontWeight: 700, color: '#1B2336', marginBottom: 4 }}>
+                        {labelTipoChamado(enc.areaDe)} → {labelTipoChamado(enc.areaPara)}
+                      </div>
+                      <div style={{ color: '#4A5468', lineHeight: 1.5, marginBottom: 6 }}>{enc.motivo}</div>
+                      <div style={{ color: '#7A8499' }}>
+                        {autorEnc?.nome ?? '—'} · {fmtDataCurta(enc.data)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Linked item */}
           {item && (
@@ -2125,8 +2430,11 @@ function ViewChamadoDetalhe({ navTo, chamados, setChamados, activeId, usuarioPor
 
 function ViewNovoChamado({
   navTo, setChamados, usuarios, usuarioPorId, usuarioLogadoId,
-  unidades, categorias, categoriasPai, itensPatrimonio,
+  unidades, categorias, categoriasPai, itensPatrimonio, areaFiltro,
 }: ViewProps) {
+  const tipoArea = areaFiltro ?? 'suporte_tecnico';
+  const areaMeta = TIPO_CHAMADO_META[tipoArea];
+  const precisaComputador = exigeComputadorNaAbertura(tipoArea);
   const usuarioLogado = usuarioLogadoId ? usuarioPorId(usuarioLogadoId) : null;
   const isTecnico = usuarioLogado?.perfil === 'TEC' || usuarioLogado?.perfil === 'ADM';
 
@@ -2165,6 +2473,11 @@ function ViewNovoChamado({
   const [salvando, setSalvando] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const categoriasPaiFiltradas = useMemo(() => {
+    const filtradas = categoriasPai.filter(p => categoriaCompativelComArea(p, tipoArea));
+    return filtradas.length > 0 ? filtradas : categoriasPai;
+  }, [categoriasPai, tipoArea]);
+
   const filhos = useMemo(() => {
     return categorias
       .filter(c => c.pai === categoriaPai && c.filho !== null)
@@ -2182,11 +2495,15 @@ function ViewNovoChamado({
   );
 
   const computadores = useMemo(
-    () => itensPatrimonio.filter(i => isTipoComputador(i.tipo)),
-    [itensPatrimonio]
+    () =>
+      itensPatrimonio.filter(
+        (i) => isTipoComputador(i.tipo) && normalizarStatusItem(i.statusitem) === 'Ativo',
+      ),
+    [itensPatrimonio],
   );
 
   useEffect(() => {
+    if (!precisaComputador) return;
     const solId = solicitanteEfetivo?.id;
     if (!solId) {
       setItemSelecionado(null);
@@ -2194,7 +2511,7 @@ function ViewNovoChamado({
     }
     const associado = computadores.find(c => c.servidorId === solId);
     setItemSelecionado(associado ?? null);
-  }, [solicitanteEfetivo?.id, computadores]);
+  }, [solicitanteEfetivo?.id, computadores, precisaComputador]);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -2222,7 +2539,7 @@ function ViewNovoChamado({
     if (precisaSubcategoria && !categoriaFilho) errs.push('Selecione a subcategoria');
     if (!categoriaId) errs.push('Categoria inválida');
     if (paraOutraPessoa && !solicitanteSelecionado) errs.push('Selecione o solicitante');
-    if (!itemSelecionado) {
+    if (precisaComputador && !itemSelecionado) {
       setErrors([...errs, 'Computador é obrigatório']);
       return;
     }
@@ -2258,7 +2575,8 @@ function ViewNovoChamado({
           solicitanteId: solId,
           abertoEmNomeDeId: emNomeDe?.id ?? null,
           telefone: telefone.trim() || undefined,
-          itemId: computadorSelecionado.idbem,
+          itemId: computadorSelecionado?.idbem ?? null,
+          areaAtual: tipoArea,
           observadorIds,
         }),
       });
@@ -2299,7 +2617,7 @@ function ViewNovoChamado({
       <div style={{ padding: 24, maxWidth: 760 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
           <button style={BTN_GHOST} onClick={() => navTo('chamados')}>← Voltar</button>
-          <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Novo Chamado</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Novo Chamado — {areaMeta.label}</h1>
         </div>
         <p style={{ fontSize: 13, color: '#7A8499' }}>
           {usuarioLogadoId === null ? 'Carregando seus dados...' : 'Usuário logado não encontrado na base do helpdesk.'}
@@ -2312,7 +2630,11 @@ function ViewNovoChamado({
     <div style={{ padding: 24, maxWidth: 760 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
         <button style={BTN_GHOST} onClick={() => navTo('chamados')}>← Voltar</button>
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Novo Chamado</h1>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Novo Chamado</h1>
+          <p style={{ fontSize: 13, color: '#7A8499', margin: '4px 0 0' }}>{areaMeta.descricao}</p>
+        </div>
+        <AreaBadge area={tipoArea} />
       </div>
 
       {errors.length > 0 && (
@@ -2440,7 +2762,7 @@ function ViewNovoChamado({
                 <label style={LABEL}>Categoria *</label>
                 <select style={INPUT_STYLE} value={categoriaPai} onChange={e => { setCategoriaPai(e.target.value); setCategoriaFilho(''); }}>
                   <option value="">Selecione a categoria...</option>
-                  {categoriasPai.map(p => <option key={p} value={p}>{p}</option>)}
+                  {categoriasPaiFiltradas.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
 
@@ -2474,9 +2796,9 @@ function ViewNovoChamado({
                 </div>
               </div>
 
-              {/* Computador — autocomplete/pesquisa */}
+              {/* Computador — obrigatório apenas em Suporte Técnico */}
               <div>
-                <label style={LABEL}>Computador *</label>
+                <label style={LABEL}>Computador{precisaComputador ? ' *' : ' (opcional)'}</label>
                 {itemSelecionado && solicitanteEfetivo && itemSelecionado.servidorId === solicitanteEfetivo.id && (
                   <div style={{ fontSize: 11, color: '#5CC9BD', marginBottom: 6 }}>
                     Preenchido automaticamente com o computador vinculado ao solicitante.
@@ -2493,7 +2815,7 @@ function ViewNovoChamado({
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ fontWeight: 600, fontSize: 13 }}>{it.patrimonio}</span>
-                        <span style={{ fontSize: 11, color: it.statusitem === 'Ativo' ? '#0F4F4A' : '#7A3A0B', background: it.statusitem === 'Ativo' ? '#D1EBE8' : '#FCE5D0', padding: '1px 7px', borderRadius: 10, fontWeight: 600 }}>{it.statusitem}</span>
+                        <StatusItemBadge status={it.statusitem} />
                       </div>
                       <div style={{ fontSize: 12, color: '#4A5468' }}>{it.descsbpm}</div>
                       <div style={{ fontSize: 11, color: '#7A8499' }}>
@@ -2583,50 +2905,136 @@ function ViewNovoChamado({
 
 // ─── VIEW: Inventário ─────────────────────────────────────────────────────────
 
-function ViewInventario({ navTo }: ViewProps) {
+function InventarioItemDetalheExpandido({ item }: { item: ItemPatrimonio }) {
+  const campos = [
+    { label: 'Descrição', value: item.descsbpm || '—' },
+    { label: 'Nº de Série', value: item.numserie || '—' },
+    { label: 'Marca / Modelo', value: textoMarcaModelo(item) },
+    { label: 'CIM BPM', value: item.cimbpm || '—' },
+    { label: 'Localização', value: item.localizacao },
+    { label: 'Servidor responsável', value: item.servidor === '—' ? '—' : item.servidor },
+    ...(item.nomeRede ? [{ label: 'Nome na rede', value: item.nomeRede }] : []),
+  ];
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+      gap: '10px 24px',
+      padding: '12px 14px 14px 42px',
+      background: '#F8F9FF',
+      borderTop: '1px solid #E8EBF1',
+    }}>
+      {campos.map(c => (
+        <div key={c.label} style={{ fontSize: 12 }}>
+          <span style={{ color: '#7A8499', fontWeight: 600, display: 'block', marginBottom: 2 }}>{c.label}</span>
+          <span style={{ color: '#1B2336', fontWeight: 500 }}>{c.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ViewInventario({ navTo, itensPatrimonio, unidades, usuarios, numToUuid, usuarioLogadoId, usuarioPorId, baixas }: ViewProps) {
   const [search, setSearch] = useState('');
   const [tabTipo, setTabTipo] = useState<string>('Todos');
+  const [tabStatus, setTabStatus] = useState<string>('Todos');
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const tipos = ['Todos', ...Array.from(new Set(ITENS.map(i => i.tipo))).sort()];
+  const itens = itensPatrimonio.length > 0 ? itensPatrimonio : ITENS;
+  const unidadeOptions = buildUnidadeOptions(unidades);
+  const usuarioOptions = buildUsuarioOptions(usuarios, numToUuid);
+  const usuarioLogadoNome = usuarioLogadoId
+    ? usuarioPorId(usuarioLogadoId)?.nome
+    : undefined;
+
+  const tipos = ['Todos', ...Array.from(new Set(itens.map(i => i.tipo))).sort()];
 
   const filtered = useMemo(() => {
-    return ITENS.filter(i => {
-      const matchSearch = !search || i.descsbpm.toLowerCase().includes(search.toLowerCase()) ||
-        i.patrimonio.includes(search) || i.localizacao.toLowerCase().includes(search.toLowerCase()) ||
+    return itens.filter(i => {
+      const matchSearch = !search || i.patrimonio.includes(search) ||
+        i.tipo.toLowerCase().includes(search.toLowerCase()) ||
+        i.marca.toLowerCase().includes(search.toLowerCase()) ||
+        i.modelo.toLowerCase().includes(search.toLowerCase()) ||
+        i.localizacao.toLowerCase().includes(search.toLowerCase()) ||
         i.servidor.toLowerCase().includes(search.toLowerCase());
       const matchTipo = tabTipo === 'Todos' || i.tipo === tabTipo;
-      return matchSearch && matchTipo;
+      const matchStatus = tabStatus === 'Todos' || normalizarStatusItem(i.statusitem) === tabStatus;
+      return matchSearch && matchTipo && matchStatus;
     });
-  }, [search, tabTipo]);
+  }, [search, tabTipo, tabStatus, itens]);
 
-  const counts: Record<string, number> = { Todos: ITENS.length };
-  tipos.forEach(t => { if (t !== 'Todos') counts[t] = ITENS.filter(i => i.tipo === t).length; });
+  const counts: Record<string, number> = { Todos: itens.length };
+  tipos.forEach(t => { if (t !== 'Todos') counts[t] = itens.filter(i => i.tipo === t).length; });
 
-  const ativos = ITENS.filter(i => i.statusitem === 'Ativo').length;
-  const manutencao = ITENS.filter(i => i.statusitem === 'Manutenção').length;
+  const countsStatus: Record<string, number> = { Todos: itens.length };
+  FILTROS_STATUS_INVENTARIO.forEach(f => {
+    if (f.key !== 'Todos') {
+      countsStatus[f.key] = itens.filter(i => normalizarStatusItem(i.statusitem) === f.key).length;
+    }
+  });
+
+  const ativos = countsStatus['Ativo'] ?? 0;
+  const estoque = countsStatus['Estoque'] ?? 0;
+  const manutencao = countsStatus['Manutenção'] ?? 0;
+  const baixados = (countsStatus['Baixado'] ?? 0) + (countsStatus['Descartado'] ?? 0) + (countsStatus['Para Descarte'] ?? 0);
 
   return (
     <div style={{ padding: 24 }}>
       <PageHeader
         title="Patrimônio de TI"
-        sub={`${ITENS.length} itens cadastrados`}
+        sub={`${itens.length} itens cadastrados`}
         action={
-          <button style={BTN_PRIMARY}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
-            Novo Item
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" style={BTN_GHOST} onClick={() => navTo('termos')}>
+              Termos
+            </button>
+            <PatrimonioNovoItemButton
+              unidades={unidadeOptions}
+              usuarios={usuarioOptions}
+              trigger={
+                <button type="button" style={BTN_PRIMARY}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
+                  Novo Item
+                </button>
+              }
+            />
+          </div>
         }
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-        <KpiCard label="Total de Itens" value={ITENS.length} cor="#0A328D" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 24 }}>
+        <KpiCard label="Total de Itens" value={itens.length} cor="#0A328D" />
         <KpiCard label="Ativos" value={ativos} cor="#5CC9BD" />
+        <KpiCard label="Em Estoque" value={estoque} cor="#0A328D" />
         <KpiCard label="Em Manutenção" value={manutencao} cor="#E56E14" />
-        <KpiCard label="Tipos" value={tipos.length - 1} cor="#EDBA94" />
+        <KpiCard label="Baixados / Descarte" value={baixados} cor="#8A93A6" />
       </div>
 
       <div style={CARD_STYLE}>
-        {/* Tabs */}
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#7A8499', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+          Filtrar por status
+        </div>
+        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #E8EBF1', marginBottom: 16, flexWrap: 'wrap' }}>
+          {FILTROS_STATUS_INVENTARIO.map(f => (
+            <button key={f.key} onClick={() => setTabStatus(f.key)} style={{
+              border: 'none', background: 'none', cursor: 'pointer', padding: '8px 14px', fontSize: 13,
+              fontWeight: tabStatus === f.key ? 700 : 500,
+              color: tabStatus === f.key ? '#0A328D' : '#7A8499',
+              borderBottom: tabStatus === f.key ? '2px solid #0A328D' : '2px solid transparent',
+              marginBottom: -1,
+            }}>
+              {f.label}
+              <span style={{ marginLeft: 5, fontSize: 11, background: tabStatus === f.key ? '#D9E1F4' : '#F2F4F8', color: tabStatus === f.key ? '#0A328D' : '#7A8499', borderRadius: 10, padding: '1px 7px', fontWeight: 600 }}>
+                {countsStatus[f.key] ?? 0}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#7A8499', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+          Filtrar por tipo
+        </div>
         <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #E8EBF1', marginBottom: 16, flexWrap: 'wrap' }}>
           {tipos.map(t => (
             <button key={t} onClick={() => setTabTipo(t)} style={{
@@ -2645,47 +3053,95 @@ function ViewInventario({ navTo }: ViewProps) {
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <SearchInput value={search} onChange={setSearch} placeholder="Buscar por patrimônio, descrição, localização, servidor..." />
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar por patrimônio, tipo, marca, modelo, localização..." />
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
           <thead>
             <tr>
-              {['Patrimônio', 'Tipo', 'Descrição', 'Marca/Modelo', 'Localização', 'Servidor', 'Status'].map(h => (
-                <th key={h} style={{ ...TABLE_TH, textAlign: 'left' }}>{h}</th>
+              <th style={{ ...TABLE_TH, width: 36 }} />
+              {['Patrimônio', 'Tipo', 'Marca', 'Modelo', 'Localização', 'Status', 'Ações'].map(h => (
+                <th key={h} style={{ ...TABLE_TH, textAlign: 'left', ...(h === 'Ações' ? { whiteSpace: 'nowrap' } : {}) }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: '#7A8499', fontSize: 14 }}>Nenhum item encontrado.</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 32, color: '#7A8499', fontSize: 14 }}>Nenhum item encontrado.</td></tr>
             )}
-            {filtered.map(i => (
-              <tr key={i.idbem} style={{ borderTop: '1px solid #F2F4F8', cursor: 'pointer' }}
-                onClick={() => navTo('item-detalhe', i.idbem)}
-                onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFD')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#0A328D' }}>{i.patrimonio}</td>
-                <td style={{ padding: '10px 14px', fontSize: 12, color: '#7A8499' }}>{i.tipo}</td>
-                <td style={{ padding: '10px 14px', fontSize: 13, maxWidth: 200 }}>
-                  <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, fontWeight: 600 }}>{i.descsbpm}</div>
-                </td>
-                <td style={{ padding: '10px 14px', fontSize: 12 }}>{i.marca} {i.modelo}</td>
-                <td style={{ padding: '10px 14px', fontSize: 12, color: '#7A8499' }}>{i.localizacao}</td>
-                <td style={{ padding: '10px 14px', fontSize: 12 }}>{i.servidor === '—' ? <span style={{ color: '#7A8499' }}>—</span> : i.servidor}</td>
-                <td style={{ padding: '10px 14px' }}>
-                  <span style={{
-                    fontSize: 12, fontWeight: 600, borderRadius: 20, padding: '3px 10px',
-                    background: i.statusitem === 'Ativo' ? '#D1EBE8' : '#FCE5D0',
-                    color: i.statusitem === 'Ativo' ? '#0F4F4A' : '#7A3A0B',
-                  }}>
-                    {i.statusitem}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {filtered.map(i => {
+              const expanded = expandedId === i.idbem;
+              return (
+                <Fragment key={i.idbem}>
+                  <tr
+                    style={{
+                      borderTop: '1px solid #F2F4F8',
+                      background: expanded ? '#FAFBFD' : undefined,
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => { if (!expanded) (e.currentTarget.style.background = '#FAFBFD'); }}
+                    onMouseLeave={e => { if (!expanded) (e.currentTarget.style.background = ''); }}
+                  >
+                    <td style={{ padding: '10px 8px 10px 14px', verticalAlign: 'middle' }}>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(expanded ? null : i.idbem)}
+                        title={expanded ? 'Recolher detalhes' : 'Expandir detalhes'}
+                        style={{
+                          border: 'none', background: 'none', cursor: 'pointer', padding: 4,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <svg
+                          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A8499" strokeWidth="2"
+                          style={{ display: 'block', transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+                        >
+                          <path d="M6 9l6 6 6-6" />
+                        </svg>
+                      </button>
+                    </td>
+                    <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#0A328D' }}>
+                      <button
+                        type="button"
+                        onClick={() => navTo('item-detalhe', i.idbem)}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0, font: 'inherit', color: 'inherit', fontWeight: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}
+                      >
+                        {i.patrimonio}
+                      </button>
+                    </td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#7A8499' }}>{i.tipo}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12 }}>{i.marca || '—'}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12 }}>{i.modelo || '—'}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#7A8499' }}>{i.localizacao}</td>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                      <StatusItemBadge status={i.statusitem} />
+                    </td>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                      <InventarioItemAcoes
+                        item={i}
+                        unidades={unidadeOptions}
+                        usuarios={usuarioOptions}
+                        numToUuid={numToUuid}
+                        usuarioLogadoNome={usuarioLogadoNome}
+                        baixas={baixas}
+                        inline
+                      />
+                    </td>
+                  </tr>
+                  {expanded && (
+                    <tr>
+                      <td colSpan={8} style={{ padding: 0 }}>
+                        <InventarioItemDetalheExpandido item={i} />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
@@ -2693,8 +3149,8 @@ function ViewInventario({ navTo }: ViewProps) {
 
 // ─── VIEW: Item Detalhe ───────────────────────────────────────────────────────
 
-function ViewItemDetalhe({ navTo, chamados, activeId }: ViewProps) {
-  const item = ITENS.find(i => i.idbem === activeId);
+function ViewItemDetalhe({ navTo, chamados, activeId, itensPatrimonio, unidades, usuarios, numToUuid, usuarioLogadoId, usuarioPorId, transferencias, baixas, statusHistorico }: ViewProps) {
+  const item = itemPorIdFrom(itensPatrimonio, activeId!) ?? ITENS.find(i => i.idbem === activeId);
 
   if (!item) {
     return (
@@ -2706,6 +3162,19 @@ function ViewItemDetalhe({ navTo, chamados, activeId }: ViewProps) {
   }
 
   const chamadosItem = chamados.filter(c => c.item === item.idbem);
+  const unidadeOptions = buildUnidadeOptions(unidades);
+  const usuarioOptions = buildUsuarioOptions(usuarios, numToUuid);
+  const usuarioLogadoNome = usuarioLogadoId
+    ? usuarioPorId(usuarioLogadoId)?.nome
+    : undefined;
+  const baixasItem = baixas.filter(b => b.idItem === item.idbem);
+  const historicoItem = statusHistorico.filter(h => h.idItem === item.idbem);
+  const transferenciasItem = transferencias
+    .filter(t => t.itens.some(i => i.idItem === item.idbem))
+    .map(t => ({
+      ...t,
+      itemTransf: t.itens.find(i => i.idItem === item.idbem)!,
+    }));
 
   return (
     <div style={{ padding: 24 }}>
@@ -2725,17 +3194,22 @@ function ViewItemDetalhe({ navTo, chamados, activeId }: ViewProps) {
                 <h2 style={{ fontSize: 17, fontWeight: 800, margin: '0 0 6px' }}>{item.descsbpm}</h2>
                 <span style={{ fontSize: 12, color: '#7A8499', background: '#F2F4F8', padding: '2px 10px', borderRadius: 12 }}>{item.tipo}</span>
               </div>
-              <span style={{
-                fontSize: 12, fontWeight: 600, borderRadius: 20, padding: '4px 12px',
-                background: item.statusitem === 'Ativo' ? '#D1EBE8' : '#FCE5D0',
-                color: item.statusitem === 'Ativo' ? '#0F4F4A' : '#7A3A0B',
-              }}>{item.statusitem}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                <StatusItemBadge status={item.statusitem} />
+                <InventarioItemAcoes
+                  item={item}
+                  unidades={unidadeOptions}
+                  usuarios={usuarioOptions}
+                  numToUuid={numToUuid}
+                  usuarioLogadoNome={usuarioLogadoNome}
+                  baixas={baixas}
+                />
+              </div>
             </div>
             {[
               { label: 'Nº Patrimônio', value: item.patrimonio },
               { label: 'Nº de Série', value: item.numserie || '—' },
-              { label: 'Marca', value: item.marca || '—' },
-              { label: 'Modelo', value: item.modelo || '—' },
+              { label: 'Marca/Modelo', value: textoMarcaModelo(item) },
               { label: 'CIM BPM', value: item.cimbpm || '—' },
               { label: 'Localização', value: item.localizacao },
               { label: 'Servidor responsável', value: item.servidor },
@@ -2774,23 +3248,82 @@ function ViewItemDetalhe({ navTo, chamados, activeId }: ViewProps) {
             )}
           </div>
 
-          {/* Movement history (simulated) */}
-          <div style={CARD_STYLE}>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>Histórico de Movimentação</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { data: '15/05/2026', evento: `Transferido para ${item.localizacao}`, responsavel: 'Patrícia Alves' },
-                { data: '01/01/2024', evento: 'Item cadastrado no sistema', responsavel: 'Ricardo Lima' },
-              ].map((h, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, paddingBottom: 10, borderBottom: i < 1 ? '1px solid #F2F4F8' : 'none' }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0A328D', marginTop: 5, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{h.evento}</div>
-                    <div style={{ fontSize: 11, color: '#7A8499' }}>{h.data} · {h.responsavel}</div>
-                  </div>
+          {baixasItem.length > 0 && (
+            <div style={CARD_STYLE}>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>Registro de Baixa</div>
+              {baixasItem.map(b => (
+                <div key={b.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { label: 'Data da baixa', value: fmtData(b.dataBaixa) },
+                    { label: 'Baixado por', value: b.usuarioBaixa },
+                    { label: 'Documento SBPM', value: b.documentoSbpm },
+                    { label: 'Observações', value: b.observacao || '—' },
+                  ].map(row => (
+                    <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F2F4F8', fontSize: 13 }}>
+                      <span style={{ color: '#7A8499', fontWeight: 500 }}>{row.label}</span>
+                      <span style={{ fontWeight: 600, textAlign: 'right', maxWidth: '60%' }}>{row.value}</span>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
+          )}
+
+          <div style={CARD_STYLE}>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>Histórico de Status ({historicoItem.length})</div>
+            {historicoItem.length === 0 ? (
+              <div style={{ fontSize: 13, color: '#7A8499', padding: '12px 0' }}>Nenhuma alteração de status registrada.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {historicoItem.map((h, i) => (
+                  <div key={h.id} style={{ display: 'flex', gap: 12, paddingBottom: 10, borderBottom: i < historicoItem.length - 1 ? '1px solid #F2F4F8' : 'none' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: metaStatusItem(h.statusNovo).corText, marginTop: 5, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        {h.statusAnterior ? (
+                          <>
+                            <StatusItemBadge status={h.statusAnterior} />
+                            <span style={{ fontSize: 12, color: '#7A8499' }}>→</span>
+                          </>
+                        ) : null}
+                        <StatusItemBadge status={h.statusNovo} />
+                      </div>
+                      <div style={{ fontSize: 12, color: '#4A5468', marginTop: 4 }}>{h.motivo}</div>
+                      <div style={{ fontSize: 11, color: '#7A8499', marginTop: 3 }}>
+                        {fmtData(h.criadoEm)} · {h.usuario}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={CARD_STYLE}>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>Histórico de Transferências</div>
+            {transferenciasItem.length === 0 ? (
+              <div style={{ fontSize: 13, color: '#7A8499', padding: '12px 0' }}>Nenhuma transferência registrada para este item.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {transferenciasItem.map((t, i) => (
+                  <div key={t.id} style={{ display: 'flex', gap: 12, paddingBottom: 10, borderBottom: i < transferenciasItem.length - 1 ? '1px solid #F2F4F8' : 'none' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0A328D', marginTop: 5, flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>
+                        Transferido para {t.unidadeDestino}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#4A5468', marginTop: 2 }}>
+                        {t.itemTransf.servidorAnterior} → {t.itemTransf.servidorAtual}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#7A8499', marginTop: 3 }}>
+                        {fmtData(t.dataTransferencia)} · Doc. {t.cimbpm}
+                        {t.observacao ? ` · ${t.observacao}` : ''}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2798,10 +3331,83 @@ function ViewItemDetalhe({ navTo, chamados, activeId }: ViewProps) {
   );
 }
 
-// ─── VIEW: Transferências ─────────────────────────────────────────────────────
+// ─── VIEW: Movimentações ──────────────────────────────────────────────────────
 
-function ViewTransferencias({ navTo, transferencias, usuarioPorId }: ViewProps) {
+const TH_STYLE: React.CSSProperties = {
+  padding: '10px 14px',
+  textAlign: 'left',
+  fontSize: 11,
+  fontWeight: 700,
+  color: '#7A8499',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  whiteSpace: 'nowrap',
+};
+
+const TD_STYLE: React.CSSProperties = {
+  padding: '12px 14px',
+  fontSize: 13,
+  color: '#1B2336',
+  verticalAlign: 'middle',
+};
+
+function ViewMovimentacoes({ navTo, transferencias, baixas, statusHistorico, usuarioPorId, itensPatrimonio, initialAbaMovimentacao }: ViewProps) {
+  const [aba, setAba] = useState<AbaMovimentacao>(initialAbaMovimentacao ?? 'transferencia');
+
+  const tabs: Array<{ key: AbaMovimentacao; label: string; count: number }> = [
+    { key: 'transferencia', label: 'Transferência', count: transferencias.length },
+    { key: 'baixa', label: 'Baixa', count: baixas.length },
+    { key: 'status', label: 'Status', count: statusHistorico.length },
+  ];
+
+  return (
+    <div style={{ padding: 24 }}>
+      <PageHeader
+        title="Movimentações"
+        sub={`${transferencias.length + baixas.length + statusHistorico.length} registros`}
+        action={aba === 'transferencia' ? (
+          <button style={BTN_PRIMARY} onClick={() => navTo('nova-transferencia')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
+            Nova Transferência
+          </button>
+        ) : undefined}
+      />
+
+      <div style={{ ...CARD_STYLE, marginBottom: 24, padding: '12px 16px 0' }}>
+        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #E8EBF1' }}>
+          {tabs.map(t => (
+            <button key={t.key} onClick={() => setAba(t.key)} style={{
+              border: 'none', background: 'none', cursor: 'pointer', padding: '8px 14px', fontSize: 13,
+              fontWeight: aba === t.key ? 700 : 500,
+              color: aba === t.key ? '#0A328D' : '#7A8499',
+              borderBottom: aba === t.key ? '2px solid #0A328D' : '2px solid transparent',
+              marginBottom: -1,
+            }}>
+              {t.label}
+              <span style={{ marginLeft: 5, fontSize: 11, background: aba === t.key ? '#D9E1F4' : '#F2F4F8', color: aba === t.key ? '#0A328D' : '#7A8499', borderRadius: 10, padding: '1px 7px', fontWeight: 600 }}>
+                {t.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {aba === 'transferencia' && (
+        <ConteudoTransferencias transferencias={transferencias} usuarioPorId={usuarioPorId} itensPatrimonio={itensPatrimonio} />
+      )}
+      {aba === 'baixa' && (
+        <ConteudoBaixas baixas={baixas} navTo={navTo} />
+      )}
+      {aba === 'status' && (
+        <ConteudoStatusHistorico statusHistorico={statusHistorico} navTo={navTo} />
+      )}
+    </div>
+  );
+}
+
+function ConteudoTransferencias({ transferencias, usuarioPorId, itensPatrimonio }: Pick<ViewProps, 'transferencias' | 'usuarioPorId' | 'itensPatrimonio'>) {
   const [search, setSearch] = useState('');
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const filtered = useMemo(() => {
     return transferencias.filter(t =>
@@ -2813,19 +3419,12 @@ function ViewTransferencias({ navTo, transferencias, usuarioPorId }: ViewProps) 
 
   const totalItens = transferencias.reduce((s, t) => s + t.itens.length, 0);
 
-  return (
-    <div style={{ padding: 24 }}>
-      <PageHeader
-        title="Transferências"
-        sub={`${transferencias.length} registros`}
-        action={
-          <button style={BTN_PRIMARY} onClick={() => navTo('nova-transferencia')}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
-            Nova Transferência
-          </button>
-        }
-      />
+  function itemLocal(id: number) {
+    return itensPatrimonio.find(i => i.idbem === id) ?? null;
+  }
 
+  return (
+    <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
         <KpiCard label="Total de Transferências" value={transferencias.length} cor="#0A328D" />
         <KpiCard label="Itens Movimentados" value={totalItens} cor="#5CC9BD" />
@@ -2836,100 +3435,362 @@ function ViewTransferencias({ navTo, transferencias, usuarioPorId }: ViewProps) 
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar por CIM, unidade, observação..." />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {filtered.length === 0 && (
-          <div style={{ ...CARD_STYLE, textAlign: 'center', padding: 32, color: '#7A8499', fontSize: 14 }}>Nenhuma transferência encontrada.</div>
+      <div style={CARD_STYLE}>
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 32, color: '#7A8499', fontSize: 14 }}>
+            Nenhuma transferência encontrada.
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #E8EBF1' }}>
+                <th style={TH_STYLE}>CIM</th>
+                <th style={TH_STYLE}>Data</th>
+                <th style={TH_STYLE}>Destino</th>
+                <th style={{ ...TH_STYLE, textAlign: 'center' }}>Itens</th>
+                <th style={TH_STYLE}>Registrado por</th>
+                <th style={TH_STYLE}>Observação</th>
+                <th style={{ ...TH_STYLE, width: 32 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(t => {
+                const reg = usuarioPorId(t.idUsuarioRegistro);
+                const expanded = expandedId === t.id;
+                return (
+                  <Fragment key={t.id}>
+                    <tr
+                      onClick={() => setExpandedId(expanded ? null : t.id)}
+                      style={{
+                        borderBottom: expanded ? 'none' : '1px solid #F2F4F8',
+                        cursor: 'pointer',
+                        background: expanded ? '#F8F9FF' : undefined,
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      <td style={{ ...TD_STYLE, fontWeight: 700, color: '#0A328D' }}>{t.cimbpm}</td>
+                      <td style={{ ...TD_STYLE, color: '#4A5468', whiteSpace: 'nowrap' }}>{fmtData(t.dataTransferencia)}</td>
+                      <td style={TD_STYLE}>{t.unidadeDestino}</td>
+                      <td style={{ ...TD_STYLE, textAlign: 'center' }}>
+                        <span style={{ background: '#D9E1F4', color: '#0A328D', borderRadius: 12, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>
+                          {t.itens.length}
+                        </span>
+                      </td>
+                      <td style={{ ...TD_STYLE, color: '#4A5468' }}>{reg?.nome || '—'}</td>
+                      <td style={{ ...TD_STYLE, color: '#7A8499', maxWidth: 220 }}>
+                        <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {t.observacao || '—'}
+                        </span>
+                      </td>
+                      <td style={{ ...TD_STYLE, paddingRight: 16 }}>
+                        <svg
+                          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A8499" strokeWidth="2"
+                          style={{ display: 'block', transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+                        >
+                          <path d="M6 9l6 6 6-6" />
+                        </svg>
+                      </td>
+                    </tr>
+                    {expanded && (
+                      <tr style={{ borderBottom: '1px solid #F2F4F8' }}>
+                        <td colSpan={7} style={{ padding: '0 14px 14px' }}>
+                          <div style={{ background: '#F4F5F9', borderRadius: 10, padding: 12 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#7A8499', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                              Itens transferidos
+                            </div>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                              <thead>
+                                <tr style={{ borderBottom: '1px solid #E8EBF1' }}>
+                                  <th style={{ ...TH_STYLE, fontSize: 10 }}>Patrimônio</th>
+                                  <th style={{ ...TH_STYLE, fontSize: 10 }}>Marca/Modelo</th>
+                                  <th style={{ ...TH_STYLE, fontSize: 10 }}>Servidor anterior</th>
+                                  <th style={{ ...TH_STYLE, fontSize: 10 }}>Servidor atual</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {t.itens.map(ti => {
+                                  const it = itemLocal(ti.idItem);
+                                  const patrimonio = ti.patrimonio || it?.patrimonio || `#${ti.idItem}`;
+                                  const equipamento = it
+                                    ? rotuloEquipamentoTransferencia(it)
+                                    : (ti.descricao || '—');
+                                  return (
+                                    <tr key={ti.id} style={{ borderBottom: '1px solid #EAEDF2' }}>
+                                      <td style={{ ...TD_STYLE, fontSize: 12, fontWeight: 700, color: '#0A328D' }}>{patrimonio}</td>
+                                      <td style={{ ...TD_STYLE, fontSize: 12, color: '#4A5468' }}>{equipamento}</td>
+                                      <td style={{ ...TD_STYLE, fontSize: 12, color: '#7A8499' }}>{ti.servidorAnterior}</td>
+                                      <td style={{ ...TD_STYLE, fontSize: 12, color: '#1B2336' }}>{ti.servidorAtual}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         )}
-        {filtered.map(t => {
-          const reg = usuarioPorId(t.idUsuarioRegistro);
-          return (
-            <div key={t.id} style={CARD_STYLE}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: '#0A328D' }}>{t.cimbpm}</span>
-                    <span style={{ fontSize: 12, background: '#D9E1F4', color: '#0A328D', borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>
-                      {t.itens.length} item(ns)
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 13, color: '#4A5468', marginBottom: 2 }}>
-                    <span style={{ fontWeight: 600 }}>Destino:</span> {t.unidadeDestino}
-                  </div>
-                  {t.observacao && <div style={{ fontSize: 12, color: '#7A8499' }}>{t.observacao}</div>}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 12, color: '#7A8499' }}>{fmtData(t.dataTransferencia)}</div>
-                  <div style={{ fontSize: 11, color: '#7A8499', marginTop: 2 }}>Registrado por {reg?.nome || '—'}</div>
-                </div>
-              </div>
-              <div style={{ borderTop: '1px solid #F2F4F8', paddingTop: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#7A8499', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Itens</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {t.itens.map(ti => {
-                    const it = itemPorId(ti.idItem);
-                    return (
-                      <div key={ti.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#FAFBFD', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
-                        <span style={{ fontWeight: 700, color: '#0A328D', minWidth: 100 }}>{it?.patrimonio || `#${ti.idItem}`}</span>
-                        <span style={{ color: '#4A5468', flex: 1 }}>{it?.descsbpm || '—'}</span>
-                        <span style={{ color: '#7A8499' }}>{ti.servidorAnterior} → {ti.servidorAtual}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          );
-        })}
       </div>
-    </div>
+    </>
+  );
+}
+
+function ConteudoStatusHistorico({
+  statusHistorico,
+  navTo,
+}: Pick<ViewProps, 'statusHistorico' | 'navTo'>) {
+  const [search, setSearch] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<string>('Todos');
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return statusHistorico.filter(h => {
+      const matchStatus = filtroStatus === 'Todos' || h.statusNovo === filtroStatus;
+      const matchSearch = !search ||
+        h.patrimonio.toLowerCase().includes(q) ||
+        h.descricao.toLowerCase().includes(q) ||
+        h.usuario.toLowerCase().includes(q) ||
+        h.motivo.toLowerCase().includes(q) ||
+        h.statusNovo.toLowerCase().includes(q) ||
+        h.statusAnterior.toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+  }, [statusHistorico, search, filtroStatus]);
+
+  const countsStatus: Record<string, number> = { Todos: statusHistorico.length };
+  FILTROS_STATUS_INVENTARIO.forEach(f => {
+    if (f.key !== 'Todos') {
+      countsStatus[f.key] = statusHistorico.filter(h => h.statusNovo === f.key).length;
+    }
+  });
+
+  const itensUnicos = new Set(statusHistorico.map(h => h.idItem)).size;
+
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+        <KpiCard label="Total de Alterações" value={statusHistorico.length} cor="#0A328D" />
+        <KpiCard label="Itens Afetados" value={itensUnicos} cor="#5CC9BD" />
+        <KpiCard label="Última Alteração" value={statusHistorico[0] ? fmtDataCurta(statusHistorico[0].criadoEm) : '—'} cor="#EDBA94" />
+      </div>
+
+      <div style={{ ...CARD_STYLE, marginBottom: 16, padding: '12px 16px 0' }}>
+        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #E8EBF1', flexWrap: 'wrap' }}>
+          {FILTROS_STATUS_INVENTARIO.map(f => (
+            <button key={f.key} onClick={() => setFiltroStatus(f.key)} style={{
+              border: 'none', background: 'none', cursor: 'pointer', padding: '8px 14px', fontSize: 13,
+              fontWeight: filtroStatus === f.key ? 700 : 500,
+              color: filtroStatus === f.key ? '#0A328D' : '#7A8499',
+              borderBottom: filtroStatus === f.key ? '2px solid #0A328D' : '2px solid transparent',
+              marginBottom: -1,
+            }}>
+              {f.label}
+              <span style={{ marginLeft: 5, fontSize: 11, background: filtroStatus === f.key ? '#D9E1F4' : '#F2F4F8', color: filtroStatus === f.key ? '#0A328D' : '#7A8499', borderRadius: 10, padding: '1px 7px', fontWeight: 600 }}>
+                {countsStatus[f.key] ?? 0}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar por patrimônio, motivo, usuário, status..." />
+      </div>
+
+      <div style={CARD_STYLE}>
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 32, color: '#7A8499', fontSize: 14 }}>
+            Nenhuma alteração de status encontrada.
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #E8EBF1' }}>
+                <th style={TH_STYLE}>Patrimônio</th>
+                <th style={TH_STYLE}>Data</th>
+                <th style={TH_STYLE}>De → Para</th>
+                <th style={TH_STYLE}>Motivo</th>
+                <th style={TH_STYLE}>Alterado por</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(h => (
+                <tr
+                  key={h.id}
+                  onClick={() => navTo('item-detalhe', h.idItem)}
+                  style={{ borderBottom: '1px solid #F2F4F8', cursor: 'pointer', transition: 'background 0.15s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = '#F8F9FF'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = ''; }}
+                >
+                  <td style={{ ...TD_STYLE, fontWeight: 700, color: '#0A328D' }}>{h.patrimonio}</td>
+                  <td style={{ ...TD_STYLE, color: '#4A5468', whiteSpace: 'nowrap' }}>{fmtData(h.criadoEm)}</td>
+                  <td style={TD_STYLE}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      {h.statusAnterior ? <StatusItemBadge status={h.statusAnterior} /> : <span style={{ fontSize: 12, color: '#7A8499' }}>—</span>}
+                      <span style={{ fontSize: 12, color: '#7A8499' }}>→</span>
+                      <StatusItemBadge status={h.statusNovo} />
+                    </div>
+                  </td>
+                  <td style={{ ...TD_STYLE, color: '#7A8499', maxWidth: 280 }}>
+                    <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {h.motivo || '—'}
+                    </span>
+                  </td>
+                  <td style={{ ...TD_STYLE, color: '#4A5468' }}>{h.usuario || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
+  );
+}
+
+function ConteudoBaixas({ baixas, navTo }: Pick<ViewProps, 'baixas' | 'navTo'>) {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return baixas.filter(b =>
+      !search ||
+      b.patrimonio.toLowerCase().includes(q) ||
+      b.descricao.toLowerCase().includes(q) ||
+      b.usuarioBaixa.toLowerCase().includes(q) ||
+      b.documentoSbpm.toLowerCase().includes(q) ||
+      b.observacao.toLowerCase().includes(q)
+    );
+  }, [baixas, search]);
+
+  const itensUnicos = new Set(baixas.map(b => b.idItem)).size;
+
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+        <KpiCard label="Total de Baixas" value={baixas.length} cor="#0A328D" />
+        <KpiCard label="Itens Baixados" value={itensUnicos} cor="#8A93A6" />
+        <KpiCard label="Última Baixa" value={baixas[0] ? fmtDataCurta(baixas[0].dataBaixa) : '—'} cor="#EDBA94" />
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar por patrimônio, documento, responsável..." />
+      </div>
+
+      <div style={CARD_STYLE}>
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 32, color: '#7A8499', fontSize: 14 }}>
+            Nenhuma baixa encontrada.
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #E8EBF1' }}>
+                <th style={TH_STYLE}>Patrimônio</th>
+                <th style={TH_STYLE}>Descrição</th>
+                <th style={TH_STYLE}>Data</th>
+                <th style={TH_STYLE}>Baixado por</th>
+                <th style={TH_STYLE}>Documento SBPM</th>
+                <th style={TH_STYLE}>Observação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(b => (
+                <tr
+                  key={b.id}
+                  onClick={() => navTo('item-detalhe', b.idItem)}
+                  style={{ borderBottom: '1px solid #F2F4F8', cursor: 'pointer', transition: 'background 0.15s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = '#F8F9FF'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = ''; }}
+                >
+                  <td style={{ ...TD_STYLE, fontWeight: 700, color: '#0A328D' }}>{b.patrimonio}</td>
+                  <td style={{ ...TD_STYLE, color: '#4A5468', maxWidth: 220 }}>
+                    <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {b.descricao || '—'}
+                    </span>
+                  </td>
+                  <td style={{ ...TD_STYLE, color: '#4A5468', whiteSpace: 'nowrap' }}>{fmtData(b.dataBaixa)}</td>
+                  <td style={{ ...TD_STYLE, color: '#4A5468' }}>{b.usuarioBaixa || '—'}</td>
+                  <td style={{ ...TD_STYLE, fontWeight: 600, color: '#1B2336' }}>{b.documentoSbpm || '—'}</td>
+                  <td style={{ ...TD_STYLE, color: '#7A8499', maxWidth: 220 }}>
+                    <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {b.observacao || '—'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
   );
 }
 
 // ─── VIEW: Nova Transferência (wizard) ────────────────────────────────────────
 
-function ViewNovaTransferencia({ navTo, transferencias, setTransferencias, unidades }: ViewProps) {
+function ViewNovaTransferencia({ navTo, setTransferencias, unidades, itensPatrimonio }: ViewProps) {
   const [step, setStep] = useState(1);
   const [unidadeId, setUnidadeId] = useState('');
   const [observacao, setObservacao] = useState('');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [servidores, setServidores] = useState<Record<number, string>>({});
   const [searchItem, setSearchItem] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
   const unidade = unidades.find(u => String(u.id) === unidadeId);
 
   const itemsFiltrados = useMemo(() => {
-    return ITENS.filter(i =>
-      !searchItem || i.descsbpm.toLowerCase().includes(searchItem.toLowerCase()) ||
-      i.patrimonio.includes(searchItem)
+    const q = searchItem.toLowerCase();
+    return itensPatrimonio.filter(i =>
+      !searchItem ||
+      i.patrimonio.includes(searchItem) ||
+      i.tipo.toLowerCase().includes(q) ||
+      i.marca.toLowerCase().includes(q) ||
+      i.modelo.toLowerCase().includes(q) ||
+      i.descsbpm.toLowerCase().includes(q) ||
+      i.localizacao.toLowerCase().includes(q)
     );
-  }, [searchItem]);
+  }, [itensPatrimonio, searchItem]);
 
   function toggleItem(id: number) {
     setSelectedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
 
-  function confirmar() {
-    const newId = Math.max(...transferencias.map(t => t.id)) + 1;
-    const novaTransf: Transferencia = {
-      id: newId,
-      cimbpm: `TRF-2026-${String(newId).padStart(4, '0')}`,
-      dataTransferencia: new Date().toISOString(),
-      idUsuarioRegistro: 1,
-      idUnidadeDestino: unidadeId,
-      unidadeDestino: unidade?.full || '',
-      observacao,
-      itens: selectedItems.map((idIt, i) => {
-        const it = itemPorId(idIt);
-        return {
-          id: i + 1,
-          idItem: idIt,
-          servidorAnterior: it?.servidor || '—',
-          servidorAtual: servidores[idIt] || '—',
-        };
-      }),
-    };
-    setTransferencias(prev => [novaTransf, ...prev]);
-    navTo('transferencias');
+  async function confirmar() {
+    setSalvando(true);
+    setErroSalvar(null);
+    try {
+      const res = await fetch('/api/helpdesk/transferencias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          unidadeId,
+          observacao,
+          itens: selectedItems.map(idIt => {
+            const it = itemPorIdFrom(itensPatrimonio, idIt);
+            return {
+              idItem: idIt,
+              servidorAnterior: it?.servidor || '—',
+              servidorAtual: servidores[idIt] || '—',
+            };
+          }),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? `HTTP ${res.status}`);
+      setTransferencias(prev => [data.transferencia, ...prev]);
+      navTo('movimentacoes');
+    } catch (err) {
+      setErroSalvar(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSalvando(false);
+    }
   }
 
   const steps = ['Destino', 'Itens', 'Servidores', 'Confirmação'];
@@ -2937,7 +3798,7 @@ function ViewNovaTransferencia({ navTo, transferencias, setTransferencias, unida
   return (
     <div style={{ padding: 24, maxWidth: 720 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button style={BTN_GHOST} onClick={() => navTo('transferencias')}>← Voltar</button>
+        <button style={BTN_GHOST} onClick={() => navTo('movimentacoes')}>← Voltar</button>
         <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Nova Transferência</h1>
       </div>
 
@@ -2991,8 +3852,13 @@ function ViewNovaTransferencia({ navTo, transferencias, setTransferencias, unida
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Selecionar Itens</h3>
-            <SearchInput value={searchItem} onChange={setSearchItem} placeholder="Buscar patrimônio ou descrição..." />
+            <SearchInput value={searchItem} onChange={setSearchItem} placeholder="Buscar por patrimônio, tipo, marca ou modelo..." />
             <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid #E8EBF1', borderRadius: 8 }}>
+              {itemsFiltrados.length === 0 && (
+                <div style={{ textAlign: 'center', padding: 24, color: '#7A8499', fontSize: 13 }}>
+                  {itensPatrimonio.length === 0 ? 'Nenhum item de patrimônio cadastrado.' : 'Nenhum item encontrado.'}
+                </div>
+              )}
               {itemsFiltrados.map(i => (
                 <div key={i.idbem}
                   onClick={() => toggleItem(i.idbem)}
@@ -3009,8 +3875,8 @@ function ViewNovaTransferencia({ navTo, transferencias, setTransferencias, unida
                     {selectedItems.includes(i.idbem) && <span style={{ color: '#fff', fontSize: 11, lineHeight: 1 }}>✓</span>}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{i.descsbpm}</div>
-                    <div style={{ fontSize: 11, color: '#7A8499' }}>{i.patrimonio} · {i.localizacao}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0A328D' }}>{i.patrimonio || '—'}</div>
+                    <div style={{ fontSize: 11, color: '#7A8499' }}>{rotuloEquipamentoTransferencia(i)}</div>
                   </div>
                 </div>
               ))}
@@ -3029,10 +3895,13 @@ function ViewNovaTransferencia({ navTo, transferencias, setTransferencias, unida
             <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Responsáveis / Servidores</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {selectedItems.map(id => {
-                const it = itemPorId(id);
+                const it = itemPorIdFrom(itensPatrimonio, id);
                 return (
                   <div key={id} style={{ background: '#FAFBFD', borderRadius: 8, padding: 12 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{it?.descsbpm}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                      <span style={{ color: '#0A328D' }}>{it?.patrimonio || '—'}</span>
+                      {it ? <span style={{ color: '#4A5468', fontWeight: 500 }}> — {rotuloEquipamentoTransferencia(it)}</span> : null}
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                       <div>
                         <label style={{ fontSize: 11, color: '#7A8499', display: 'block', marginBottom: 4 }}>Servidor Anterior</label>
@@ -3081,18 +3950,23 @@ function ViewNovaTransferencia({ navTo, transferencias, setTransferencias, unida
             </div>
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Itens a transferir:</div>
             {selectedItems.map(id => {
-              const it = itemPorId(id);
+              const it = itemPorIdFrom(itensPatrimonio, id);
               return (
                 <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#FAFBFD', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
                   <span style={{ fontWeight: 700, color: '#0A328D', minWidth: 100 }}>{it?.patrimonio}</span>
-                  <span style={{ color: '#4A5468', flex: 1 }}>{it?.descsbpm}</span>
+                  <span style={{ color: '#4A5468', flex: 1 }}>{it ? rotuloEquipamentoTransferencia(it) : '—'}</span>
                   <span style={{ color: '#7A8499' }}>{it?.servidor} → {servidores[id] || '—'}</span>
                 </div>
               );
             })}
+            {erroSalvar && (
+              <div style={{ color: '#C0392B', fontSize: 13 }}>{erroSalvar}</div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-              <button style={BTN_GHOST} onClick={() => setStep(3)}>← Anterior</button>
-              <button style={BTN_PRIMARY} onClick={confirmar}>Confirmar Transferência</button>
+              <button style={BTN_GHOST} onClick={() => setStep(3)} disabled={salvando}>← Anterior</button>
+              <button style={BTN_PRIMARY} onClick={confirmar} disabled={salvando}>
+                {salvando ? 'Salvando...' : 'Confirmar Transferência'}
+              </button>
             </div>
           </div>
         )}
@@ -3198,15 +4072,66 @@ function ViewUsuarios({ navTo, usuarios }: ViewProps) {
 
 // ─── VIEW: Relatórios ─────────────────────────────────────────────────────────
 
-function ViewRelatorios({ chamados, usuarios }: ViewProps) {
-  // Chamados by status
+type TabRelatorio = 'geral' | TipoChamado;
+
+function RelatorioTempoAtendimento({ chamados, cor }: { chamados: Chamado[]; cor: string }) {
+  const metricas = useMemo(() => metricasTempoAtendimento(chamados), [chamados]);
+
+  const medianaFmt = metricas.medianaMs !== null ? formatarDuracaoMs(metricas.medianaMs) : '—';
+  const mediaFmt = metricas.mediaMs !== null ? formatarDuracaoMs(metricas.mediaMs) : '—';
+  const prodamFmt = metricas.prodamMedianaMs !== null ? formatarDuracaoMs(metricas.prodamMedianaMs) : '—';
+
+  return (
+    <div style={{ ...CARD_STYLE, marginBottom: 20 }}>
+      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Tempo de atendimento</div>
+      <p style={{ fontSize: 12, color: '#7A8499', margin: '0 0 16px', lineHeight: 1.5 }}>
+        Da abertura até a resolução, descontando o período em Aguardando PRODAM.
+        A <strong>mediana</strong> indica o tempo típico; a média pode ser distorcida por casos excepcionais.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        <KpiCard
+          label="Tempo mediano"
+          value={medianaFmt}
+          cor={cor}
+          sub={metricas.amostra > 0 ? `${metricas.amostra} chamado(s) encerrado(s)` : 'Sem dados'}
+        />
+        <KpiCard label="Tempo médio" value={mediaFmt} cor="#8A93A6" sub="Pode incluir outliers" />
+        <KpiCard
+          label="Mediana em PRODAM"
+          value={prodamFmt}
+          cor="#9A68C0"
+          sub="Tempo descontado do atendimento"
+        />
+        <KpiCard
+          label="Chamados encerrados"
+          value={metricas.amostra}
+          cor="#0A328D"
+          sub={`de ${chamados.length} no período`}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RelatorioConteudoArea({
+  chamados,
+  usuarios,
+  titulo,
+  cor,
+  mostrarPatrimonio,
+}: {
+  chamados: Chamado[];
+  usuarios: Usuario[];
+  titulo: string;
+  cor: string;
+  mostrarPatrimonio?: boolean;
+}) {
   const statusData = (['aberto', 'atendimento', 'aguardando', 'prodam', 'resolvido', 'fechado'] as StatusChamado[]).map(s => ({
     nome: STATUS_META[s].label,
     valor: chamados.filter(c => c.status === s).length,
     cor: STATUS_META[s].cor,
   }));
 
-  // Chamados by category
   const catCount: Record<string, number> = {};
   chamados.forEach(c => {
     const p = c.categoria.split(' > ')[0];
@@ -3215,14 +4140,15 @@ function ViewRelatorios({ chamados, usuarios }: ViewProps) {
   const catData = Object.entries(catCount).sort((a, b) => b[1] - a[1]);
   const catMax = catData[0]?.[1] || 1;
 
-  // Technician stats
-  const tecStats = usuarios.filter(u => u.perfil === 'TEC' || u.perfil === 'ADM').map(u => {
-    const meus = chamados.filter(c => c.tecnicos.includes(u.id));
-    const resolvidos = meus.filter(c => c.status === 'resolvido' || c.status === 'fechado').length;
-    return { nome: u.nome, total: meus.length, resolvidos, emAndamento: meus.filter(c => c.status === 'atendimento').length };
-  }).filter(t => t.total > 0);
+  const tecStats = usuarios
+    .filter(u => u.perfil === 'TEC' || u.perfil === 'ADM')
+    .map(u => {
+      const meus = chamados.filter(c => c.tecnicos.includes(u.id));
+      const resolvidos = meus.filter(c => c.status === 'resolvido' || c.status === 'fechado').length;
+      return { nome: u.nome, total: meus.length, resolvidos, emAndamento: meus.filter(c => c.status === 'atendimento').length };
+    })
+    .filter(t => t.total > 0);
 
-  // Itens by type
   const tipoCount: Record<string, number> = {};
   ITENS.forEach(i => { tipoCount[i.tipo] = (tipoCount[i.tipo] || 0) + 1; });
   const tipoSegments = Object.entries(tipoCount).map(([nome, valor], idx) => ({
@@ -3230,79 +4156,76 @@ function ViewRelatorios({ chamados, usuarios }: ViewProps) {
   }));
 
   return (
-    <div style={{ padding: 24 }}>
-      <PageHeader title="Relatórios" sub="Análises e estatísticas do Help Desk" />
+    <>
+      <RelatorioTempoAtendimento chamados={chamados} cor={cor} />
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-        <KpiCard label="Total de Chamados" value={chamados.length} cor="#0A328D" />
-        <KpiCard label="Total de Itens" value={ITENS.length} cor="#5CC9BD" />
-        <KpiCard label="Técnicos Ativos" value={usuarios.filter(u => u.perfil === 'TEC').length} cor="#EDBA94" />
-        <KpiCard label="Transferências" value={TRANSF_INIT.length} cor="#E56E14" />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
-        {/* Chamados by category (bar chart) */}
+      <div style={{ display: 'grid', gridTemplateColumns: mostrarPatrimonio ? '1fr 1fr' : '1fr', gap: 20, marginBottom: 20 }}>
         <div style={CARD_STYLE}>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Chamados por Categoria</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {catData.map(([cat, count]) => (
-              <div key={cat}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                  <span style={{ color: '#4A5468', fontWeight: 500 }}>{cat}</span>
-                  <span style={{ fontWeight: 700 }}>{count}</span>
-                </div>
-                <div style={{ height: 8, background: '#F2F4F8', borderRadius: 4, overflow: 'hidden' }}>
-                  <div style={{ width: `${(count / catMax) * 100}%`, height: '100%', background: '#0A328D', borderRadius: 4 }} />
-                </div>
-              </div>
-            ))}
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
+            {titulo ? `Chamados por Categoria — ${titulo}` : 'Chamados por Categoria'}
           </div>
-        </div>
-
-        {/* Right: donut + status list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={CARD_STYLE}>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Patrimônio por Tipo</div>
-            <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-              <DonutChart segments={tipoSegments} total={ITENS.length} />
-              <div style={{ flex: 1 }}>
-                {tipoSegments.map(s => (
-                  <div key={s.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.cor, flexShrink: 0 }} />
-                      <span style={{ color: '#4A5468' }}>{s.nome}</span>
-                    </div>
-                    <span style={{ fontWeight: 700 }}>{s.valor}</span>
+          {catData.length === 0 ? (
+            <p style={{ fontSize: 13, color: '#7A8499', margin: 0 }}>Nenhum chamado nesta área.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {catData.map(([cat, count]) => (
+                <div key={cat}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                    <span style={{ color: '#4A5468', fontWeight: 500 }}>{cat}</span>
+                    <span style={{ fontWeight: 700 }}>{count}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div style={CARD_STYLE}>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Chamados por Status</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {statusData.map(s => (
-                <div key={s.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.cor }} />
-                    <span>{s.nome}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 80, height: 6, background: '#F2F4F8', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ width: `${(s.valor / chamados.length) * 100}%`, height: '100%', background: s.cor, borderRadius: 3 }} />
-                    </div>
-                    <span style={{ fontWeight: 700, minWidth: 16 }}>{s.valor}</span>
+                  <div style={{ height: 8, background: '#F2F4F8', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ width: `${(count / catMax) * 100}%`, height: '100%', background: cor, borderRadius: 4 }} />
                   </div>
                 </div>
               ))}
             </div>
+          )}
+        </div>
+
+        {mostrarPatrimonio && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={CARD_STYLE}>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Patrimônio por Tipo</div>
+              <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                <DonutChart segments={tipoSegments} total={ITENS.length} />
+                <div style={{ flex: 1 }}>
+                  {tipoSegments.map(s => (
+                    <div key={s.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.cor, flexShrink: 0 }} />
+                        <span style={{ color: '#4A5468' }}>{s.nome}</span>
+                      </div>
+                      <span style={{ fontWeight: 700 }}>{s.valor}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
+        )}
+      </div>
+
+      <div style={{ ...CARD_STYLE, marginBottom: 20 }}>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Chamados por Status</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {statusData.map(s => (
+            <div key={s.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.cor }} />
+                <span>{s.nome}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 80, height: 6, background: '#F2F4F8', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ width: `${chamados.length ? (s.valor / chamados.length) * 100 : 0}%`, height: '100%', background: s.cor, borderRadius: 3 }} />
+                </div>
+                <span style={{ fontWeight: 700, minWidth: 16 }}>{s.valor}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Technician table */}
       {tecStats.length > 0 && (
         <div style={CARD_STYLE}>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>Desempenho por Técnico</div>
@@ -3347,6 +4270,89 @@ function ViewRelatorios({ chamados, usuarios }: ViewProps) {
           </table>
         </div>
       )}
+    </>
+  );
+}
+
+function ViewRelatorios({ chamados, usuarios, transferencias }: ViewProps) {
+  const [tab, setTab] = useState<TabRelatorio>('geral');
+
+  const chamadosPorArea = useMemo(() => {
+    const mapa = Object.fromEntries(TIPOS_CHAMADO.map(t => [t, [] as Chamado[]])) as Record<TipoChamado, Chamado[]>;
+    chamados.forEach(c => {
+      const area = c.areaAtual ?? c.areaOrigem;
+      if (area && mapa[area]) mapa[area].push(c);
+    });
+    return mapa;
+  }, [chamados]);
+
+  const tabs: Array<{ key: TabRelatorio; label: string; count: number; cor: string }> = [
+    { key: 'geral', label: 'Visão geral', count: chamados.length, cor: '#0A328D' },
+    ...TIPOS_CHAMADO.map(t => ({
+      key: t as TabRelatorio,
+      label: TIPO_CHAMADO_META[t].label,
+      count: chamadosPorArea[t].length,
+      cor: TIPO_CHAMADO_META[t].cor,
+    })),
+  ];
+
+  const tabAtiva = tabs.find(t => t.key === tab) ?? tabs[0];
+  const chamadosTab = tab === 'geral' ? chamados : chamadosPorArea[tab];
+
+  return (
+    <div style={{ padding: 24 }}>
+      <PageHeader title="Relatórios" sub="Análises e estatísticas do Help Desk" />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+        <KpiCard label="Total de Chamados" value={chamados.length} cor="#0A328D" />
+        <KpiCard label="Total de Itens" value={ITENS.length} cor="#5CC9BD" />
+        <KpiCard label="Técnicos Ativos" value={usuarios.filter(u => u.perfil === 'TEC').length} cor="#EDBA94" />
+        <KpiCard label="Transferências" value={transferencias.length} cor="#E56E14" />
+      </div>
+
+      <div style={CARD_STYLE}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, borderBottom: '1px solid #E8EBF1', marginBottom: 20, paddingBottom: 0 }}>
+          {tabs.map(t => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              style={{
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                padding: '8px 14px',
+                fontSize: 13,
+                fontWeight: tab === t.key ? 700 : 500,
+                color: tab === t.key ? t.cor : '#7A8499',
+                borderBottom: tab === t.key ? `2px solid ${t.cor}` : '2px solid transparent',
+                marginBottom: -1,
+              }}
+            >
+              {t.label}
+              <span style={{
+                marginLeft: 5,
+                fontSize: 11,
+                background: tab === t.key ? `${t.cor}22` : '#F2F4F8',
+                color: tab === t.key ? t.cor : '#7A8499',
+                borderRadius: 10,
+                padding: '1px 7px',
+                fontWeight: 600,
+              }}>
+                {t.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <RelatorioConteudoArea
+          chamados={chamadosTab}
+          usuarios={usuarios}
+          titulo={tab === 'geral' ? '' : tabAtiva.label}
+          cor={tabAtiva.cor}
+          mostrarPatrimonio={tab === 'geral'}
+        />
+      </div>
     </div>
   );
 }

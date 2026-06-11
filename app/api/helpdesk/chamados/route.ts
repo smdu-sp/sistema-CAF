@@ -8,6 +8,7 @@ import {
   mapUsuarioApi,
 } from "@/lib/helpdesk/mappers";
 import { textoAbertura, textoFechamentoAutomatico } from "@/lib/helpdesk/eventos";
+import { processarAutorizacoesPendentesExpiradas } from "@/lib/helpdesk/acesso-sistemas/autorizar-solicitacao";
 import {
   montarMensagemInicialChamado,
   nomeMaquinaItemPatrimonio,
@@ -18,7 +19,12 @@ import {
   podeAbrirChamadosHelpdesk,
   podeSelecionarItemEmChamado,
 } from "@/lib/permissoes";
-import type { HdPrioridade } from "@/prisma/generated";
+import {
+  exigeComputadorNaAbertura,
+  isTipoChamado,
+  type TipoChamado,
+} from "@/lib/helpdesk/tipos-chamado";
+import type { HdPrioridade, HdTipoChamado } from "@/prisma/generated";
 
 const PRIORIDADES = new Set(["baixa", "media", "alta", "urgente"]);
 
@@ -42,6 +48,8 @@ export async function GET() {
         { status: 403 }
       );
     }
+
+    await processarAutorizacoesPendentesExpiradas();
 
     const limiteSemRetorno = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -94,7 +102,7 @@ export async function GET() {
     const carregarItens = podeSelecionarItemEmChamado(usuario.permissao) ||
       capacidades.patrimonio;
 
-    const [dbChamados, todosUsuariosDb, dbUnidades, dbCategorias, dbItens] =
+    const [dbChamados, todosUsuariosDb, dbUnidades, dbCategorias, dbItens, dbTransferencias, dbBaixas, dbStatusHistorico] =
       await Promise.all([
         incluirChamados
           ? prisma.hdChamado.findMany({
@@ -126,9 +134,43 @@ export async function GET() {
         }),
         carregarItens
           ? prisma.hdItemPatrimonio.findMany({
-              where: { statusitem: "Ativo" },
+              where: capacidades.patrimonio ? {} : { statusitem: "Ativo" },
               include: { unidade: true, servidor: true },
               orderBy: { patrimonio: "asc" },
+              take: 2000,
+            })
+          : Promise.resolve([]),
+        capacidades.patrimonio
+          ? prisma.hdTransferenciaCabecalho.findMany({
+              include: {
+                itens: {
+                  include: {
+                    item: { select: { patrimonio: true, descsbpm: true } },
+                  },
+                },
+                unidadeDestino: true,
+              },
+              orderBy: { dataTransferencia: "desc" },
+              take: 500,
+            })
+          : Promise.resolve([]),
+        capacidades.patrimonio
+          ? prisma.hdBaixaPatrimonio.findMany({
+              include: {
+                item: { select: { patrimonio: true, descsbpm: true } },
+                usuarioBaixa: { select: { id: true, nome: true } },
+              },
+              orderBy: { dataBaixa: "desc" },
+              take: 500,
+            })
+          : Promise.resolve([]),
+        capacidades.patrimonio
+          ? prisma.hdItemPatrimonioStatusHistorico.findMany({
+              include: {
+                item: { select: { patrimonio: true, descsbpm: true } },
+                usuario: { select: { id: true, nome: true } },
+              },
+              orderBy: { criadoEm: "desc" },
               take: 2000,
             })
           : Promise.resolve([]),
@@ -139,6 +181,9 @@ export async function GET() {
     dbItens.forEach((i) => {
       if (i.servidorId) userUuidSet.add(i.servidorId);
     });
+    dbTransferencias.forEach((t) => userUuidSet.add(t.idUsuarioRegistro));
+    dbBaixas.forEach((b) => userUuidSet.add(b.idUsuarioBaixa));
+    dbStatusHistorico.forEach((h) => userUuidSet.add(h.idUsuario));
 
     const { uuidToNum, numToUuid } = buildUserIdMaps(userUuidSet);
 
@@ -182,12 +227,56 @@ export async function GET() {
       numserie: i.numserie ?? "",
       marca: i.marca ?? "",
       modelo: i.modelo ?? "",
-      localizacao: i.unidade?.nome ?? "—",
+      localizacao: i.unidade?.sigla ?? i.unidade?.nome ?? "—",
+      unidadeId: i.unidadeId,
       servidor: i.servidor?.nome ?? "—",
       servidorId: i.servidorId ? (uuidToNum.get(i.servidorId) ?? null) : null,
       cimbpm: i.cimbpm ?? "",
       nomeRede: i.nomeRede ?? undefined,
       statusitem: i.statusitem,
+    }));
+
+    const baixas = dbBaixas.map((b) => ({
+      id: b.id,
+      idItem: b.idItem,
+      patrimonio: b.item.patrimonio ?? "",
+      descricao: b.item.descsbpm ?? "",
+      dataBaixa: b.dataBaixa.toISOString(),
+      idUsuarioBaixa: uuidToNum.get(b.idUsuarioBaixa) ?? 0,
+      usuarioBaixa: b.usuarioBaixa.nome,
+      documentoSbpm: b.documentoSbpm,
+      observacao: b.observacao ?? "",
+    }));
+
+    const statusHistorico = dbStatusHistorico.map((h) => ({
+      id: h.id,
+      idItem: h.idItem,
+      patrimonio: h.item.patrimonio ?? "",
+      descricao: h.item.descsbpm ?? "",
+      statusAnterior: h.statusAnterior ?? "",
+      statusNovo: h.statusNovo,
+      motivo: h.motivo,
+      idUsuario: uuidToNum.get(h.idUsuario) ?? 0,
+      usuario: h.usuario.nome,
+      criadoEm: h.criadoEm.toISOString(),
+    }));
+
+    const transferencias = dbTransferencias.map((t) => ({
+      id: t.id,
+      cimbpm: t.cimbpm,
+      observacao: t.observacao ?? "",
+      dataTransferencia: t.dataTransferencia.toISOString(),
+      idUsuarioRegistro: uuidToNum.get(t.idUsuarioRegistro) ?? 0,
+      idUnidadeDestino: t.idUnidadeDestino,
+      unidadeDestino: t.unidadeDestino.sigla ?? t.unidadeDestino.nome,
+      itens: t.itens.map((i) => ({
+        id: i.id,
+        idItem: i.idItem,
+        patrimonio: i.item.patrimonio ?? "",
+        descricao: i.item.descsbpm ?? "",
+        servidorAnterior: i.servidorAnterior ?? "—",
+        servidorAtual: i.servidorAtual ?? "—",
+      })),
     }));
 
     return NextResponse.json({
@@ -196,10 +285,14 @@ export async function GET() {
       usuarioLogadoId,
       perfilLogado: perfil,
       capacidades,
-      unidades: incluirChamados ? unidades : [],
+      unidades:
+        incluirChamados || capacidades.patrimonio ? unidades : [],
       categorias: incluirChamados ? categorias : [],
       categoriasPai: incluirChamados ? categoriasPai : [],
       itens,
+      transferencias,
+      baixas,
+      statusHistorico,
       numToUuid: Object.fromEntries(numToUuid),
     });
   } catch (err) {
@@ -244,6 +337,11 @@ export async function POST(request: NextRequest) {
       : null;
     const telefone =
       typeof body.telefone === "string" ? body.telefone.trim() : undefined;
+    const areaRaw =
+      typeof body.areaAtual === "string" ? body.areaAtual.trim() : "";
+    const areaAtual: TipoChamado = isTipoChamado(areaRaw)
+      ? areaRaw
+      : "suporte_tecnico";
     const itemId =
       body.itemId != null && body.itemId !== ""
         ? Number(body.itemId)
@@ -321,28 +419,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Categoria não encontrada" }, { status: 400 });
     }
 
-    if (!itemId || Number.isNaN(itemId)) {
+    const exigeItem = exigeComputadorNaAbertura(areaAtual);
+    if (exigeItem && (!itemId || Number.isNaN(itemId))) {
       return NextResponse.json(
-        { error: "Computador é obrigatório" },
+        { error: "Computador é obrigatório para esta área" },
         { status: 400 }
       );
     }
+
     const [item, solicitanteDb] = await Promise.all([
-      prisma.hdItemPatrimonio.findUnique({ where: { idbem: itemId } }),
+      itemId && !Number.isNaN(itemId)
+        ? prisma.hdItemPatrimonio.findUnique({ where: { idbem: itemId } })
+        : Promise.resolve(null),
       prisma.usuario.findUnique({
         where: { id: solicitanteUuid },
         select: { login: true },
       }),
     ]);
-    if (!item) {
-      return NextResponse.json({ error: "Computador inválido" }, { status: 400 });
+
+    if (exigeItem) {
+      if (!item) {
+        return NextResponse.json({ error: "Computador inválido" }, { status: 400 });
+      }
+      if ((item.tipo ?? "").trim().toLowerCase() !== "computador") {
+        return NextResponse.json(
+          { error: "Selecione um item do tipo Computador" },
+          { status: 400 }
+        );
+      }
+    } else if (itemId && !Number.isNaN(itemId) && !item) {
+      return NextResponse.json({ error: "Item patrimonial inválido" }, { status: 400 });
     }
-    if (item.tipo.trim().toLowerCase() !== "computador") {
-      return NextResponse.json(
-        { error: "Selecione um item do tipo Computador" },
-        { status: 400 }
-      );
-    }
+
     if (!solicitanteDb) {
       return NextResponse.json({ error: "Solicitante inválido" }, { status: 400 });
     }
@@ -350,7 +458,7 @@ export async function POST(request: NextRequest) {
     const textoMensagemInicial = montarMensagemInicialChamado({
       descricaoUsuario: descricao,
       loginUsuario: solicitanteDb.login,
-      nomeMaquina: nomeMaquinaItemPatrimonio(item),
+      nomeMaquina: item && item.tipo ? nomeMaquinaItemPatrimonio({ tipo: item.tipo, nomeRede: item.nomeRede }) : undefined,
       telefone,
       sala: unidade.sala,
     });
@@ -374,7 +482,9 @@ export async function POST(request: NextRequest) {
           telefone: telefone?.slice(0, 30) || null,
           unidadeId,
           categoriaId,
-          itemId: itemId || null,
+          itemId: itemId && !Number.isNaN(itemId) ? itemId : null,
+          areaOrigem: areaAtual as HdTipoChamado,
+          areaAtual: areaAtual as HdTipoChamado,
         },
       });
 

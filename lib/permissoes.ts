@@ -17,6 +17,8 @@ export type CapacidadesHelpdesk = {
   patrimonio: boolean;
   unidades: boolean;
   relatorios: boolean;
+  /** Cadastro de permissões por sistema e pontos focais */
+  gerenciarAcessoSistemas: boolean;
 };
 
 export function getCapacidadesHelpdesk(permissao: string): CapacidadesHelpdesk {
@@ -26,7 +28,13 @@ export function getCapacidadesHelpdesk(permissao: string): CapacidadesHelpdesk {
     patrimonio: podeAcessarPatrimonioHelpdesk(permissao),
     unidades: podeGerenciarUnidadesHelpdesk(permissao),
     relatorios: podeVerRelatoriosHelpdesk(permissao),
+    gerenciarAcessoSistemas: podeGerenciarAcessoSistemasHelpdesk(permissao),
   };
+}
+
+/** Catálogo de permissões e pontos focais de acesso a sistemas. */
+export function podeGerenciarAcessoSistemasHelpdesk(permissao: string): boolean {
+  return ["DEV", "ADM", "SUP"].includes(permissao);
 }
 
 /** Atribuir, resolver e operar chamados como técnico/supervisor. */

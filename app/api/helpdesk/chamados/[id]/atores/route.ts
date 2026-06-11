@@ -13,6 +13,8 @@ import {
   textoObservadorAdicionado,
   textoObservadorRemovido,
   textoRequerenteAlterado,
+  textoStatusAberto,
+  textoStatusAtendimento,
 } from "@/lib/helpdesk/eventos";
 import { getSessaoHelpdesk, isStaffPermissao } from "@/lib/helpdesk/session";
 
@@ -237,6 +239,32 @@ export async function PATCH(
                   nomePorUuid.get(id) ?? "usuário",
                   id === usuario.id
                 ),
+              },
+            });
+          }
+
+          const statusAtual = String(atual.status);
+          const novoStatus =
+            tecnicosFinal.length > 0 && statusAtual === "aberto"
+              ? "atendimento"
+              : tecnicosFinal.length === 0 && statusAtual === "atendimento"
+                ? "aberto"
+                : null;
+
+          if (novoStatus) {
+            await tx.hdChamado.update({
+              where: { id: chamadoId },
+              data: { status: novoStatus as "aberto" | "atendimento" },
+            });
+            await tx.hdChamadoEvento.create({
+              data: {
+                chamadoId,
+                tipo: "statusAlterado",
+                autorId: usuario.id,
+                texto:
+                  novoStatus === "atendimento"
+                    ? textoStatusAtendimento(nomeAutor)
+                    : textoStatusAberto(nomeAutor),
               },
             });
           }

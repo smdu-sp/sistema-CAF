@@ -61,6 +61,8 @@ model Usuario {
   hdBeneficiarioAcesso  HdSolicitacaoAcesso[]             @relation("hdBeneficiarioAcesso")
   hdNegadorAcesso       HdSolicitacaoAcesso[]             @relation("hdNegadorAcesso")
   permissoes    UsuarioPermissao[]
+  gpImportadorCargas    GpCargaMensal[]                   @relation("gpImportadorCargas")
+  gpUnidades            GpUsuarioUnidade[]                @relation("gpUsuarioUnidades")
 
   @@map("principal.usuarios")
 }
@@ -68,6 +70,7 @@ model Usuario {
 enum Modulo {
   reserva_salas
   avaliacao_limpeza
+  gestao_pessoas
 }
 
 model Permissao {

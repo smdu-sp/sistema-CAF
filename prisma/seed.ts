@@ -174,7 +174,28 @@ async function main() {
         nome: "reserva_salas.usuarios.excluir",
         modulo: "reserva_salas"
       },
-    ]
+      {
+        nome: "gestao_pessoas.modulo.visualizar",
+        modulo: "gestao_pessoas",
+        descricao: "Acesso ao módulo Gestão de Pessoas",
+      },
+      {
+        nome: "gestao_pessoas.importacao.executar",
+        modulo: "gestao_pessoas",
+        descricao: "Importar carga mensal SIGPEG",
+      },
+      {
+        nome: "gestao_pessoas.folha_ponto.imprimir",
+        modulo: "gestao_pessoas",
+        descricao: "Imprimir folha de frequência individual",
+      },
+      {
+        nome: "gestao_pessoas.permissoes.gerenciar",
+        modulo: "gestao_pessoas",
+        descricao: "Gerenciar vínculos usuário-unidade",
+      },
+    ],
+    skipDuplicates: true,
   });
   console.log("Seed: usuário x577988 (USR) criado/atualizado.");
 

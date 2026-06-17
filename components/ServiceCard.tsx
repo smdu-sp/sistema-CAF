@@ -1,5 +1,5 @@
 import { listarPermissoes } from "@/services/permissoes";
-import { ArrowRight, CalendarSearch, ClipboardCheck } from "lucide-react";
+import { ArrowRight, CalendarSearch, ClipboardCheck, Users } from "lucide-react";
 import Link from "next/link";
 
 interface IModulo {
@@ -27,6 +27,14 @@ const modulos = [
     href: "/avaliacao-limpeza",
     icon: ClipboardCheck,
     permissao: "avaliacao_limpeza.avaliacoes.visualizar",
+  },
+  {
+    nome: "gestao-pessoas",
+    titulo: "Gestão de Pessoas",
+    descricao: "Folha de ponto (FFI), carga SIGPEG e permissões por unidade.",
+    href: "/gestao-pessoas",
+    icon: Users,
+    permissao: "gestao_pessoas.modulo.visualizar",
   }
 ]
 

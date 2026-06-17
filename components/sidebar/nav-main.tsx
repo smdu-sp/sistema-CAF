@@ -35,7 +35,7 @@ import {
   podeAdministrarSistema,
 } from "@/lib/permissoes";
 import Link from "../link";
-import { listarPermissoes, verificarDesenvolvedor } from "@/services/permissoes/";
+import { listarPermissoes } from "@/services/permissoes/";
 
 export async function NavMain() {
   const session = await auth();
@@ -46,6 +46,16 @@ export async function NavMain() {
   const mostraHelpDesk =
     podeAcessarAreaChamadosHelpdesk(permissao) ||
     podeAcessarPatrimonioHelpdesk(permissao);
+
+  let permissoesModulos: string[] = [];
+  try {
+    permissoesModulos = await listarPermissoes();
+  } catch {
+    permissoesModulos = [];
+  }
+  const mostraGestaoPessoas = permissoesModulos.includes(
+    "gestao_pessoas.modulo.visualizar",
+  );
 
   return (
     <SidebarContent>
@@ -165,7 +175,7 @@ export async function NavMain() {
         <SidebarGroupLabel>Geral</SidebarGroupLabel>
         <SidebarMenu>
           <SidebarMenuItem>
-            <Link href="/home">
+            <Link href="/">
               <House className="size-4" />
               <span>Página Inicial</span>
             </Link>
@@ -182,6 +192,14 @@ export async function NavMain() {
               <span>Avaliação de Limpeza</span>
             </Link>
           </SidebarMenuItem>
+          {mostraGestaoPessoas ? (
+          <SidebarMenuItem>
+            <Link href="/gestao-pessoas">
+              <Users className="size-4" />
+              <span>Gestão de Pessoas</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
         </SidebarMenu>
       </SidebarGroup>
 

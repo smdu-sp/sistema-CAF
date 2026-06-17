@@ -18,6 +18,7 @@ async function main() {
     update: {
       email: "vmabreu@prefeitura.sp.gov.br",
       desenvolvedor: true,
+      permissao: "DEV",
       nome: "Victor Alexander Menezes de Abreu",
     },
     create: {
@@ -25,6 +26,7 @@ async function main() {
       nome: "Victor Alexander Menezes de Abreu",
       email: "vmabreu@prefeitura.sp.gov.br",
       desenvolvedor: true,
+      permissao: "DEV",
     },
   });
 
@@ -216,6 +218,20 @@ async function main() {
     },
   });
   console.log("Seed: usuário teste.chamados (USR) criado/atualizado.");
+
+  await prisma.usuario.upsert({
+    where: { login: "d854440" },
+    update: { permissao: "DEV", desenvolvedor: true },
+    create: {
+      login: "d854440",
+      nome: "Bruno Luiz Vieira",
+      email: "blv.bruno@gmail.com",
+      permissao: "DEV",
+      desenvolvedor: true,
+      status: true,
+    },
+  });
+  console.log("Seed: usuário d854440 (DEV) criado/atualizado.");
 }
 
 main()

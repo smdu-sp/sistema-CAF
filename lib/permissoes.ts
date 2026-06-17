@@ -67,6 +67,11 @@ export function podeAdministrarSistema(permissao: string): boolean {
   return permissao === "DEV" || permissao === "ADM";
 }
 
+/** Acesso total aos módulos (reserva de salas, avaliação, gestão de pessoas). */
+export function temAcessoTotalModulos(permissao: string, desenvolvedor = false): boolean {
+  return desenvolvedor || permissao === "DEV" || permissao === "ADM";
+}
+
 /** Pode selecionar item de patrimônio ao abrir chamado (leitura). */
 export function podeSelecionarItemEmChamado(permissao: string): boolean {
   return podeAbrirChamadosHelpdesk(permissao);

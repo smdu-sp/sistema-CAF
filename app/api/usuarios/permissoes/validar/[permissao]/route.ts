@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { temAcessoTotalModulos } from "@/lib/permissoes";
 
 export async function GET(
   _: NextRequest,
@@ -12,19 +13,25 @@ export async function GET(
   if (!session?.usuario?.id) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
-  const { permissao } = await params;
+  const { permissao: nomePermissao } = await params;
   const usuario = await prisma.usuario.findUnique({
+    where: { id: session.usuario.id },
+    select: { desenvolvedor: true, permissao: true },
+  });
+  if (
+    temAcessoTotalModulos(
+      usuario?.permissao ?? session.usuario.permissao ?? "",
+      usuario?.desenvolvedor ?? session.usuario.desenvolvedor,
+    )
+  ) {
+    return NextResponse.json({ temPermissao: true });
+  }
+  const vinculo = await prisma.usuarioPermissao.findFirst({
     where: {
-      id: session.usuario.id,
-      OR: [
-        { desenvolvedor: true },
-        { permissoes: { some: { permissao: { nome: permissao }}}},
-      ]
+      usuarioId: session.usuario.id,
+      permissao: { nome: nomePermissao },
     },
-    include: {
-      permissoes: true,
-    }
   });
 
-  return NextResponse.json({ temPermissao: !!usuario });
+  return NextResponse.json({ temPermissao: !!vinculo });
 }

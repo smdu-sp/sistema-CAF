@@ -25,12 +25,23 @@ model Coordenadoria {
   @@map("principal.coordenadorias")
 }
 
+/// Papel operacional do usuário (help desk e administração legada).
+enum PapelUsuario {
+  DEV
+  ADM
+  TEC
+  SUP
+  PAT
+  USR
+}
+
 model Usuario {
   id              String    @id @default(uuid())
   nome            String
   nomeSocial      String?
   login           String    @unique
   email           String    @unique
+  permissao       PapelUsuario @default(USR)
   status          Boolean   @default(true)
   avatar          String?   @db.Text
   coordenadoriaId String?

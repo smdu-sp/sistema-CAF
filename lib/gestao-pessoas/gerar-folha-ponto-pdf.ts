@@ -12,16 +12,16 @@ import type { ServidorParaImpressao } from "./constants";
 const NOME_SECRETARIA =
   "29 - SECRETARIA MUNICIPAL DE URBANISMO E LICENCIAMENTO";
 
+/** Largura útil da página (A4 com margens 20/10 pt), equivalente ao width=700 do legado. */
+const LARGURA_CONTEUDO = 515;
+
 let pdfInicializado = false;
 let brasaoPath = "";
 
 function inicializarPdfMake() {
   if (pdfInicializado) return;
-  const vfs = pdfMake as typeof pdfMake & {
-    virtualfs: { writeFileSync: (name: string, data: string, encoding: string) => void };
-  };
   for (const [nome, dados] of Object.entries(vfsFonts as Record<string, string>)) {
-    vfs.virtualfs.writeFileSync(nome, dados, "base64");
+    pdfMake.virtualfs.writeFileSync(nome, dados, "base64");
   }
   pdfMake.setFonts({
     Roboto: {
@@ -43,36 +43,34 @@ const layoutTabela = {
   vLineColor: () => "#000000",
   paddingLeft: () => 3,
   paddingRight: () => 3,
-  paddingTop: () => 2,
-  paddingBottom: () => 2,
+  paddingTop: () => 3,
+  paddingBottom: () => 3,
 };
 
 function cabecalhoSecretaria(): Content {
   return {
-    margin: [0, 0, 0, 4],
-    table: {
-      widths: [60, "*"],
-      body: [
-        [
-          { image: "brasao", width: 50, margin: [0, 2, 0, 0] },
-          {
-            text: NOME_SECRETARIA,
-            bold: true,
-            fontSize: 9,
-            alignment: "center",
-            margin: [8, 12, 8, 0],
-          },
-        ],
-      ],
-    },
-    layout: { hLineWidth: () => 0, vLineWidth: () => 0 },
+    stack: [
+      {
+        image: "brasao",
+        width: 150,
+        alignment: "center",
+        margin: [0, 0, 0, 4],
+      },
+      {
+        text: NOME_SECRETARIA,
+        bold: true,
+        fontSize: 9,
+        alignment: "center",
+        margin: [0, 0, 0, 6],
+      },
+    ],
   };
 }
 
 function tituloFfi(): Content {
   return {
     table: {
-      widths: ["*"],
+      widths: [LARGURA_CONTEUDO],
       body: [
         [
           {
@@ -86,7 +84,7 @@ function tituloFfi(): Content {
       ],
     },
     layout: layoutTabela,
-    margin: [0, 4, 0, 4],
+    margin: [0, 0, 0, 4],
   };
 }
 
@@ -97,26 +95,67 @@ function dadosServidor(
 ): Content {
   const mesAno = `${String(mes).padStart(2, "0")}/${ano}`;
   return {
-    margin: [0, 0, 0, 6],
-    fontSize: 9,
+    table: {
+      widths: [LARGURA_CONTEUDO],
+      body: [
+        [
+          {
+            text: [
+              { text: " NOME: ", bold: true },
+              servidor.nome,
+              "\n",
+              { text: "RF: ", bold: true },
+              servidor.rf,
+              { text: " - VÍNCULO:", bold: true },
+              " ",
+              servidor.vinculo ?? "",
+              "\n",
+              { text: "EH:", bold: true },
+              " ",
+              servidor.codigoEh,
+              "\n",
+              { text: "UNIDADE:", bold: true },
+              " ",
+              servidor.nomeUnidade,
+              "\n",
+              { text: "MÊS / ANO REFERENCIA:", bold: true },
+              " ",
+              mesAno,
+            ],
+            fontSize: 12,
+            margin: [5, 5, 5, 5],
+          },
+        ],
+      ],
+    },
+    layout: layoutTabela,
+    margin: [0, 0, 0, 4],
+  };
+}
+
+function linhaHorario(): Content {
+  return {
     text: [
-      { text: "NOME: ", bold: true },
-      servidor.nome,
-      "\n",
-      { text: "RF: ", bold: true },
-      servidor.rf,
-      { text: " - VÍNCULO: ", bold: true },
-      servidor.vinculo ?? "",
-      "\n",
-      { text: "EH: ", bold: true },
-      servidor.codigoEh,
-      "\n",
-      { text: "UNIDADE: ", bold: true },
-      servidor.nomeUnidade,
-      "\n",
-      { text: "MÊS / ANO REFERÊNCIA: ", bold: true },
-      mesAno,
+      { text: "HORÁRIO:", bold: true },
+      " _______:_______ às _______:_______",
     ],
+    fontSize: 8,
+    alignment: "center",
+    margin: [0, 0, 0, 4],
+  };
+}
+
+function celulaDia(
+  texto: string,
+  opts: { bold?: boolean; cinza?: boolean; alinhamento?: "left" | "center" } = {}
+): Content {
+  return {
+    text: texto,
+    bold: opts.bold,
+    fontSize: 7,
+    alignment: opts.alinhamento ?? "center",
+    fillColor: opts.cinza ? "#BDBDBD" : undefined,
+    margin: [0, 2, 0, 2],
   };
 }
 
@@ -125,21 +164,21 @@ function tabelaDias(mes: number, ano: number): Content {
   const feriados = obterFeriadosDoAno(ano);
 
   const header1 = [
-    { text: "DIA", bold: true, fontSize: 8, alignment: "center", fillColor: "#BDBDBD", rowSpan: 3 },
-    { text: "HORÁRIO", bold: true, fontSize: 7, alignment: "center", colSpan: 4, fillColor: "#BDBDBD" },
+    { text: "DIA", bold: true, fontSize: 8, alignment: "center" as const, fillColor: "#BDBDBD", rowSpan: 3 },
+    { text: "HORÁRIO", bold: true, fontSize: 7, alignment: "center" as const, colSpan: 4, fillColor: "#BDBDBD" },
     {},
     {},
     {},
-    { text: "ASSINATURA", bold: true, fontSize: 7, alignment: "center", rowSpan: 3, fillColor: "#BDBDBD" },
-    { text: "OBSERVAÇÕES", bold: true, fontSize: 7, alignment: "center", rowSpan: 3, fillColor: "#BDBDBD" },
+    { text: "ASSINATURA", bold: true, fontSize: 7, alignment: "center" as const, rowSpan: 3, fillColor: "#BDBDBD" },
+    { text: "OBSERVAÇÕES", bold: true, fontSize: 7, alignment: "center" as const, rowSpan: 3, fillColor: "#BDBDBD" },
   ];
 
   const header2 = [
     {},
-    { text: "ENTRADA", bold: true, fontSize: 7, alignment: "center", rowSpan: 2, fillColor: "#BDBDBD" },
-    { text: "ALMOÇO", bold: true, fontSize: 7, alignment: "center", colSpan: 2, fillColor: "#BDBDBD" },
+    { text: "ENTRADA", bold: true, fontSize: 8, alignment: "center" as const, rowSpan: 2, fillColor: "#BDBDBD" },
+    { text: "ALMOÇO", bold: true, fontSize: 7, alignment: "center" as const, colSpan: 2, fillColor: "#BDBDBD" },
     {},
-    { text: "SAÍDA", bold: true, fontSize: 7, alignment: "center", rowSpan: 2, fillColor: "#BDBDBD" },
+    { text: "SAÍDA", bold: true, fontSize: 7, alignment: "center" as const, rowSpan: 2, fillColor: "#BDBDBD" },
     {},
     {},
   ];
@@ -147,8 +186,8 @@ function tabelaDias(mes: number, ano: number): Content {
   const header3 = [
     {},
     {},
-    { text: "SAÍDA", bold: true, fontSize: 7, alignment: "center", fillColor: "#BDBDBD" },
-    { text: "ENTRADA", bold: true, fontSize: 7, alignment: "center", fillColor: "#BDBDBD" },
+    { text: "SAÍDA", bold: true, fontSize: 8, alignment: "center" as const, fillColor: "#BDBDBD" },
+    { text: "ENTRADA", bold: true, fontSize: 7, alignment: "center" as const, fillColor: "#BDBDBD" },
     {},
     {},
     {},
@@ -163,8 +202,9 @@ function tabelaDias(mes: number, ano: number): Content {
     const fimDeSemana = diaSemana === "DOMINGO" || diaSemana === "SÁBADO";
     const feriado = !foraDoMes && ehFeriado(data, feriados);
     const cinza = foraDoMes || fimDeSemana || feriado;
+    const traco = " ------------- ";
     const obs = foraDoMes
-      ? "-------------"
+      ? traco.trim()
       : feriado
         ? "FERIADO"
         : fimDeSemana
@@ -172,25 +212,19 @@ function tabelaDias(mes: number, ano: number): Content {
           : "";
 
     body.push([
-      {
-        text: String(dia),
-        bold: true,
-        fontSize: 7,
-        alignment: "center",
-        fillColor: cinza ? "#BDBDBD" : undefined,
-      },
-      { text: foraDoMes ? "-------------" : "", fontSize: 7, alignment: "center", fillColor: cinza ? "#BDBDBD" : undefined },
-      { text: foraDoMes ? "-------------" : "", fontSize: 7, alignment: "center", fillColor: cinza ? "#BDBDBD" : undefined },
-      { text: foraDoMes ? "-------------" : "", fontSize: 7, alignment: "center", fillColor: cinza ? "#BDBDBD" : undefined },
-      { text: foraDoMes ? "-------------" : "", fontSize: 7, alignment: "center", fillColor: cinza ? "#BDBDBD" : undefined },
-      { text: foraDoMes ? "-------------" : "", fontSize: 7, fillColor: cinza ? "#BDBDBD" : undefined },
-      { text: obs, fontSize: 7, fillColor: cinza ? "#BDBDBD" : undefined },
+      celulaDia(String(dia), { bold: true, cinza }),
+      celulaDia(foraDoMes ? traco : "", { cinza }),
+      celulaDia(foraDoMes ? traco : "", { cinza }),
+      celulaDia(foraDoMes ? traco : "", { cinza }),
+      celulaDia(foraDoMes ? traco : "", { cinza }),
+      celulaDia(foraDoMes ? traco : "", { cinza }),
+      celulaDia(obs, { cinza, alinhamento: cinza && !foraDoMes ? "left" : "center" }),
     ]);
   }
 
   return {
     table: {
-      widths: [22, 45, 45, 45, 45, 70, 80],
+      widths: [28, 65, 65, 65, 65, 100, "*"],
       body,
     },
     layout: layoutTabela,
@@ -201,17 +235,45 @@ function tabelaDias(mes: number, ano: number): Content {
 function blocoApontamento(): Content {
   const cols = ["EVENTO", "INÍCIO", "FINAL", "QUANT."];
   const header = [
-  ...cols.map((c) => ({ text: c, bold: true, fontSize: 7, alignment: "center" as const, fillColor: "#BDBDBD" })),
-  ...cols.map((c) => ({ text: c, bold: true, fontSize: 7, alignment: "center" as const, fillColor: "#BDBDBD" })),
+    ...cols.map((c) => ({
+      text: c,
+      bold: true,
+      fontSize: 7,
+      alignment: "center" as const,
+      fillColor: "#BDBDBD",
+    })),
+    ...cols.map((c) => ({
+      text: c,
+      bold: true,
+      fontSize: 7,
+      alignment: "center" as const,
+      fillColor: "#BDBDBD",
+    })),
   ];
   const linhasVazias = Array.from({ length: 6 }, () =>
-    Array(8).fill({ text: " ", fontSize: 7 })
+    Array(8).fill({ text: " ", fontSize: 7, margin: [0, 4, 0, 4] })
   );
   return {
     table: {
       widths: Array(8).fill("*"),
       body: [
-        [{ text: "APONTAMENTO", bold: true, fontSize: 8, alignment: "center", colSpan: 8, fillColor: "#BDBDBD" }, {}, {}, {}, {}, {}, {}, {}],
+        [
+          {
+            text: "APONTAMENTO",
+            bold: true,
+            fontSize: 8,
+            alignment: "center",
+            colSpan: 8,
+            fillColor: "#BDBDBD",
+          },
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+        ],
         header,
         ...linhasVazias,
       ],
@@ -223,7 +285,7 @@ function blocoApontamento(): Content {
 
 function assinaturaChefia(): Content {
   return {
-    fontSize: 9,
+    fontSize: 11,
     alignment: "center",
     margin: [0, 12, 0, 0],
     text: [
@@ -241,13 +303,8 @@ function paginaServidor(
   return [
     cabecalhoSecretaria(),
     tituloFfi(),
-    {
-      text: "HORÁRIO: _______:_______ às _______:_______",
-      fontSize: 8,
-      alignment: "center",
-      margin: [0, 0, 0, 4],
-    },
     dadosServidor(servidor, mes, ano),
+    linhaHorario(),
     tabelaDias(mes, ano),
     blocoApontamento(),
     assinaturaChefia(),
@@ -269,12 +326,11 @@ export async function gerarPdfFolhaPonto(
 
   const doc: TDocumentDefinitions = {
     pageSize: "A4",
-    pageMargins: [40, 20, 30, 20],
+    pageMargins: [20, 5, 10, 10],
     defaultStyle: { font: "Roboto", fontSize: 8 },
     images: { brasao: brasaoPath },
     content: conteudo,
   };
 
-  const pdf = pdfMake.createPdf(doc);
-  return pdf.getBuffer();
+  return pdfMake.createPdf(doc).getBuffer();
 }

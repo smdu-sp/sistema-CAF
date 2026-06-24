@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../../Downloads/Sistema de chamados E controle de iventário"
+		},
+		{
+			"path": "../../htdocs"
 		}
 	],
 	"settings": {

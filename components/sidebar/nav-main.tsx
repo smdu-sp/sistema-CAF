@@ -33,6 +33,7 @@ import {
   podeAcessarAreaChamadosHelpdesk,
   podeAcessarPatrimonioHelpdesk,
   podeAdministrarSistema,
+  temAcessoTotalModulos,
 } from "@/lib/permissoes";
 import Link from "../link";
 import { listarPermissoes } from "@/services/permissoes/";
@@ -41,11 +42,14 @@ export async function NavMain() {
   const session = await auth();
   const usuario = (session as any)?.usuario ?? null;
   const permissao = usuario?.permissao?.toString?.() ?? "";
+  const desenvolvedor = Boolean(usuario?.desenvolvedor);
   const mostraAdmin = podeAdministrarSistema(permissao);
   const hd = getCapacidadesHelpdesk(permissao);
   const mostraHelpDesk =
     podeAcessarAreaChamadosHelpdesk(permissao) ||
     podeAcessarPatrimonioHelpdesk(permissao);
+
+  const acessoTotalModulos = temAcessoTotalModulos(permissao, desenvolvedor);
 
   let permissoesModulos: string[] = [];
   try {
@@ -53,9 +57,9 @@ export async function NavMain() {
   } catch {
     permissoesModulos = [];
   }
-  const mostraGestaoPessoas = permissoesModulos.includes(
-    "gestao_pessoas.modulo.visualizar",
-  );
+  const mostraGestaoPessoas =
+    acessoTotalModulos ||
+    permissoesModulos.includes("gestao_pessoas.modulo.visualizar");
 
   return (
     <SidebarContent>

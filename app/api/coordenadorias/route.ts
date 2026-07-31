@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { validarPermissao } from "@/services/permissoes";
 
 export async function GET() {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
-  const usuario = (session as any).usuario;
-  const permissao = usuario?.permissao;
-  if (permissao !== "ADM" && permissao !== "DEV") {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-  }
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   const lista = await prisma.coordenadoria.findMany({
     orderBy: { nome: "asc" },
     select: { id: true, nome: true, ativo: true },
@@ -24,11 +22,10 @@ export async function POST(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
-  const usuario = (session as any).usuario;
-  const permissao = usuario?.permissao;
-  if (permissao !== "ADM" && permissao !== "DEV") {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-  }
+
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+
   let body: { nome?: string };
   try {
     body = await request.json();

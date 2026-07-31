@@ -9,6 +9,7 @@ import {
   isCaminhoUploadSalaSeguro,
   removerArquivoLayoutImagem,
 } from "@/lib/sala-layout-imagem";
+import { validarPermissao } from "@/services/permissoes";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -21,10 +22,8 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
-  const usuario = (session as any).usuario;
-  if (usuario?.permissao !== "ADM" && usuario?.permissao !== "DEV") {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-  }
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const { id: salaId } = await params;
   if (!salaId) {

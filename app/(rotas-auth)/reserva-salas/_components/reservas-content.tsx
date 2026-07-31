@@ -2,6 +2,7 @@ import { MinhasReservasContent } from "../minhas/_components/minhas-reservas-con
 import { ProximosEventos } from "../admin/_components/proximos-eventos";
 import { ActionButton } from "@/components/action-button";
 import { Plus } from "lucide-react";
+import { validarPermissao } from "@/services/permissoes";
 
 interface UsuarioData {
   login: string;
@@ -13,7 +14,7 @@ interface ReservasContentProps {
 }
 
 export async function ReservasContent({ usuario }: ReservasContentProps) {
-  const isAdminOrDev = usuario?.permissao === "ADM" || usuario?.permissao === "DEV";
+  const temPermissao = await validarPermissao("usuarios.importar");
 
   return (
     <div>
@@ -25,7 +26,7 @@ export async function ReservasContent({ usuario }: ReservasContentProps) {
           icon={Plus}
         />
       </div>
-      {isAdminOrDev ? <ProximosEventos /> : <MinhasReservasContent usuarioLogin={usuario.login} />}
+      {temPermissao ? <ProximosEventos /> : <MinhasReservasContent usuarioLogin={usuario.login} />}
     </div>
   );
 }

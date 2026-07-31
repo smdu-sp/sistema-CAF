@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { listarUsuariosPorPrefixo } from "@/lib/auth/ldap";
 import type { Permissao } from "@prisma/client";
+import { validarPermissao } from "@/services/permissoes";
 
 /**
  * POST /api/usuarios/importar-lote
@@ -16,10 +17,8 @@ export async function POST() {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const usuarioSessao = (session as any).usuario;
-  if (usuarioSessao?.permissao !== "ADM" && usuarioSessao?.permissao !== "DEV") {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-  }
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const regras: { prefixo: string; permissao: Permissao }[] = [
     { prefixo: "D", permissao: "USR" },

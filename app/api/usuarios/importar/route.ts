@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buscarUsuarioNoAD } from "@/lib/auth/ldap";
+import { validarPermissao } from "@/services/permissoes";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -9,10 +10,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const usuarioSessao: any = (session as any).usuario;
-  if (usuarioSessao?.permissao !== "ADM" && usuarioSessao?.permissao !== "DEV") {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-  }
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const { login } = await req.json();
   if (!login) {

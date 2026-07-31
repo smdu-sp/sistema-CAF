@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Layout } from "@prisma/client";
+import { validarPermissao } from "@/services/permissoes";
 
 const select = {
   id: true,
@@ -35,8 +36,8 @@ function normalizarItens(items: unknown): { nome: string; quantidade: number }[]
       const nome = typeof raw.nome === "string" ? raw.nome.trim() : "";
       const quantidade =
         typeof raw.quantidade === "number" &&
-        Number.isFinite(raw.quantidade) &&
-        raw.quantidade > 0
+          Number.isFinite(raw.quantidade) &&
+          raw.quantidade > 0
           ? Math.trunc(raw.quantidade)
           : 0;
       if (!nome || quantidade <= 0) return null;
@@ -56,11 +57,8 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
-  const usuario = (session as any).usuario;
-  const permissao = usuario?.permissao;
-  if (permissao !== "ADM" && permissao !== "DEV") {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-  }
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   const lista = await prisma.salaReserva.findMany({
     orderBy: { nome: "asc" },
     select,
@@ -73,11 +71,8 @@ export async function POST(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
-  const usuario = (session as any).usuario;
-  const permissao = usuario?.permissao;
-  if (permissao !== "ADM" && permissao !== "DEV") {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-  }
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   let body: {
     nome?: string;
     andar?: string;

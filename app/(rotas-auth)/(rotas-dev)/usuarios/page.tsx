@@ -15,14 +15,16 @@ import { Label } from "@/components/ui/label";
 import DataTable from "@/components/data-table";
 
 import { getColumns, type UsuarioRow } from "./_components/columns";
+import { validarPermissao } from "@/services/permissoes";
 
 type CoordenadoriaOption = {
   id: string;
   nome: string;
 };
 
-export default function UsuariosAdminPage() {
+export default async function UsuariosAdminPage() {
   const { data: session } = useSession();
+  const temPermissao = await validarPermissao("usuarios.importar");
 
   const searchParams = useSearchParams();
 
@@ -56,7 +58,6 @@ export default function UsuariosAdminPage() {
     [],
   );
 
-  const permissao = (session as any)?.usuario?.permissao;
 
   async function carregarUsuarios() {
     try {
@@ -93,12 +94,12 @@ export default function UsuariosAdminPage() {
   }
 
   useEffect(() => {
-    if (session && (permissao === "ADM" || permissao === "DEV")) {
+    if (session && temPermissao) {
       carregarUsuarios();
 
       carregarCoordenadorias();
     }
-  }, [session, permissao, pagina, limite]);
+  }, [session, temPermissao, pagina, limite]);
 
   async function alterarCoordenadoria(
     usuarioId: string,

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Suspense } from "react";
 import { columns } from "./_components/columns";
 import ModalUpdateAndCreate from "./_components/modal-update-create";
+import { validarPermissao } from "@/services/permissoes";
 
 interface CoordenadoriasPageProps {
   searchParams: Promise<{
@@ -17,9 +18,7 @@ export default async function CoordenadoriasPage({
 }: CoordenadoriasPageProps) {
   const session = await auth();
 
-  const usuario = (session as any)?.usuario;
-
-  const permissao = usuario?.permissao;
+  const temPermissao = await validarPermissao("usuarios.importar");
 
   if (!session) {
     return (
@@ -29,7 +28,7 @@ export default async function CoordenadoriasPage({
     );
   }
 
-  if (permissao !== "ADM" && permissao !== "DEV") {
+  if (!temPermissao) {
     return (
       <div className="w-full px-0 md:px-8 pb-20 md:pb-14">
         <p>Somente administradores podem acessar esta página.</p>

@@ -1,13 +1,13 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AgendaAdmin } from "./agenda-admin";
+import { validarPermissao } from "@/services/permissoes";
 
 export default async function AdminDashboard() {
   const session = await auth();
   if (!session) redirect("/login");
-  const usuario = (session as any).usuario;
-  const isAdmin = usuario?.permissao === "ADM" || usuario?.permissao === "DEV";
-  if (!isAdmin) redirect("/reserva-salas");
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) redirect("/reserva-salas");
 
   return (
     <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">

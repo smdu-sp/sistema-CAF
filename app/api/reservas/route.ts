@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { validarPermissao } from "@/services/permissoes";
 
 /** GET: lista reservas de uma sala em um dia (horário do prédio 9h–19h). */
 export async function GET(request: NextRequest) {
@@ -24,10 +25,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Data inválida" }, { status: 400 });
   }
 
-  const usuario = (session as any).usuario;
-  const permissao = usuario?.permissao;
-  const isAdmin = permissao === "ADM" || permissao === "DEV";
 
+  let isAdmin = await validarPermissao("usuarios.importar");
   const inicioDia = new Date(y, m - 1, d, 9, 0, 0);
   const fimDia = new Date(y, m - 1, d, 19, 0, 0);
 

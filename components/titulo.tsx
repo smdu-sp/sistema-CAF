@@ -19,9 +19,7 @@ export default function Titulo({ titulo, descricao, abas }: TituloProps) {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
             {tituloFinal}
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-            {descricaoFinal}
-          </p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-2" dangerouslySetInnerHTML={{ __html: descricaoFinal as string }}></p>
         </div>
     );
 }

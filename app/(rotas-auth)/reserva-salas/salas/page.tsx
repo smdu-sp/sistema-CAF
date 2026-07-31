@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
-import { SalasContent } from "../../salas/_components/salas-context";
+import { SalasContent } from "./_components/salas-content";
 import { redirect } from "next/navigation";
+import { validarPermissao } from "@/services/permissoes";
 
 interface SalasPageProps {
   searchParams: Promise<{
@@ -18,11 +19,7 @@ export default async function SalasPage({
     redirect("/login");
   }
 
-  const usuario = (session as any).usuario;
-
-  const isAdmin =
-    usuario?.permissao === "ADM" ||
-    usuario?.permissao === "DEV";
+  const isAdmin = await validarPermissao("usuarios.importar");
 
   if (!isAdmin) {
     redirect("/reserva-salas");

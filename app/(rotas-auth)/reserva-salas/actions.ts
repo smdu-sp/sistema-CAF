@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth/";
 import { existeConflito } from "./services/reservas";
+import { validarPermissao } from "@/services/permissoes";
 
 export type CriarReservaState = {
   erro?: string;
@@ -23,8 +24,8 @@ export async function criarReserva(
   if (!usuario?.login) {
     return { erro: "Dados do usuário não encontrados." };
   }
-  const podeReservar = usuario.permissao === "USR" || usuario.permissao === "ADM" || usuario.permissao === "DEV";
-  if (!podeReservar) {
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) {
     return { erro: "Sua permissão não permite reservar salas." };
   }
 
@@ -123,17 +124,17 @@ export async function criarReserva(
       foto.descricao.length > 120 ? foto.descricao.slice(0, 120) : foto.descricao;
   }
 
-let usuarioIdGravar: string | null = null;
-if (usuario.id) {
-  const usuarioExiste = await prisma.usuario.findUnique({
-    where: { id: usuario.id },
-    select: { id: true },
-  });
-  if (!usuarioExiste) {
-    return { erro: "Usuário não encontrado no sistema." };
+  let usuarioIdGravar: string | null = null;
+  if (usuario.id) {
+    const usuarioExiste = await prisma.usuario.findUnique({
+      where: { id: usuario.id },
+      select: { id: true },
+    });
+    if (!usuarioExiste) {
+      return { erro: "Usuário não encontrado no sistema." };
+    }
+    usuarioIdGravar = usuario.id;
   }
-  usuarioIdGravar = usuario.id;
-}
 
   const reserva = await prisma.reserva.create({
     data: {
@@ -199,11 +200,11 @@ export async function cancelarReserva(
   if (reserva.status === "CANCELADO") {
     return { erro: "Esta reserva já está cancelada." };
   }
-  const isAdmin = usuario?.permissao === "ADM" || usuario?.permissao === "DEV";
-  if (!isAdmin && reserva.usuarioLogin !== usuario.login) {
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao && reserva.usuarioLogin !== usuario.login) {
     return { erro: "Você só pode cancelar suas próprias reservas." };
   }
-  if (isAdmin && !motivo?.trim()) {
+  if (temPermissao && !motivo?.trim()) {
     return { erro: "Informe o motivo do cancelamento." };
   }
 
@@ -227,9 +228,9 @@ export async function aprovarReserva(reservaId: string): Promise<{ erro?: string
   if (!session?.user) {
     return { erro: "Não autorizado." };
   }
-  const usuario = (session as any).usuario;
-  const permissao = usuario?.permissao;
-  if (permissao !== "ADM" && permissao !== "DEV") {
+
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) {
     return { erro: "Sem permissão para aprovar reservas." };
   }
 

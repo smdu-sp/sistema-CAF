@@ -1,5 +1,5 @@
 import DataTable from "@/components/data-table";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Suspense } from "react";
 import { columns } from "./_components/columns";

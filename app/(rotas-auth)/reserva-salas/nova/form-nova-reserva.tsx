@@ -323,7 +323,7 @@ export function FormNovaReserva({
             onChange={
               onSalaChange ? (e) => onSalaChange(e.target.value) : undefined
             }
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs transition-[color,box-shadow] outline-none [color-scheme:light] dark:[color-scheme:dark] focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value="">Selecione a sala</option>
             {salas.map((s) => {
@@ -509,7 +509,7 @@ export function FormNovaReserva({
               required
               value={coordenadoriaId}
               onChange={(e) => setCoordenadoriaId(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs transition-[color,box-shadow] outline-none [color-scheme:light] dark:[color-scheme:dark] focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="">Selecione a coordenadoria ou setor</option>
               {coordenadorias.map((c) => (

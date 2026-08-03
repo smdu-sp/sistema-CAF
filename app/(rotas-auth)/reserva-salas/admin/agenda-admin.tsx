@@ -289,7 +289,7 @@ export function AgendaAdmin() {
             <div className="min-w-[220px] flex-1">
               <label className="mb-1 block text-sm font-medium">Sala</label>
               <select
-                className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none [color-scheme:light] dark:[color-scheme:dark] focus-visible:ring-2 focus-visible:ring-ring"
                 value={salaIdFiltro}
                 onChange={(e) => setSalaIdFiltro(e.target.value)}
               >
@@ -502,7 +502,7 @@ export function AgendaAdmin() {
           if (!open) setSolicitacaoAberta(null);
         }}
       >
-        <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg">
+        <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg p-3.5">
           {solicitacaoAberta ? (
             <>
               <SheetHeader className="space-y-1 text-left border-b pb-4">

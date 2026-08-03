@@ -5,7 +5,6 @@ import { AgendaAdmin } from "../admin/agenda-admin";
 export default async function AgendaPage() {
   const session = await auth();
   if (!session) redirect("/login");
-  const usuario = (session as any).usuario;
 
   return (
     <main className="p-4 md:p-6 w-full mx-auto space-y-6">

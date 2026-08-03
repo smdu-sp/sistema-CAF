@@ -8,8 +8,12 @@ import { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SquarePen } from 'lucide-react';
+import { Tooltip } from '@radix-ui/react-tooltip';
+import { TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export type { SalaRow };
+
+const ariaLabel = "Editar sala";
 
 export const columns: ColumnDef<SalaRow>[] = [
   {
@@ -21,21 +25,21 @@ export const columns: ColumnDef<SalaRow>[] = [
     accessorKey: 'andar',
     header: 'Andar',
     cell: ({ row }) =>
-      row.original.andar ?? '—',
+      row.original.andar ?? <span className="text-gray-500">Não informado</span>,
   },
 
   {
     accessorKey: 'numero',
     header: 'Número',
     cell: ({ row }) =>
-      row.original.numero ?? '—',
+      row.original.numero ?? <span className="text-gray-500">Não informado</span>,
   },
 
   {
     accessorKey: 'lotacao',
     header: 'Lotação',
     cell: ({ row }) =>
-      row.original.lotacao ?? '—',
+      row.original.lotacao ?? <span className="text-gray-500">Não informada</span>,
   },
 
   {
@@ -44,7 +48,7 @@ export const columns: ColumnDef<SalaRow>[] = [
 
     cell: ({ row }) => {
       if (!row.original.layout) {
-        return '—';
+        return <span className="text-gray-500">Não informado</span>;
       }
 
       return row.original.layout ===
@@ -98,18 +102,26 @@ export const columns: ColumnDef<SalaRow>[] = [
         className="flex items-center justify-center gap-2"
         key={row.id}
       >
-        <Link
-          href={`/reserva-salas/salas/${row.original.id}`}
-        >
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Editar sala"
-            type="button"
-          >
-            <SquarePen size={18} />
-          </Button>
-        </Link>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              href={`/reserva-salas/salas/${row.original.id}`}
+            >
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={ariaLabel}
+                type="button"
+              >
+                <SquarePen size={18} />
+              </Button>
+            </Link>
+          </TooltipTrigger>
+
+          <TooltipContent side="bottom">
+            <p>{ariaLabel}</p>
+          </TooltipContent>
+        </Tooltip>
 
         <ModalDelete
           id={row.original.id}

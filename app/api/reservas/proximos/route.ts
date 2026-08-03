@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { validarPermissao } from "@/services/permissoes";
 
 /** GET: próximas reservas (fim >= agora), paginado. Apenas ADM/DEV. */
 export async function GET(request: NextRequest) {
@@ -8,11 +9,8 @@ export async function GET(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
-  const usuario = (session as any).usuario;
-  const permissao = usuario?.permissao;
-  if (permissao !== "ADM" && permissao !== "DEV") {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-  }
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
   const pagina = Math.max(1, parseInt(searchParams.get("pagina") ?? "1", 10));

@@ -19,8 +19,8 @@ async function listarPermissoes(modulo?: string): Promise<string[]> {
     const cookieStore = await cookies();
     try {
         const resposta = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}api/usuarios/permissoes${modulo ? `?modulo=${modulo}` : ''}`, 
-            { headers: { Cookie: cookieStore.toString() }}
+            `${process.env.NEXT_PUBLIC_API_URL}api/usuarios/permissoes${modulo ? `?modulo=${modulo}` : ''}`,
+            { headers: { Cookie: cookieStore.toString() } }
         );
         const { permissoes } = await resposta.json();
         return permissoes;
@@ -33,8 +33,8 @@ async function validarPermissao(permissao: string): Promise<boolean> {
     const cookieStore = await cookies();
     try {
         const resposta = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}api/usuarios/permissoes/validar/${permissao}`, 
-        { headers: { Cookie: cookieStore.toString() }}
+            `${process.env.NEXT_PUBLIC_API_URL}api/usuarios/permissoes/validar/${permissao}`,
+            { headers: { Cookie: cookieStore.toString() } }
         );
         const { temPermissao } = await resposta.json();
         return temPermissao;

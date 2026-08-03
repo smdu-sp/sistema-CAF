@@ -69,7 +69,7 @@ export const columns: ColumnDef<AvaliacaoRow>[] = [
     accessorKey: "salaNome",
     header: "Sala",
     cell: ({ row }) => {
-      const sala = row.original.sala?.nome ?? "—";
+      const sala = row.original.sala?.nome ?? <span className="text-gray-500">Não informada</span>;
       return (
         <div className="flex flex-col whitespace-nowrap">
           <span className="font-medium text-sm">{sala}</span>
@@ -90,7 +90,7 @@ export const columns: ColumnDef<AvaliacaoRow>[] = [
     header: "Observação",
     cell: ({ row }) => {
       const obs = row.original.observacao;
-      if (!obs) return <span className="text-muted-foreground">—</span>;
+      if (!obs) return <span className="text-gray-500">Não informada</span>;
       const truncated = obs.length > 40 ? obs.substring(0, 40) + "..." : obs;
       return (
         <div className="text-xs sm:text-sm max-w-xs truncate" title={obs}>

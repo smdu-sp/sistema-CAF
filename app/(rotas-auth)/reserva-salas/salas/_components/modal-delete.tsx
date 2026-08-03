@@ -75,7 +75,7 @@ export default function ModalDelete({
 						</Button>
 					</DialogTrigger>
 				</TooltipTrigger>
-				<TooltipContent side="top">
+				<TooltipContent side="bottom">
 					<p>{labelAcao}</p>
 				</TooltipContent>
 			</Tooltip>

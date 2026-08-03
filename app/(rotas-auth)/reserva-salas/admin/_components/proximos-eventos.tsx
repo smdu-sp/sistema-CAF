@@ -101,7 +101,7 @@ export function ProximosEventos() {
           </p>
         ) : proximos.length === 0 ? (
           <p className="text-sm text-muted-foreground p-4">
-            Nenhuma reserva futura.
+            Você ainda não tem reservas agendadas. Crie sua primeira reserva.
           </p>
         ) : (
           <>

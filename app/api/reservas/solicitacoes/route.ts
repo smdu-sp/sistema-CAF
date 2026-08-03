@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { validarPermissao } from "@/services/permissoes";
 
 /** GET: reservas com status SOLICITADO (painel admin). Apenas ADM/DEV. */
 export async function GET() {
@@ -8,10 +9,8 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
-  const usuario = (session as any).usuario;
-  if (usuario?.permissao !== "ADM" && usuario?.permissao !== "DEV") {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-  }
+  const temPermissao = await validarPermissao("usuarios.importar");
+  if (!temPermissao) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const lista = await prisma.reserva.findMany({
     where: { status: "SOLICITADO" },

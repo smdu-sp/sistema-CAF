@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #F5F6F9; font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+    * { box-sizing: border-box; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #D6D9E0; border-radius: 8px; }
+    a { color: #0A3299; }
+    a:hover { color: #395AAD; }
+  </style>
+</helmet>
+
+<div style="width:100%;max-width:1440px;min-width:1020px;min-height:960px;margin:0 auto;background:#F5F6F9;color:#1A1A1A;position:relative;">
+
+  <!-- TOP BAR -->
+  <div style="position:sticky;top:0;z-index:40;height:64px;background:#FFFFFF;border-bottom:1px solid #E7E8EC;display:flex;align-items:center;padding:0 24px;gap:24px;">
+    <div style="display:flex;align-items:center;gap:10px;min-width:220px;">
+      <img src="figma-assets/coat-of-arms-color.png" alt="Brasão São Paulo" style="width:34px;height:34px;object-fit:contain;">
+      <div style="display:flex;flex-direction:column;line-height:1.05;">
+        <span style="font-size:15px;font-weight:800;color:#0A3299;letter-spacing:-0.01em;">SMUL <span style="color:#1E9E86;">Intranet</span></span>
+        <span style="font-size:10.5px;font-weight:600;color:#9497A1;letter-spacing:0.04em;">URBANISMO E LICENCIAMENTO</span>
+      </div>
+    </div>
+
+    <div style="flex:1;max-width:520px;position:relative;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9497A1" stroke-width="2" stroke-linecap="round" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);">
+        <circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" value="{{ search }}" oninput="{{ onSearchInput }}" placeholder="Buscar pessoas, comunicados, posts..." style="width:100%;height:38px;border-radius:19px;border:1px solid #E7E8EC;background:#F5F6F9;padding:0 16px 0 40px;font:500 13.5px 'Open Sans', sans-serif;color:#1A1A1A;outline:none;">
+    </div>
+
+    <div style="flex:1;"></div>
+
+    <div style="position:relative;">
+      <button onclick="{{ toggleNotif }}" style="position:relative;width:38px;height:38px;border-radius:50%;border:none;background:#F5F6F9;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4A4A4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ false }}">
+          <span style="position:absolute;top:5px;right:6px;width:9px;height:9px;border-radius:50%;background:#F94668;border:2px solid #fff;"></span>
+        </sc-if>
+      </button>
+
+      <sc-if value="{{ notifOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;right:0;top:48px;width:340px;background:#fff;border:1px solid #E7E8EC;border-radius:12px;box-shadow:0 12px 32px rgba(20,25,40,0.14);overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #EFEFF2;">
+            <span style="font:700 14px 'Open Sans';color:#1A1A1A;">Notificações</span>
+            <button onclick="{{ markAllRead }}" style="border:none;background:none;color:#0A3299;font:600 12px 'Open Sans';cursor:pointer;">Marcar como lidas</button>
+          </div>
+          <div style="max-height:340px;overflow-y:auto;">
+            <sc-for list="{{ notifications }}" as="n" hint-placeholder-count="4">
+              <div style="display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid #F5F6F9;background:{{ n.bg }};">
+                <div style="width:8px;height:8px;border-radius:50%;background:{{ n.dot }};margin-top:6px;flex:none;"></div>
+                <div style="flex:1;">
+                  <div style="font:600 12.5px/1.4 'Open Sans';color:#1A1A1A;">{{ n.text }}</div>
+                  <div style="font:500 11px 'Open Sans';color:#9497A1;margin-top:2px;">{{ n.time }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;padding-left:6px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:#395AAD;color:#fff;display:flex;align-items:center;justify-content:center;font:700 13px 'Open Sans';">VC</div>
+      <div style="line-height:1.1;">
+        <div style="font:700 12.5px 'Open Sans';color:#1A1A1A;">Você</div>
+        <div style="font:500 11px 'Open Sans';color:#9497A1;">Meu perfil</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:flex-start;width:100%;margin:0 auto;">
+
+    <!-- LEFT SIDEBAR -->
+    <div style="width:236px;flex:none;position:sticky;top:64px;padding:20px 14px;display:flex;flex-direction:column;gap:2px;">
+
+      <button onclick="{{ goFeed }}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;text-align:left;font:600 13.5px 'Open Sans';background:{{ navBgFeed }};color:{{ navFgFeed }};">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V21h14V9.5"></path></svg>
+        Início
+      </button>
+
+      <button onclick="{{ goBirthdays }}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;text-align:left;font:600 13.5px 'Open Sans';background:{{ navBgBirthdays }};color:{{ navFgBirthdays }};">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v13"></path><path d="M4 13h16"></path><path d="M4 13a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v8H4v-8Z"></path><circle cx="12" cy="4" r="2"></circle></svg>
+        Aniversários
+      </button>
+
+      <button onclick="{{ goComunicados }}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;text-align:left;font:600 13.5px 'Open Sans';background:{{ navBgComunicados }};color:{{ navFgComunicados }};">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v3a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1Z"></path><path d="M15 8a4 4 0 0 1 0 8"></path><path d="M18 5a8 8 0 0 1 0 14"></path></svg>
+        Comunicados
+      </button>
+
+      <button onclick="{{ goDiretorio }}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;text-align:left;font:600 13.5px 'Open Sans';background:{{ navBgDiretorio }};color:{{ navFgDiretorio }};">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1"></rect><line x1="8" y1="8" x2="10" y2="8"></line><line x1="8" y1="12" x2="10" y2="12"></line><line x1="8" y1="16" x2="10" y2="16"></line><line x1="14" y1="8" x2="16" y2="8"></line><line x1="14" y1="12" x2="16" y2="12"></line><line x1="14" y1="16" x2="16" y2="16"></line></svg>
+        Diretório
+      </button>
+
+      <button onclick="{{ goEventos }}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;text-align:left;font:600 13.5px 'Open Sans';background:{{ navBgEventos }};color:{{ navFgEventos }};">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><line x1="16" y1="3" x2="16" y2="7"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        Eventos
+      </button>
+
+      <button onclick="{{ goPerfil }}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;text-align:left;font:600 13.5px 'Open Sans';background:{{ navBgPerfil }};color:{{ navFgPerfil }};">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>
+        Meu perfil
+      </button>
+
+      <div style="margin-top:18px;padding:14px;border-radius:12px;background:#0A3299;color:#fff;">
+        <div style="font:700 12.5px 'Open Sans';margin-bottom:4px;">Suporte Técnico</div>
+        <div style="font:500 11px/1.4 'Open Sans';color:#C6D0EE;margin-bottom:10px;">Precisa de ajuda com sistemas ou equipamentos?</div>
+        <div style="background:#F94668;color:#fff;font:700 11.5px 'Open Sans';text-align:center;padding:8px;border-radius:7px;">ABRIR CHAMADO</div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div style="flex:1;min-width:0;padding:20px 20px 60px;display:flex;gap:20px;align-items:flex-start;">
+
+      <div style="flex:1;min-width:0;max-width:680px;display:flex;flex-direction:column;gap:16px;">
+
+        <!-- FEED TAB -->
+        <sc-if value="{{ isFeed }}" hint-placeholder-val="{{ true }}">
+
+          <!-- composer -->
+          <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:16px;">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:38px;height:38px;border-radius:50%;background:#395AAD;color:#fff;display:flex;align-items:center;justify-content:center;font:700 13px 'Open Sans';flex:none;">VC</div>
+              <textarea value="{{ composerText }}" oninput="{{ onComposerInput }}" onfocus="{{ openComposer }}" placeholder="Compartilhe uma novidade com a SMUL..." style="flex:1;min-height:40px;resize:none;border:1px solid #E7E8EC;border-radius:10px;padding:10px 12px;font:500 13.5px 'Open Sans';color:#1A1A1A;outline:none;background:#F9F9FB;"></textarea>
+            </div>
+
+            <sc-if value="{{ composerOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;">
+                <div style="font:600 11.5px 'Open Sans';color:#9497A1;margin-bottom:8px;">TIPO DE PUBLICAÇÃO</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+                  <button onclick="{{ setTypeComum }}" style="padding:7px 14px;border-radius:20px;font:600 12px 'Open Sans';cursor:pointer;border:1px solid {{ chipBorderComum }};background:{{ chipBgComum }};color:{{ chipFgComum }};">Post</button>
+                  <button onclick="{{ setTypeComunicado }}" style="padding:7px 14px;border-radius:20px;font:600 12px 'Open Sans';cursor:pointer;border:1px solid {{ chipBorderComunicado }};background:{{ chipBgComunicado }};color:{{ chipFgComunicado }};">Comunicado</button>
+                  <button onclick="{{ setTypeConquista }}" style="padding:7px 14px;border-radius:20px;font:600 12px 'Open Sans';cursor:pointer;border:1px solid {{ chipBorderConquista }};background:{{ chipBgConquista }};color:{{ chipFgConquista }};">Conquista</button>
+                  <button onclick="{{ setTypeKudos }}" style="padding:7px 14px;border-radius:20px;font:600 12px 'Open Sans';cursor:pointer;border:1px solid {{ chipBorderKudos }};background:{{ chipBgKudos }};color:{{ chipFgKudos }};">Kudos</button>
+                  <button onclick="{{ setTypeVaga }}" style="padding:7px 14px;border-radius:20px;font:600 12px 'Open Sans';cursor:pointer;border:1px solid {{ chipBorderVaga }};background:{{ chipBgVaga }};color:{{ chipFgVaga }};">Vaga interna</button>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <button onclick="{{ closeComposer }}" style="border:none;background:none;color:#9497A1;font:600 12.5px 'Open Sans';cursor:pointer;">Cancelar</button>
+                  <button onclick="{{ submitPost }}" disabled="{{ submitDisabled }}" style="border:none;background:#0A3299;opacity:{{ submitOpacity }};color:#fff;font:700 12.5px 'Open Sans';padding:9px 20px;border-radius:8px;cursor:pointer;">Publicar</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <!-- posts -->
+          <sc-for list="{{ filteredPosts }}" as="p" hint-placeholder-count="3">
+            <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;overflow:hidden;">
+              <div style="padding:16px 16px 0;display:flex;justify-content:space-between;align-items:flex-start;">
+                <div style="display:flex;gap:12px;">
+                  <div style="width:42px;height:42px;border-radius:50%;background:{{ p.avatarColor }};color:#fff;display:flex;align-items:center;justify-content:center;font:700 13.5px 'Open Sans';flex:none;">{{ p.initials }}</div>
+                  <div>
+                    <div style="font:700 13.5px 'Open Sans';color:#1A1A1A;">{{ p.author }}</div>
+                    <div style="font:500 12px 'Open Sans';color:#9497A1;">{{ p.cargo }} · {{ p.time }}</div>
+                  </div>
+                </div>
+                <sc-if value="{{ p.hasTag }}" hint-placeholder-val="{{ false }}">
+                  <span style="font:700 10.5px 'Open Sans';letter-spacing:0.03em;padding:5px 11px;border-radius:20px;background:{{ p.tagBg }};color:{{ p.tagFg }};white-space:nowrap;">{{ p.tagLabel }}</span>
+                </sc-if>
+              </div>
+
+              <div style="padding:12px 16px 0;font:500 13.5px/1.55 'Open Sans';color:#2A2A2E;white-space:pre-wrap;">{{ p.text }}</div>
+
+              <sc-if value="{{ p.hasImage }}" hint-placeholder-val="{{ false }}">
+                <div style="margin:14px 16px 0;border-radius:10px;overflow:hidden;height:260px;">
+                  <img src="{{ p.image }}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                </div>
+              </sc-if>
+
+              <div style="display:flex;gap:6px;padding:12px 16px;margin-top:10px;border-top:1px solid #F0F0F3;">
+                <button onclick="{{ p.toggleLike }}" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:none;background:none;cursor:pointer;color:{{ p.likeColor }};">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="{{ p.likeFill }}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"></path></svg>
+                  <span style="font:700 12.5px 'Open Sans';">{{ p.likeLabel }}</span>
+                </button>
+                <button onclick="{{ p.toggleComments }}" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:none;background:none;cursor:pointer;color:#4A4A4A;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"></path></svg>
+                  <span style="font:700 12.5px 'Open Sans';">{{ p.commentCountLabel }}</span>
+                </button>
+              </div>
+
+              <sc-if value="{{ p.commentsOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:0 16px 16px;">
+                  <sc-for list="{{ p.comments }}" as="c" hint-placeholder-count="1">
+                    <div style="display:flex;gap:10px;margin-top:10px;">
+                      <div style="width:28px;height:28px;border-radius:50%;background:{{ c.avatarColor }};color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px 'Open Sans';flex:none;">{{ c.initials }}</div>
+                      <div style="background:#F5F6F9;border-radius:10px;padding:8px 12px;flex:1;">
+                        <div style="font:700 12px 'Open Sans';color:#1A1A1A;">{{ c.author }}</div>
+                        <div style="font:500 12.5px 'Open Sans';color:#2A2A2E;">{{ c.text }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div style="display:flex;gap:10px;margin-top:12px;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:#395AAD;color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px 'Open Sans';flex:none;">VC</div>
+                    <input type="text" value="{{ p.draft }}" oninput="{{ p.onDraftInput }}" placeholder="Escreva um comentário..." style="flex:1;border:1px solid #E7E8EC;border-radius:20px;padding:8px 14px;font:500 12.5px 'Open Sans';outline:none;">
+                    <button onclick="{{ p.submitComment }}" style="border:none;background:#0A3299;color:#fff;border-radius:20px;padding:0 16px;font:700 12px 'Open Sans';cursor:pointer;">Enviar</button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <!-- BIRTHDAYS TAB -->
+        <sc-if value="{{ isBirthdays }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:22px 24px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F94668" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v13"></path><path d="M4 13h16"></path><path d="M4 13a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v8H4v-8Z"></path><circle cx="12" cy="4" r="2"></circle></svg>
+              <div>
+                <div style="font:800 19px 'Open Sans';color:#1A1A1A;">Aniversariantes de {{ monthLabel }}</div>
+                <div style="font:500 13px 'Open Sans';color:#9497A1;">Envie uma felicitação para quem faz aniversário este mês</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <sc-for list="{{ birthdays }}" as="b" hint-placeholder-count="4">
+              <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:18px;position:relative;">
+                <sc-if value="{{ b.isToday }}" hint-placeholder-val="{{ false }}">
+                  <span style="position:absolute;top:14px;right:14px;font:700 10px 'Open Sans';letter-spacing:0.03em;background:#FEEBEE;color:#F94668;padding:4px 9px;border-radius:20px;">HOJE</span>
+                </sc-if>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <div style="width:50px;height:50px;border-radius:50%;background:{{ b.avatarColor }};color:#fff;display:flex;align-items:center;justify-content:center;font:700 16px 'Open Sans';flex:none;">{{ b.initials }}</div>
+                  <div style="min-width:0;">
+                    <div style="font:700 14px 'Open Sans';color:#1A1A1A;">{{ b.name }}</div>
+                    <div style="font:500 12px/1.4 'Open Sans';color:#9497A1;">{{ b.dept }}</div>
+                    <div style="font:700 12px 'Open Sans';color:#1E9E86;margin-top:4px;">{{ b.dateLabel }}</div>
+                  </div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid #F0F0F3;">
+                  <div style="font:600 12px 'Open Sans';color:#6B6B6B;">{{ b.congratsLabel }}</div>
+                  <button onclick="{{ b.toggleCongrats }}" style="display:flex;align-items:center;gap:6px;border:1px solid {{ b.btnBorder }};background:{{ b.btnBg }};color:{{ b.btnFg }};font:700 12px 'Open Sans';padding:7px 13px;border-radius:20px;cursor:pointer;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15l2-9 4 3 2-5 2 5 4-3 2 9Z"></path><path d="M4 19h16"></path></svg>
+                    {{ b.btnLabel }}
+                  </button>
+                </div>
+
+                <sc-if value="{{ b.hasCongratulators }}" hint-placeholder-val="{{ false }}">
+                  <div style="font:500 11.5px/1.5 'Open Sans';color:#9497A1;margin-top:8px;">{{ b.congratulatorsLabel }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- COMUNICADOS TAB -->
+        <sc-if value="{{ isComunicados }}" hint-placeholder-val="{{ false }}">
+          <sc-for list="{{ comunicados }}" as="cm" hint-placeholder-count="3">
+            <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;overflow:hidden;display:flex;">
+              <div style="width:6px;background:#0A3299;flex:none;"></div>
+              <div style="padding:18px 20px;flex:1;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A3299" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v3a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1Z"></path><path d="M15 8a4 4 0 0 1 0 8"></path></svg>
+                  <span style="font:700 11px 'Open Sans';letter-spacing:0.04em;color:#0A3299;">COMUNICADO OFICIAL · {{ cm.date }}</span>
+                </div>
+                <div style="font:700 16px 'Open Sans';color:#1A1A1A;margin-bottom:6px;">{{ cm.title }}</div>
+                <div style="font:500 13.5px/1.6 'Open Sans';color:#4A4A4A;">{{ cm.text }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <!-- DIRETORIO TAB -->
+        <sc-if value="{{ isDiretorio }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:20px 22px 8px;">
+            <div style="font:800 18px 'Open Sans';color:#1A1A1A;margin-bottom:2px;">Diretório de Secretarias</div>
+            <div style="font:500 13px 'Open Sans';color:#9497A1;margin-bottom:14px;">Organograma e contatos das coordenadorias da SMUL</div>
+          </div>
+          <sc-for list="{{ directory }}" as="d" hint-placeholder-count="6">
+            <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+              <div style="display:flex;gap:14px;align-items:center;min-width:0;">
+                <div style="width:44px;height:44px;border-radius:10px;background:#EEF1FB;color:#0A3299;display:flex;align-items:center;justify-content:center;font:800 12px 'Open Sans';flex:none;">{{ d.sigla }}</div>
+                <div style="min-width:0;">
+                  <div style="font:700 14px 'Open Sans';color:#1A1A1A;">{{ d.name }}</div>
+                  <div style="font:500 12.5px 'Open Sans';color:#9497A1;">Responsável: {{ d.head }}</div>
+                </div>
+              </div>
+              <div style="text-align:right;flex:none;">
+                <div style="font:600 12.5px 'Open Sans';color:#395AAD;">{{ d.email }}</div>
+                <div style="font:500 12px 'Open Sans';color:#9497A1;">{{ d.phone }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <!-- EVENTOS TAB -->
+        <sc-if value="{{ isEventos }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:20px 22px;">
+            <div style="font:800 18px 'Open Sans';color:#1A1A1A;">Calendário Institucional</div>
+            <div style="font:500 13px 'Open Sans';color:#9497A1;">Próximos eventos, treinamentos e datas relevantes</div>
+          </div>
+          <sc-for list="{{ events }}" as="e" hint-placeholder-count="5">
+            <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:16px 20px;display:flex;gap:16px;align-items:center;">
+              <div style="width:56px;height:56px;border-radius:10px;background:#EEF1FB;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <div style="font:800 17px 'Open Sans';color:#0A3299;line-height:1;">{{ e.day }}</div>
+                <div style="font:700 10px 'Open Sans';letter-spacing:0.04em;color:#395AAD;">{{ e.monthShort }}</div>
+              </div>
+              <div style="min-width:0;">
+                <div style="font:700 14px 'Open Sans';color:#1A1A1A;">{{ e.title }}</div>
+                <div style="font:500 12.5px/1.5 'Open Sans';color:#9497A1;">{{ e.desc }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <!-- PERFIL TAB -->
+        <sc-if value="{{ isPerfil }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;overflow:hidden;">
+            <div style="height:96px;background:linear-gradient(100deg,#0A3299,#1E9E86);"></div>
+            <div style="padding:0 24px 24px;margin-top:-38px;">
+              <div style="width:84px;height:84px;border-radius:50%;background:#395AAD;color:#fff;display:flex;align-items:center;justify-content:center;font:800 26px 'Open Sans';border:4px solid #fff;">VC</div>
+              <div style="font:800 19px 'Open Sans';color:#1A1A1A;margin-top:10px;">Você</div>
+              <div style="font:600 13px 'Open Sans';color:#9497A1;">Analista de Sistemas · Coordenadoria de Tecnologia da Informação</div>
+              <div style="display:flex;gap:22px;margin-top:16px;padding-top:16px;border-top:1px solid #F0F0F3;font:500 13px 'Open Sans';color:#4A4A4A;">
+                <div><strong style="color:#1A1A1A;">voce@prefeitura.sp.gov.br</strong></div>
+                <div><strong style="color:#1A1A1A;">Ramal 4032</strong></div>
+                <div><strong style="color:#1A1A1A;">Sala 18º andar</strong></div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:18px 22px;">
+            <div style="font:700 14px 'Open Sans';color:#1A1A1A;margin-bottom:10px;">Minha atividade recente</div>
+            <div style="font:500 13px/1.7 'Open Sans';color:#6B6B6B;">Curtidas, comentários e felicitações que você enviou aparecerão aqui.</div>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- RIGHT RAIL (feed only) -->
+      <sc-if value="{{ isFeed }}" hint-placeholder-val="{{ true }}">
+        <div style="width:300px;flex:none;display:flex;flex-direction:column;gap:16px;position:sticky;top:84px;">
+
+          <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <span style="font:700 13.5px 'Open Sans';color:#1A1A1A;">Aniversariantes</span>
+              <button onclick="{{ goBirthdays }}" style="border:none;background:none;color:#0A3299;font:700 11.5px 'Open Sans';cursor:pointer;">Ver todos</button>
+            </div>
+            <sc-for list="{{ birthdaysPreview }}" as="b" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+                <div style="width:34px;height:34px;border-radius:50%;background:{{ b.avatarColor }};color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px 'Open Sans';flex:none;">{{ b.initials }}</div>
+                <div style="min-width:0;flex:1;">
+                  <div style="font:700 12.5px 'Open Sans';color:#1A1A1A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ b.name }}</div>
+                  <div style="font:600 11px 'Open Sans';color:#1E9E86;">{{ b.dateLabel }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <span style="font:700 13.5px 'Open Sans';color:#1A1A1A;">Próximos eventos</span>
+              <button onclick="{{ goEventos }}" style="border:none;background:none;color:#0A3299;font:700 11.5px 'Open Sans';cursor:pointer;">Ver todos</button>
+            </div>
+            <sc-for list="{{ eventsPreview }}" as="e" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+                <div style="width:34px;height:34px;border-radius:8px;background:#EEF1FB;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                  <div style="font:800 12px 'Open Sans';color:#0A3299;line-height:1;">{{ e.day }}</div>
+                  <div style="font:700 8px 'Open Sans';color:#395AAD;">{{ e.monthShort }}</div>
+                </div>
+                <div style="min-width:0;flex:1;">
+                  <div style="font:700 12.5px 'Open Sans';color:#1A1A1A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ e.title }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E7E8EC;border-radius:14px;padding:16px;">
+            <div style="font:700 13.5px 'Open Sans';color:#1A1A1A;margin-bottom:10px;">Vagas internas</div>
+            <sc-for list="{{ vagas }}" as="v" hint-placeholder-count="2">
+              <div style="padding:8px 0;border-top:1px solid #F5F6F9;">
+                <div style="font:700 12.5px 'Open Sans';color:#1A1A1A;">{{ v.title }}</div>
+                <div style="font:500 11.5px 'Open Sans';color:#9497A1;">{{ v.dept }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const AVATAR_COLORS = ["#395AAD", "#1E9E86", "#F94668", "#C98A1B", "#8B5CB0"];
+
+function initials(name) {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase();
+}
+
+class Component extends DCLogic {
+  state = {
+    tab: "feed",
+    search: "",
+    notifOpen: false,
+    composerOpen: false,
+    composerType: "comum",
+    composerText: "",
+    notifications: [
+      { id: 1, text: "Ingrid Jesus Costa e mais 4 pessoas parabenizaram Mieco Miyazato pelo aniversário.", time: "há 20 min", read: false, dot: "#F94668", bg: "#fff" },
+      { id: 2, text: "Novo comunicado oficial: Atualização cadastral obrigatória.", time: "há 2h", read: false, dot: "#0A3299", bg: "#fff" },
+      { id: 3, text: "Rogério do N. Gonçalves comentou no seu post.", time: "ontem", read: true, dot: "#9497A1", bg: "#fff" },
+      { id: 4, text: "Vaga interna aberta na Coordenadoria de Licenciamento.", time: "há 2 dias", read: true, dot: "#9497A1", bg: "#fff" },
+    ],
+    posts: [
+      {
+        id: 1, author: "Coordenadoria de Comunicação", cargo: "Comunicação SMUL", time: "há 1h",
+        type: "comunicado", text: "Já conferiu se o seu cadastro está atualizado? Atualize seus dados de contato no portal do servidor para mantermos uma comunicação assertiva. É simples e rápido!",
+        image: "figma-assets/banner-comunicado.png", likes: 34, likedByMe: false, commentsOpen: false, draft: "",
+        comments: [{ author: "Sandra Maria Coelho Cruz", text: "Feito! Muito importante essa atualização.", initials: "SC", avatarColor: "#8B5CB0" }],
+      },
+      {
+        id: 2, author: "Ingrid Jesus Costa", cargo: "Divisão de Gestão de Pessoas", time: "há 3h",
+        type: "kudos", text: "Quero reconhecer o time da CASE pelo excelente trabalho na migração do sistema de licenciamento este mês. Dedicação exemplar! 👏 (sem emoji, só orgulho mesmo)",
+        image: null, likes: 21, likedByMe: true, commentsOpen: false, draft: "", comments: [],
+      },
+      {
+        id: 3, author: "Urbanismo em Pauta", cargo: "Cultura urbana", time: "há 5h",
+        type: "comum", text: "Papo Urbano deste mês: uma releitura visual da região central de São Paulo. Confira a matéria completa na aba Comunicados.",
+        image: "figma-assets/news-photo-1.png", likes: 12, likedByMe: false, commentsOpen: false, draft: "", comments: [],
+      },
+      {
+        id: 4, author: "Rogério do N. Gonçalves", cargo: "RESID", time: "há 1 dia",
+        type: "vaga", text: "Estamos com uma vaga interna aberta na Coordenadoria de Licenciamento para analista pleno. Interessados podem procurar a DSIGP até sexta-feira.",
+        image: null, likes: 8, likedByMe: false, commentsOpen: false, draft: "", comments: [],
+      },
+      {
+        id: 5, author: "Coordenadoria de Tecnologia da Informação", cargo: "TI · Suporte", time: "há 2 dias",
+        type: "conquista", text: "Celebramos 3 anos do GeoSampa 2.0 no ar, com mais de 40 mil acessos mensais. Obrigado a todos que tornaram esse projeto possível!",
+        image: null, likes: 45, likedByMe: false, commentsOpen: false, draft: "", comments: [],
+      },
+    ],
+    birthdays: [
+      { id: 1, name: "Mieco Miyazato Ricieri Teixeira", dept: "Coordenadoria de Cadastro, Análise de Dados e Sistema Eletrônico de Licenciamento - CASE", day: 6, congratulated: false, congratulators: ["Ingrid Jesus Costa", "Sandra Maria Coelho Cruz"] },
+      { id: 2, name: "Ingrid Jesus Costa", dept: "Divisão de Gestão de Pessoas", day: 6, congratulated: false, congratulators: [] },
+      { id: 3, name: "Sandra Maria Coelho Cruz", dept: "SERVIN / DSIGP", day: 11, congratulated: false, congratulators: ["Mieco Miyazato Ricieri Teixeira"] },
+      { id: 4, name: "Rogério do N. Gonçalves", dept: "RESID", day: 15, congratulated: false, congratulators: [] },
+      { id: 5, name: "Paulo Roberto Andrade", dept: "Coordenadoria de Planejamento Urbano", day: 19, congratulated: false, congratulators: [] },
+      { id: 6, name: "Fernanda Lima Souza", dept: "Assessoria Jurídica", day: 22, congratulated: false, congratulators: [] },
+      { id: 7, name: "Carlos Eduardo Prado", dept: "Coordenadoria de Licenciamento", day: 27, congratulated: false, congratulators: [] },
+      { id: 8, name: "Beatriz Nascimento Alves", dept: "GeoSampa", day: 30, congratulated: false, congratulators: [] },
+    ],
+  };
+
+  today = 6;
+  monthLabel = "Julho";
+
+  goFeed = () => this.setState({ tab: "feed" });
+  goBirthdays = () => this.setState({ tab: "birthdays", notifOpen: false });
+  goComunicados = () => this.setState({ tab: "comunicados" });
+  goDiretorio = () => this.setState({ tab: "diretorio" });
+  goEventos = () => this.setState({ tab: "eventos" });
+  goPerfil = () => this.setState({ tab: "perfil" });
+
+  toggleNotif = () => this.setState(s => ({ notifOpen: !s.notifOpen }));
+  markAllRead = () => this.setState(s => ({ notifications: s.notifications.map(n => ({ ...n, read: true })) }));
+
+  onSearchInput = (e) => this.setState({ search: e.target.value });
+
+  openComposer = () => this.setState({ composerOpen: true });
+  closeComposer = () => this.setState({ composerOpen: false, composerText: "", composerType: "comum" });
+  onComposerInput = (e) => this.setState({ composerText: e.target.value, composerOpen: true });
+  setTypeComum = () => this.setState({ composerType: "comum" });
+  setTypeComunicado = () => this.setState({ composerType: "comunicado" });
+  setTypeConquista = () => this.setState({ composerType: "conquista" });
+  setTypeKudos = () => this.setState({ composerType: "kudos" });
+  setTypeVaga = () => this.setState({ composerType: "vaga" });
+
+  submitPost = () => {
+    const text = this.state.composerText.trim();
+    if (!text) return;
+    const newPost = {
+      id: Date.now(), author: "Você", cargo: "Analista de Sistemas · TI", time: "agora",
+      type: this.state.composerType, text, image: null, likes: 0, likedByMe: false,
+      commentsOpen: false, draft: "", comments: [],
+    };
+    this.setState(s => ({ posts: [newPost, ...s.posts], composerText: "", composerOpen: false, composerType: "comum" }));
+  };
+
+  toggleLike = (id) => {
+    this.setState(s => ({
+      posts: s.posts.map(p => p.id === id ? { ...p, likedByMe: !p.likedByMe, likes: p.likes + (p.likedByMe ? -1 : 1) } : p),
+    }));
+  };
+
+  toggleComments = (id) => {
+    this.setState(s => ({ posts: s.posts.map(p => p.id === id ? { ...p, commentsOpen: !p.commentsOpen } : p) }));
+  };
+
+  setDraft = (id, value) => {
+    this.setState(s => ({ posts: s.posts.map(p => p.id === id ? { ...p, draft: value } : p) }));
+  };
+
+  submitComment = (id) => {
+    this.setState(s => ({
+      posts: s.posts.map(p => {
+        if (p.id !== id) return p;
+        const text = p.draft.trim();
+        if (!text) return p;
+        return { ...p, draft: "", comments: [...p.comments, { author: "Você", text, initials: "VC", avatarColor: "#395AAD" }] };
+      }),
+    }));
+  };
+
+  toggleCongrats = (id) => {
+    this.setState(s => ({
+      birthdays: s.birthdays.map(b => {
+        if (b.id !== id) return b;
+        const congratulated = !b.congratulated;
+        const congratulators = congratulated ? [...b.congratulators, "Você"] : b.congratulators.filter(n => n !== "Você");
+        return { ...b, congratulated, congratulators };
+      }),
+    }));
+  };
+
+  TYPE_META = {
+    comum: null,
+    comunicado: { label: "COMUNICADO", bg: "#EEF1FB", fg: "#0A3299" },
+    conquista: { label: "CONQUISTA", bg: "#E3F7F3", fg: "#1E9E86" },
+    kudos: { label: "KUDOS", bg: "#FEEBEE", fg: "#F94668" },
+    vaga: { label: "VAGA INTERNA", bg: "#F3F3F4", fg: "#4A4A4A" },
+  };
+
+  chip(type) {
+    const active = this.state.composerType === type;
+    const meta = this.TYPE_META[type];
+    const activeColor = meta ? meta.fg : "#0A3299";
+    return {
+      border: active ? activeColor : "#E7E8EC",
+      bg: active ? (meta ? meta.bg : "#EEF1FB") : "#fff",
+      fg: active ? activeColor : "#6B6B6B",
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const q = s.search.trim().toLowerCase();
+
+    const posts = s.posts.map(p => {
+      const meta = this.TYPE_META[p.type];
+      return {
+        ...p,
+        avatarColor: AVATAR_COLORS[p.author.length % AVATAR_COLORS.length],
+        initials: initials(p.author),
+        hasTag: !!meta,
+        tagLabel: meta ? meta.label : "",
+        tagBg: meta ? meta.bg : "",
+        tagFg: meta ? meta.fg : "",
+        hasImage: !!p.image,
+        image: p.image,
+        likeFill: p.likedByMe ? "#F94668" : "none",
+        likeColor: p.likedByMe ? "#F94668" : "#4A4A4A",
+        likeLabel: p.likes + (p.likes === 1 ? " curtida" : " curtidas"),
+        commentCountLabel: p.comments.length + (p.comments.length === 1 ? " comentário" : " comentários"),
+        toggleLike: () => this.toggleLike(p.id),
+        toggleComments: () => this.toggleComments(p.id),
+        onDraftInput: (e) => this.setDraft(p.id, e.target.value),
+        submitComment: () => this.submitComment(p.id),
+      };
+    });
+
+    const filteredPosts = q
+      ? posts.filter(p => p.text.toLowerCase().includes(q) || p.author.toLowerCase().includes(q))
+      : posts;
+
+    const birthdays = [...s.birthdays].sort((a, b) => a.day - b.day).map(b => {
+      const congratsCount = b.congratulators.length;
+      return {
+        ...b,
+        avatarColor: AVATAR_COLORS[b.name.length % AVATAR_COLORS.length],
+        initials: initials(b.name),
+        dateLabel: b.day + " de " + this.monthLabel,
+        isToday: b.day === this.today,
+        congratsLabel: congratsCount === 0 ? "Seja o primeiro a parabenizar" : congratsCount + (congratsCount === 1 ? " felicitação" : " felicitações"),
+        btnLabel: b.congratulated ? "Parabenizado" : "Parabenizar",
+        btnBg: b.congratulated ? "#E3F7F3" : "#0A3299",
+        btnFg: b.congratulated ? "#1E9E86" : "#fff",
+        btnBorder: b.congratulated ? "#1E9E86" : "#0A3299",
+        hasCongratulators: congratsCount > 0,
+        congratulatorsLabel: congratsCount > 0 ? congratsCount + " pessoa(s): " + b.congratulators.join(", ") : "",
+        toggleCongrats: () => this.toggleCongrats(b.id),
+      };
+    });
+
+    const directory = [
+      { sigla: "CASE", name: "Coordenadoria de Cadastro, Análise de Dados e Sistema Eletrônico de Licenciamento", head: "Mieco Miyazato Ricieri Teixeira", email: "case@prefeitura.sp.gov.br", phone: "Ramal 4011" },
+      { sigla: "DSIGP", name: "Divisão de Gestão de Pessoas", head: "Ingrid Jesus Costa", email: "dsigp@prefeitura.sp.gov.br", phone: "Ramal 4022" },
+      { sigla: "SERVIN", name: "Serviço de Infraestrutura", head: "Sandra Maria Coelho Cruz", email: "servin@prefeitura.sp.gov.br", phone: "Ramal 4033" },
+      { sigla: "RESID", name: "Coordenadoria de Resíduos e Licenciamento", head: "Rogério do N. Gonçalves", email: "resid@prefeitura.sp.gov.br", phone: "Ramal 4044" },
+      { sigla: "CPU", name: "Coordenadoria de Planejamento Urbano", head: "Paulo Roberto Andrade", email: "cpu@prefeitura.sp.gov.br", phone: "Ramal 4055" },
+      { sigla: "AJ", name: "Assessoria Jurídica", head: "Fernanda Lima Souza", email: "juridico@prefeitura.sp.gov.br", phone: "Ramal 4066" },
+      { sigla: "TI", name: "Coordenadoria de Tecnologia da Informação", head: "Carlos Eduardo Prado", email: "ti@prefeitura.sp.gov.br", phone: "Ramal 4077" },
+    ];
+
+    const events = [
+      { day: "08", monthShort: "JUL", title: "Reunião geral SMUL", desc: "Auditório principal, 10h — apresentação de resultados do semestre." },
+      { day: "10", monthShort: "JUL", title: "Treinamento SEI para novos servidores", desc: "Sala de treinamento, 18º andar, 14h." },
+      { day: "14", monthShort: "JUL", title: "Palestra Urbanismo em Pauta", desc: "Convidados externos discutem planejamento urbano em SP." },
+      { day: "21", monthShort: "JUL", title: "Manutenção programada do SIMPROC", desc: "Sistema indisponível das 20h às 23h." },
+      { day: "31", monthShort: "JUL", title: "Fechamento mensal de indicadores", desc: "Envio dos relatórios até 18h." },
+    ];
+
+    const comunicados = [
+      { date: "05 jul", title: "Já conferiu se o seu cadastro está atualizado?", text: "Atualize seus dados de contato no portal do servidor para mantermos uma comunicação assertiva e de qualidade. É simples e rápido." },
+      { date: "01 jul", title: "Novo horário de atendimento presencial", text: "A partir de julho, o atendimento presencial da SMUL passa a funcionar das 9h às 17h, de segunda a sexta." },
+      { date: "26 jun", title: "Atualização do sistema SIMPROC", text: "O SIMPROC Web recebeu melhorias de performance e uma nova tela de acompanhamento de processos." },
+    ];
+
+    const vagas = [
+      { title: "Analista de Sistemas Pleno", dept: "Coordenadoria de Tecnologia da Informação" },
+      { title: "Assistente Técnico", dept: "Coordenadoria de Licenciamento" },
+    ];
+
+    const chipComum = this.chip("comum");
+    const chipComunicado = this.chip("comunicado");
+    const chipConquista = this.chip("conquista");
+    const chipKudos = this.chip("kudos");
+    const chipVaga = this.chip("vaga");
+
+    const navActive = (tab) => ({
+      bg: s.tab === tab ? "#EEF1FB" : "transparent",
+      fg: s.tab === tab ? "#0A3299" : "#4A4A4A",
+    });
+    const nFeed = navActive("feed"), nBirth = navActive("birthdays"), nCom = navActive("comunicados"),
+      nDir = navActive("diretorio"), nEv = navActive("eventos"), nPer = navActive("perfil");
+
+    return {
+      search: s.search, onSearchInput: this.onSearchInput,
+      notifOpen: s.notifOpen, toggleNotif: this.toggleNotif, markAllRead: this.markAllRead,
+      notifications: s.notifications,
+      hasUnread: s.notifications.some(n => !n.read),
+
+      isFeed: s.tab === "feed", isBirthdays: s.tab === "birthdays", isComunicados: s.tab === "comunicados",
+      isDiretorio: s.tab === "diretorio", isEventos: s.tab === "eventos", isPerfil: s.tab === "perfil",
+
+      goFeed: this.goFeed, goBirthdays: this.goBirthdays, goComunicados: this.goComunicados,
+      goDiretorio: this.goDiretorio, goEventos: this.goEventos, goPerfil: this.goPerfil,
+
+      navBgFeed: nFeed.bg, navFgFeed: nFeed.fg, navBgBirthdays: nBirth.bg, navFgBirthdays: nBirth.fg,
+      navBgComunicados: nCom.bg, navFgComunicados: nCom.fg, navBgDiretorio: nDir.bg, navFgDiretorio: nDir.fg,
+      navBgEventos: nEv.bg, navFgEventos: nEv.fg, navBgPerfil: nPer.bg, navFgPerfil: nPer.fg,
+
+      composerOpen: s.composerOpen, composerText: s.composerText,
+      openComposer: this.openComposer, closeComposer: this.closeComposer, onComposerInput: this.onComposerInput,
+      submitPost: this.submitPost, submitDisabled: s.composerText.trim() === "", submitOpacity: s.composerText.trim() === "" ? 0.5 : 1,
+      setTypeComum: this.setTypeComum, setTypeComunicado: this.setTypeComunicado, setTypeConquista: this.setTypeConquista,
+      setTypeKudos: this.setTypeKudos, setTypeVaga: this.setTypeVaga,
+      chipBorderComum: chipComum.border, chipBgComum: chipComum.bg, chipFgComum: chipComum.fg,
+      chipBorderComunicado: chipComunicado.border, chipBgComunicado: chipComunicado.bg, chipFgComunicado: chipComunicado.fg,
+      chipBorderConquista: chipConquista.border, chipBgConquista: chipConquista.bg, chipFgConquista: chipConquista.fg,
+      chipBorderKudos: chipKudos.border, chipBgKudos: chipKudos.bg, chipFgKudos: chipKudos.fg,
+      chipBorderVaga: chipVaga.border, chipBgVaga: chipVaga.bg, chipFgVaga: chipVaga.fg,
+
+      filteredPosts,
+      monthLabel: this.monthLabel,
+      birthdays,
+      birthdaysPreview: birthdays.slice(0, 4),
+      comunicados,
+      directory,
+      events,
+      eventsPreview: events.slice(0, 3),
+      vagas,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

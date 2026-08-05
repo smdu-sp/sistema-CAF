@@ -14,6 +14,7 @@ export const Boxes: BoxesProps[] = [
   {
     id: 1,
     title: "Qual é o objetivo da CIPA?",
+    description: "Desenvolver atividade para:",
     list: ["Prevenção de acidentes de trabalho", "Prevenção de doenças profissionais", "Melhoria das condições de trabalho"],
   },
   {

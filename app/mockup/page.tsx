@@ -4,7 +4,8 @@ import { useState, useRef } from "react";
 import { Header } from "@/components/mockup/header";
 import { Boxes } from "@/app/mockup/mockBoxes";
 import { Button } from "@/components/mockup/Button";
-import { ArrowRight, Image as ImageIcon } from "lucide-react";
+import { ArrowRight, FileWarning, Image as ImageIcon } from "lucide-react";
+import { AccessibilityBar } from "@/components/mockup/accessibility-bar";
 
 export default function home() {
   const [preview, setPreview] = useState<string | null>(null);
@@ -18,7 +19,14 @@ export default function home() {
   };
   return (
     <div>
+      <AccessibilityBar />
       <Header />
+      <div className="flex gap-4 items-center justify-center flex-1 bg-green-600 py-2">
+        <span className=" flex justify-center items-center gap-4 text-xs text-white font-bold">
+          <FileWarning size={14} /> Sofreu ou presenciou assédio moral ou sexual? Você não está sozinho(a).
+        </span>
+        <Button className="text-sm flex-1 max-w-72" onClick={() => alert("funcionou")} title={"Canal de denúncia e Acolhimento "} icon={<ArrowRight size={12} />} />
+      </div>
       <main className="max-w-[1180px] mx-auto px-6 py-4">
         <div className="w-full flex flex-col gap-4 bg-gray-100 rounded-lg py-8 mb-8 px-6">
           <section className="flex flex-col gap-4 ">
@@ -29,14 +37,14 @@ export default function home() {
           <section className="flex justify-center gap-4">
             {Boxes.map(({ title, description, list, id }) => {
               return (
-                <div key={id} className="flex-1 flex flex-col gap-4 max-w-80 bg-gray-200 p-4 rounded-lg">
+                <div key={id} className="flex-1 flex flex-col gap-2 max-w-80 bg-gray-200 p-4 rounded-lg">
                   <p className="font-bold text-lg">{title}</p>
                   {description ? <p className="text-sm">{description}</p> : null}
                   {list ? (
                     <ul className=" flex flex-col list-disc">
                       {list?.map((item, key) => {
                         return (
-                          <li className="max-w-48 ml-4 text-sm" key={key}>
+                          <li className=" ml-4 text-sm" key={key}>
                             {item}
                           </li>
                         );
@@ -68,7 +76,7 @@ export default function home() {
             <p className="text-sm text-gray-500 max-w-[500px]">
               Atualizado periodicamente pela CIPA. Arraste uma nova imagem no quadro ao lado para substituir o cartaz atual — os cartazes anteriores ficam guardados na área de Conteúdos.
             </p>
-            <Button onClick={() => alert("Funcionou ")} title={"Ver Cartazes anteriores"} icon={<ArrowRight size={14} />} />
+            <Button className="max-w-52" onClick={() => alert("Funcionou ")} title={"Ver Cartazes anteriores"} icon={<ArrowRight size={14} />} />
           </section>
         </div>
       </main>

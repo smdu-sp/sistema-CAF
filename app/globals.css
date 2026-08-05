@@ -76,3 +76,26 @@
     min-width: 0;
   }
 }
+
+.high-contrast,
+.high-contrast body,
+.high-contrast header,
+.high-contrast nav,
+.high-contrast main,
+.high-contrast section,
+.high-contrast div:not(.bg-\[\#111111\]) {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.high-contrast a {
+  color: #ffff00 !important;
+}
+
+.high-contrast a:hover {
+  color: #ffffff !important;
+  text-decoration: underline;
+}
+
+

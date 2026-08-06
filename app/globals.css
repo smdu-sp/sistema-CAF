@@ -4,6 +4,7 @@
 
 :root {
   --background: oklch(1 0 0);
+  --background-secondary: #fbfbfd;
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
@@ -71,7 +72,7 @@
     overflow-x: visible;
   }
   body {
-    background-color: var(--background);
+    background-color: var(--background-secondary);
     color: var(--foreground);
     min-width: 0;
   }
@@ -97,5 +98,3 @@
   color: #ffffff !important;
   text-decoration: underline;
 }
-
-

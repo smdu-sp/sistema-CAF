@@ -4,10 +4,28 @@ import { useState, useEffect } from "react";
 import { Contrast } from "lucide-react";
 
 export function AccessibilityBar() {
-  const [fontSize, setFontSize] = useState<number>(100); // 100% default
+  const [fontSize, setFontSize] = useState<number>(100);
   const [highContrast, setHighContrast] = useState<boolean>(false);
 
-  // Apply font size adjustment to document root
+  // Carrega as preferências salvas no localStorage ao montar a página
+  useEffect(() => {
+    const savedContrast = localStorage.getItem("highContrast") === "true";
+    const savedFontSize = localStorage.getItem("fontSize");
+
+    if (savedContrast) {
+      setHighContrast(true);
+      document.documentElement.classList.add("high-contrast");
+    }
+
+    if (savedFontSize) {
+      const size = Number(savedFontSize);
+      setFontSize(size);
+      document.documentElement.style.fontSize = `${size}%`;
+      document.body.style.fontSize = `${size}%`;
+    }
+  }, []);
+
+  // Aplica alteração do tamanho da fonte e salva
   const handleFontSizeChange = (action: "decrease" | "reset" | "increase") => {
     let newSize = fontSize;
     if (action === "decrease") {
@@ -18,14 +36,17 @@ export function AccessibilityBar() {
       newSize = 100;
     }
     setFontSize(newSize);
+    localStorage.setItem("fontSize", String(newSize));
     document.documentElement.style.fontSize = `${newSize}%`;
     document.body.style.fontSize = `${newSize}%`;
   };
 
-  // Toggle high contrast mode
+  // Alterna o modo de alto contraste e salva
   const toggleHighContrast = () => {
     const nextState = !highContrast;
     setHighContrast(nextState);
+    localStorage.setItem("highContrast", String(nextState));
+
     if (nextState) {
       document.documentElement.classList.add("high-contrast");
     } else {
@@ -34,37 +55,34 @@ export function AccessibilityBar() {
   };
 
   return (
-    <div className="bg-[#111111] text-white border-b border-zinc-800 py-1.5 px-4 text-xs select-none">
+    <div className="bg-[#fff] text-white border-b border-zinc-800 py-1.5 px-4 text-xs select-none">
       <div className="max-w-[1180px] mx-auto flex items-center justify-end gap-4">
         <div className="flex items-center gap-1.5">
-          <span className="text-zinc-300 font-normal mr-1">Fonte:</span>
+          <span className="text-black font-normal mr-1">Fonte:</span>
           <button
             onClick={() => handleFontSizeChange("decrease")}
-            className="bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-white font-bold px-2 py-0.5 rounded border border-zinc-700 transition-colors text-xs"
+            className="bg-white text-black font-bold px-2 py-0.5 rounded border border-zinc-700 transition-colors text-xs cursor-pointer"
             title="Diminuir fonte (A-)"
           >
             A-
           </button>
           <button
             onClick={() => handleFontSizeChange("reset")}
-            className="bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-white font-bold px-2.5 py-0.5 rounded border border-zinc-700 transition-colors text-xs"
+            className="bg-white text-black font-bold px-2.5 py-0.5 rounded border border-zinc-700 transition-colors text-xs cursor-pointer"
             title="Tamanho normal (A)"
           >
             A
           </button>
           <button
             onClick={() => handleFontSizeChange("increase")}
-            className="bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-white font-bold px-2 py-0.5 rounded border border-zinc-700 transition-colors text-xs"
+            className="bg-white text-black font-bold px-2 py-0.5 rounded border border-zinc-700 transition-colors text-xs cursor-pointer"
             title="Aumentar fonte (A+)"
           >
             A+
           </button>
         </div>
 
-        <button
-          onClick={toggleHighContrast}
-          className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-white px-3 py-1 rounded border border-zinc-700 transition-colors font-medium text-xs cursor-pointer ml-2"
-        >
+        <button onClick={toggleHighContrast} className="flex items-center gap-2 bg-white text-black px-3 py-1 rounded border border-zinc-700 transition-colors font-medium text-xs cursor-pointer ml-2">
           <Contrast className="w-3.5 h-3.5" />
           <span>
             Alto contraste: <strong className="font-semibold">{highContrast ? "ativado" : "desativado"}</strong>

@@ -35,7 +35,7 @@ export const intranetNavigationItems: IntranetNavigationItem[] = [
     icon: Megaphone,
   },
   {
-    label: "Diretorio",
+    label: "Diretório",
     href: "/intranet/diretorio",
     icon: ContactRound,
   },

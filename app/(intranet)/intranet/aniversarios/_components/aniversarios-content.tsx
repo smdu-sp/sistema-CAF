@@ -1,11 +1,18 @@
 /** @format */
 
+import { mockBirthdayConfig, mockBirthdays } from "../../_mock";
+import { PageHeader } from "../../_components/shared/page-header";
+import { BirthdayGrid } from "./birthday-grid";
+
 export function AniversariosContent() {
   return (
-    <section className="flex flex-1 items-center justify-center">
-      <h1 className="text-2xl font-bold leading-tight md:text-3xl">
-        Aniversários
-      </h1>
+    <section className="space-y-6">
+      <PageHeader
+        title="Aniversarios"
+        description={`Aniversariantes de ${mockBirthdayConfig.monthLabel}`}
+      />
+
+      <BirthdayGrid birthdays={mockBirthdays} />
     </section>
   );
 }

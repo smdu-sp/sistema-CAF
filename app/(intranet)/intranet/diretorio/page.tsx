@@ -1,5 +1,9 @@
 /** @format */
 
 export default function DiretorioPage() {
-  return null;
+  return (
+    <>
+      <h2>Diretório</h2>
+    </>
+  );
 }

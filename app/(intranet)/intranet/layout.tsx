@@ -17,9 +17,9 @@ export default function IntranetRouteLayout({
         </div>
       </div>
 
-      <div className="grid w-full grid-cols-[minmax(1rem,1fr)_minmax(0,1280px)_minmax(1rem,1fr)]">
+      <div className="grid w-full grid-cols-[minmax(1rem,1fr)_minmax(0,1440px)_minmax(1rem,1fr)]">
         <div aria-hidden="true" />
-        <div className="grid min-w-0 gap-6 py-6 md:grid-cols-[280px_minmax(0,1fr)_minmax(0,280px)]">
+        <div className="grid min-w-0 gap-8 py-6 md:grid-cols-[260px_minmax(0,1fr)_260px] xl:grid-cols-[280px_minmax(0,1fr)_280px]">
           <aside className="hidden md:block [&>div]:rounded-lg [&>div]:border [&>div]:bg-background [&>div]:shadow-sm">
             <IntranetSidebar />
           </aside>

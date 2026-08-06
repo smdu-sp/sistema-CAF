@@ -15,19 +15,22 @@ export function Header() {
         <nav>
           <ul className="flex items-center gap-8 justify-center transition-all duration-300">
             <li className="hover:text-gray-700 ease-in-out">
-              <Link href="/mockup">Início</Link>
+              <Link href="/mockup/">Início</Link>
             </li>
             <li className="hover:text-gray-700 ease-in-out">
-              <Link href="/mockup">Fale com a gente</Link>
+              <Link href="/mockup/eventos">Fale com a gente</Link>
             </li>
             <li className="hover:text-gray-700 ease-in-out">
-              <Link href="/mockup">Conteúdos</Link>
+              <Link href="/mockup/informacoes">Conteúdos</Link>
             </li>
             <li className="hover:text-gray-700 ease-in-out">
-              <Link href="/mockup">Equipe</Link>
+              <Link href="/mockup/videos">Vídeos</Link>
             </li>
             <li className="hover:text-gray-700 ease-in-out">
-              <Link href="/mockup">Parceiros</Link>
+              <Link href="/mockup/integrantes">Equipe</Link>
+            </li>
+            <li className="hover:text-gray-700 ease-in-out">
+              <Link href="/mockup/parcerias">Parceiros</Link>
             </li>
           </ul>
         </nav>

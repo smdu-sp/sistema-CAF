@@ -11,8 +11,8 @@ interface FastAcessProps {
 export const FastAcess: FastAcessProps[] = [
   {
     id: 1,
-    title: "Nossa agenda",
-    subtitle: "Fique por dentro dos próximos encontros, palestras e eventos organizados pela CIPA. Confira a agenda e participe!",
+    title: "Quer falar com a gente ?",
+    subtitle: "E-mails, caixas de recado e canal de acolihmento",
     icon: <MessageCircle className="text-gray-500" size={16} />,
     url: "/mockup/eventos",
   },

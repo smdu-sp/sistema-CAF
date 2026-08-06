@@ -28,7 +28,7 @@ export default function home() {
         <span className=" flex justify-center items-center gap-2 text-xs text-white font-bold">
           <TriangleAlert size={14} /> Sofreu ou presenciou assédio moral ou sexual? Você não está sozinho(a).
         </span>
-        <Button className="text-sm max-w-72 font-bold bg-[#ffffff] text-black" onClick={() => alert("funcionou")} title={"Canal de denúncia e Acolhimento "} icon={<ArrowRight size={12} />} />
+        <Button className="text-sm max-w-72 font-bold bg-[#ffffff] text-[#1f7a3d]" onClick={() => alert("funcionou")} title={"Canal de denúncia e Acolhimento "} icon={<ArrowRight size={12} />} />
       </div>
       <main className="max-w-[1180px] mx-auto px-6 py-4">
         <div className="w-full flex flex-col gap-4 bg-[#ffffff] rounded-lg py-8 mb-8 px-6 border border-gray-200">

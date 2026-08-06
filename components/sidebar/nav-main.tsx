@@ -8,6 +8,7 @@ import {
   LucideProps,
   Users,
   ClipboardCheck,
+  UsersRound,
 } from "lucide-react";
 
 import {
@@ -54,6 +55,11 @@ export async function NavMain() {
       icone: House,
       titulo: "Página Inicial",
       url: "/",
+    },
+    {
+      icone: UsersRound,
+      titulo: "Intranet",
+      url: "/intranet",
     }
   ];
 

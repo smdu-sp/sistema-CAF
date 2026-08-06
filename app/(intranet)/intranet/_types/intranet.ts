@@ -50,3 +50,31 @@ export interface IntranetProfile {
   room: string;
   imageUrl?: string | null;
 }
+
+export type IntranetPublicationType =
+  | "comum"
+  | "comunicado"
+  | "conquista"
+  | "kudos"
+  | "vaga";
+
+export interface IntranetPostComment {
+  id: IntranetEntityId;
+  author: string;
+  text: string;
+  initials?: string;
+  avatarColor?: string;
+}
+
+export interface IntranetPost {
+  id: IntranetEntityId;
+  author: string;
+  cargo: string;
+  time: string;
+  type: IntranetPublicationType;
+  text: string;
+  image?: string | { src: string; height: number; width: number } | null;
+  likes: number;
+  likedByMe?: boolean;
+  comments?: IntranetPostComment[];
+}

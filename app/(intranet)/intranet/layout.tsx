@@ -3,6 +3,7 @@
 import { IntranetHeader } from "./_components/layout/intranet-header";
 import { IntranetSideBirthday } from "./_components/layout/intranet-side-birthdays";
 import { IntranetSidebar } from "./_components/layout/intranet-sidebar";
+import { FeedRightRail } from "./feed/_components/feed-right-rail";
 
 export default function IntranetRouteLayout({
   children,
@@ -25,8 +26,11 @@ export default function IntranetRouteLayout({
           </aside>
 
           <section className="min-w-0">{children}</section>
-          <aside className="hidden md:block [&>div]:rounded-lg [&>div]:border [&>div]:bg-background [&>div]:shadow-sm">
-            <IntranetSideBirthday />
+          <aside className="hidden space-y-4 md:block">
+            <div className="rounded-lg border bg-background shadow-sm">
+              <IntranetSideBirthday />
+            </div>
+            <FeedRightRail />
           </aside>
         </div>
         <div aria-hidden="true" />

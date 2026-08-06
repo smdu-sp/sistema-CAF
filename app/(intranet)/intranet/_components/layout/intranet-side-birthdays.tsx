@@ -47,7 +47,9 @@ export function IntranetSideBirthday({
             <SidebarContent>
                 <SidebarGroup>
                     <div className="flex justify-between">
-                        <SidebarGroupLabel>Aniversários</SidebarGroupLabel>
+                        <SidebarGroupLabel className="text-sm font-semibold">
+                            Aniversariantes
+                        </SidebarGroupLabel>
                         <SidebarGroupLabel>
                             <Link
                                 href={supportHref}

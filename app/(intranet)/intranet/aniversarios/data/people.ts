@@ -23,7 +23,7 @@ export const pessoasMock: PessoaMock[] = [
   {
     nome: "Lucas Mendes",
     setor: "STEL",
-    data_nascimento: "1991-01-30"
+    data_nascimento: "1991-08-30"
   },
   {
     nome: "Beatriz Lima",
@@ -33,7 +33,7 @@ export const pessoasMock: PessoaMock[] = [
   {
     nome: "Rafael Fernandes",
     setor: "STEL",
-    data_nascimento: "1985-04-12"
+    data_nascimento: "1985-08-12"
   },
   {
     nome: "Juliana Rocha",

@@ -61,11 +61,11 @@ export function IntranetSideBirthday({
                     </div>
                     <SidebarGroupContent>
                         {todaysBirthdays.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground p-2">
                                 Nenhum aniversário hoje.
                             </p>
                         ) : (
-                            <ul>
+                            <ul className="ml-2">
                                 {todaysBirthdays.map((person, index) => {
                                     const initials = getInitials(person.nome);
                                     const { month, day } = parseDateBirthday(person.data_nascimento);

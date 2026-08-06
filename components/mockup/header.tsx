@@ -13,20 +13,20 @@ export function Header() {
           <p className="text-[0.65rem] self-center">Prevenção de acidentes e assédio</p>
         </div>
         <nav>
-          <ul className="flex items-center gap-8 justify-center">
-            <li className="hover:text-blue-600">
+          <ul className="flex items-center gap-8 justify-center transition-all duration-300">
+            <li className="hover:text-gray-700 ease-in-out">
               <Link href="/mockup">Início</Link>
             </li>
-            <li className="hover:text-blue-600">
+            <li className="hover:text-gray-700 ease-in-out">
               <Link href="/mockup">Fale com a gente</Link>
             </li>
-            <li className="hover:text-blue-600">
+            <li className="hover:text-gray-700 ease-in-out">
               <Link href="/mockup">Conteúdos</Link>
             </li>
-            <li className="hover:text-blue-600">
+            <li className="hover:text-gray-700 ease-in-out">
               <Link href="/mockup">Equipe</Link>
             </li>
-            <li className="hover:text-blue-600">
+            <li className="hover:text-gray-700 ease-in-out">
               <Link href="/mockup">Parceiros</Link>
             </li>
           </ul>

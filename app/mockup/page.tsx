@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { Header } from "@/components/mockup/header";
 import { Boxes } from "@/app/mockup/mockBoxes";
 import { Button } from "@/components/mockup/Button";
-import { ArrowRight, FileWarning, Image as ImageIcon } from "lucide-react";
+import { ArrowRight, TriangleAlert, Image as Image, ImageIcon } from "lucide-react";
 import { AccessibilityBar } from "@/components/mockup/accessibility-bar";
 import { Footer } from "@/components/mockup/footer";
 import { FastAcess } from "./mockFastAcess";
@@ -25,8 +25,8 @@ export default function home() {
       <AccessibilityBar />
       <Header />
       <div className="flex gap-4 items-center justify-center flex-1 bg-green-600 py-2">
-        <span className=" flex justify-center items-center gap-4 text-xs text-white font-bold">
-          <FileWarning size={14} /> Sofreu ou presenciou assédio moral ou sexual? Você não está sozinho(a).
+        <span className=" flex justify-center items-center gap-2 text-xs text-white font-bold">
+          <TriangleAlert size={14} /> Sofreu ou presenciou assédio moral ou sexual? Você não está sozinho(a).
         </span>
         <Button className="text-sm flex-1 max-w-72 font-bold" onClick={() => alert("funcionou")} title={"Canal de denúncia e Acolhimento "} icon={<ArrowRight size={12} />} />
       </div>
@@ -82,7 +82,7 @@ export default function home() {
             <Button className="max-w-52" onClick={() => alert("Funcionou ")} title={"Ver Cartazes anteriores"} icon={<ArrowRight size={14} />} />
           </section>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-8 mb-8 px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-4 mb-8 ">
           {FastAcess.map(({ title, subtitle, icon, url, id }) => {
             return (
               <Link href={url} key={id} className="w-full h-full flex">

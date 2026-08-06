@@ -1,10 +1,11 @@
 /** @format */
 
+import { IntranetBirthday } from "../../_types/intranet";
 import { mockBirthdays } from "../../_mock";
-import { Birthday, BirthdayCard } from "./birthday-card";
+import { BirthdayCard } from "./birthday-card";
 
 interface BirthdayGridProps {
-  birthdays?: readonly Birthday[];
+  birthdays?: readonly IntranetBirthday[];
 }
 
 export function BirthdayGrid({ birthdays = mockBirthdays }: BirthdayGridProps) {

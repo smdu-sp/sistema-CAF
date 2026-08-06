@@ -8,18 +8,17 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { IntranetBirthday } from "../../_types/intranet";
 import { EmployeeAvatar } from "../../_components/shared/employee-avatar";
-import { mockBirthdayConfig, mockBirthdays } from "../../_mock";
-
-export type Birthday = (typeof mockBirthdays)[number];
+import { mockBirthdayConfig } from "../../_mock";
 
 interface BirthdayCardProps {
-  birthday: Birthday;
+  birthday: IntranetBirthday;
 }
 
 export function BirthdayCard({ birthday }: BirthdayCardProps) {
   const isToday = birthday.day === mockBirthdayConfig.today;
-  const congratulatorsCount = birthday.congratulators.length;
+  const congratulatorsCount = birthday.congratulators?.length ?? 0;
   const congratulatorsLabel =
     congratulatorsCount === 0
       ? "Seja o primeiro a parabenizar"
@@ -31,7 +30,11 @@ export function BirthdayCard({ birthday }: BirthdayCardProps) {
     <Card>
       <CardHeader>
         <div className="flex items-start gap-3">
-          <EmployeeAvatar name={birthday.name} className="size-11" />
+          <EmployeeAvatar
+            name={birthday.name}
+            imageUrl={birthday.imageUrl}
+            className="size-11"
+          />
 
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-2">

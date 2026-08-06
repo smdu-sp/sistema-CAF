@@ -1,11 +1,16 @@
 /** @format */
 
-export const mockBirthdayConfig = {
+import {
+  IntranetBirthday,
+  IntranetBirthdayConfig,
+} from "../_types/intranet";
+
+export const mockBirthdayConfig: IntranetBirthdayConfig = {
   today: 6,
   monthLabel: "Julho",
-} as const;
+};
 
-export const mockBirthdays = [
+export const mockBirthdays: IntranetBirthday[] = [
   {
     id: 1,
     name: "Mieco Miyazato Ricieri Teixeira",
@@ -70,4 +75,4 @@ export const mockBirthdays = [
     congratulated: false,
     congratulators: [],
   },
-] as const;
+];

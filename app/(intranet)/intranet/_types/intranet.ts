@@ -23,3 +23,12 @@ export interface IntranetAnnouncement {
   title: string;
   text: string;
 }
+
+export interface IntranetDepartment {
+  id: IntranetEntityId;
+  sigla: string;
+  name: string;
+  head: string;
+  email: string;
+  phone: string;
+}

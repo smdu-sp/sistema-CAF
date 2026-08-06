@@ -1,7 +1,10 @@
 /** @format */
 
-export const mockDirectory = [
+import { IntranetDepartment } from "../_types/intranet";
+
+export const mockDirectory: IntranetDepartment[] = [
   {
+    id: 1,
     sigla: "CASE",
     name: "Coordenadoria de Cadastro, Análise de Dados e Sistema Eletrônico de Licenciamento",
     head: "Mieco Miyazato Ricieri Teixeira",
@@ -9,6 +12,7 @@ export const mockDirectory = [
     phone: "Ramal 4011",
   },
   {
+    id: 2,
     sigla: "DSIGP",
     name: "Divisão de Gestão de Pessoas",
     head: "Ingrid Jesus Costa",
@@ -16,6 +20,7 @@ export const mockDirectory = [
     phone: "Ramal 4022",
   },
   {
+    id: 3,
     sigla: "SERVIN",
     name: "Serviço de Infraestrutura",
     head: "Sandra Maria Coelho Cruz",
@@ -23,6 +28,7 @@ export const mockDirectory = [
     phone: "Ramal 4033",
   },
   {
+    id: 4,
     sigla: "RESID",
     name: "Coordenadoria de Resíduos e Licenciamento",
     head: "Rogério do N. Gonçalves",
@@ -30,6 +36,7 @@ export const mockDirectory = [
     phone: "Ramal 4044",
   },
   {
+    id: 5,
     sigla: "CPU",
     name: "Coordenadoria de Planejamento Urbano",
     head: "Paulo Roberto Andrade",
@@ -37,6 +44,7 @@ export const mockDirectory = [
     phone: "Ramal 4055",
   },
   {
+    id: 6,
     sigla: "AJ",
     name: "Assessoria Jurídica",
     head: "Fernanda Lima Souza",
@@ -44,10 +52,11 @@ export const mockDirectory = [
     phone: "Ramal 4066",
   },
   {
+    id: 7,
     sigla: "TI",
     name: "Coordenadoria de Tecnologia da Informação",
     head: "Carlos Eduardo Prado",
     email: "ti@prefeitura.sp.gov.br",
     phone: "Ramal 4077",
   },
-] as const;
+];

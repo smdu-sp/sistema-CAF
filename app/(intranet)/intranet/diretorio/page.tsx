@@ -1,9 +1,7 @@
 /** @format */
 
+import { DepartmentContent } from "./_components/department-content";
+
 export default function DiretorioPage() {
-  return (
-    <>
-      <h2>Diretório</h2>
-    </>
-  );
+  return <DepartmentContent />;
 }

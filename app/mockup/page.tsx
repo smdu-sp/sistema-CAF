@@ -6,6 +6,9 @@ import { Boxes } from "@/app/mockup/mockBoxes";
 import { Button } from "@/components/mockup/Button";
 import { ArrowRight, FileWarning, Image as ImageIcon } from "lucide-react";
 import { AccessibilityBar } from "@/components/mockup/accessibility-bar";
+import { Footer } from "@/components/mockup/footer";
+import { FastAcess } from "./mockFastAcess";
+import Link from "next/link";
 
 export default function home() {
   const [preview, setPreview] = useState<string | null>(null);
@@ -25,7 +28,7 @@ export default function home() {
         <span className=" flex justify-center items-center gap-4 text-xs text-white font-bold">
           <FileWarning size={14} /> Sofreu ou presenciou assédio moral ou sexual? Você não está sozinho(a).
         </span>
-        <Button className="text-sm flex-1 max-w-72" onClick={() => alert("funcionou")} title={"Canal de denúncia e Acolhimento "} icon={<ArrowRight size={12} />} />
+        <Button className="text-sm flex-1 max-w-72 font-bold" onClick={() => alert("funcionou")} title={"Canal de denúncia e Acolhimento "} icon={<ArrowRight size={12} />} />
       </div>
       <main className="max-w-[1180px] mx-auto px-6 py-4">
         <div className="w-full flex flex-col gap-4 bg-gray-100 rounded-lg py-8 mb-8 px-6">
@@ -56,7 +59,7 @@ export default function home() {
             })}
           </section>
         </div>
-        <div className="flex justify-center items-center gap-16 bg-gray-100 rounded-lg p-8">
+        <div className="flex flex-col md:flex-row  justify-center items-center gap-16 bg-gray-100 rounded-lg py-8 mb-8 px-6">
           <section
             onClick={() => fileInputRef.current?.click()}
             className="relative flex flex-col items-center justify-center w-72 h-44 p-3 bg-gray-200 rounded-2xl cursor-pointer group hover:bg-gray-300 transition-colors shrink-0"
@@ -73,13 +76,27 @@ export default function home() {
           </section>
           <section className="flex flex-1 flex-col gap-4">
             <p className="font-bold text-lg">Nosso cartaz do mês</p>
-            <p className="text-sm text-gray-500 max-w-[500px]">
+            <p className="text-sm text-gray-500 ">
               Atualizado periodicamente pela CIPA. Arraste uma nova imagem no quadro ao lado para substituir o cartaz atual — os cartazes anteriores ficam guardados na área de Conteúdos.
             </p>
             <Button className="max-w-52" onClick={() => alert("Funcionou ")} title={"Ver Cartazes anteriores"} icon={<ArrowRight size={14} />} />
           </section>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-8 mb-8 px-6">
+          {FastAcess.map(({ title, subtitle, icon, url, id }) => {
+            return (
+              <Link href={url} key={id} className="w-full h-full flex">
+                <section className="w-full h-full flex flex-col items-start p-4 gap-2 bg-gray-50 rounded-lg border">
+                  <span>{icon}</span>
+                  <p className="font-bold text-xs">{title}</p>
+                  <p className="text-[11px] text-gray-500">{subtitle}</p>
+                </section>
+              </Link>
+            );
+          })}
+        </div>
       </main>
+      <Footer />
     </div>
   );
 }

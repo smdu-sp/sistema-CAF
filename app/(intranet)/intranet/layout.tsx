@@ -1,6 +1,7 @@
 /** @format */
 
 import { IntranetHeader } from "./_components/layout/intranet-header";
+import { IntranetSideBirthday } from "./_components/layout/intranet-side-birthdays";
 import { IntranetSidebar } from "./_components/layout/intranet-sidebar";
 
 export default function IntranetRouteLayout({
@@ -18,12 +19,15 @@ export default function IntranetRouteLayout({
 
       <div className="grid w-full grid-cols-[minmax(1rem,1fr)_minmax(0,1280px)_minmax(1rem,1fr)]">
         <div aria-hidden="true" />
-        <div className="grid min-w-0 gap-6 py-6 md:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="grid min-w-0 gap-6 py-6 md:grid-cols-[280px_minmax(0,1fr)_minmax(0,280px)]">
           <aside className="hidden md:block [&>div]:rounded-lg [&>div]:border [&>div]:bg-background [&>div]:shadow-sm">
             <IntranetSidebar />
           </aside>
 
           <section className="min-w-0">{children}</section>
+          <aside className="hidden md:block [&>div]:rounded-lg [&>div]:border [&>div]:bg-background [&>div]:shadow-sm">
+            <IntranetSideBirthday />
+          </aside>
         </div>
         <div aria-hidden="true" />
       </div>

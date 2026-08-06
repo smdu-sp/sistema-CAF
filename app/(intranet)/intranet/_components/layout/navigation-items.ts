@@ -25,7 +25,7 @@ export const intranetNavigationItems: IntranetNavigationItem[] = [
     exact: true,
   },
   {
-    label: "Aniversarios",
+    label: "Aniversários",
     href: "/intranet/aniversarios",
     icon: CalendarDays,
   },

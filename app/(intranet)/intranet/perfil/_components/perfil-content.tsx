@@ -1,9 +1,20 @@
 /** @format */
 
+import { PageHeader } from "../../_components/shared/page-header";
+import { mockProfile } from "../../_mock";
+import { ProfileHeader } from "./profile-header";
+import { RecentActivity } from "./recent-activity";
+
 export function PerfilContent() {
   return (
-    <section className="flex flex-1 items-center justify-center">
-      <h1 className="text-2xl font-bold leading-tight md:text-3xl">Perfil</h1>
+    <section className="space-y-6">
+      <PageHeader
+        title="Perfil"
+        description="Informacoes do usuario e atividades recentes."
+      />
+
+      <ProfileHeader profile={mockProfile} />
+      <RecentActivity />
     </section>
   );
 }

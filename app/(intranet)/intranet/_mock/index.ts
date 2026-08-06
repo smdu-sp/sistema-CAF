@@ -9,3 +9,4 @@ export * from "./jobs";
 export * from "./notifications";
 export * from "./posts";
 export * from "./publication-types";
+export * from "./profile";

@@ -32,3 +32,21 @@ export interface IntranetDepartment {
   email: string;
   phone: string;
 }
+
+export interface IntranetEvent {
+  id: IntranetEntityId;
+  day: string;
+  monthShort: string;
+  title: string;
+  desc: string;
+}
+
+export interface IntranetProfile {
+  id: IntranetEntityId;
+  name: string;
+  role: string;
+  email: string;
+  extension: string;
+  room: string;
+  imageUrl?: string | null;
+}

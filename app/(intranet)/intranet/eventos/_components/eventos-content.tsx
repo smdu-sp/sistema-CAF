@@ -1,11 +1,18 @@
 /** @format */
 
+import { PageHeader } from "../../_components/shared/page-header";
+import { mockEvents } from "../../_mock";
+import { EventList } from "./event-list";
+
 export function EventosContent() {
   return (
-    <section className="flex flex-1 items-center justify-center">
-      <h1 className="text-2xl font-bold leading-tight md:text-3xl">
-        Eventos
-      </h1>
+    <section className="space-y-6">
+      <PageHeader
+        title="Eventos"
+        description="Agenda de encontros, comunicacoes internas e datas importantes."
+      />
+
+      <EventList events={mockEvents} />
     </section>
   );
 }

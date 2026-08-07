@@ -1,5 +1,5 @@
 import PreviousPage from "@/components/mockup/PreviousPage";
-import { MockInfo } from "./MokcInfo";
+import { MockInfo, TableInfo } from "./MokcInfo";
 
 export default function Informacoes() {
   return (
@@ -17,6 +17,31 @@ export default function Informacoes() {
           </div>
         ))}
       </section>
+      <table className="w-full mt-8 border-collapse">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="w-1/4 py-3 px-4 text-start text-xs font-bold rounded-tl-xl">Tema</th>
+            <th className="w-1/2 py-3 px-4 text-start text-xs font-bold">Descrição</th>
+            <th className="w-1/4 py-3 px-4 text-start text-xs font-bold rounded-tr-xl">Acesso</th>
+          </tr>
+        </thead>
+        <tbody>
+          {TableInfo.map(({ id, theme, description, access }) => (
+            <tr key={id} className="border-b border-gray-100">
+              <td className="w-1/4 py-3 px-4">
+                <p className="text-xs font-bold">{theme}</p>
+              </td>
+              <td className="w-1/2 py-3 px-4">
+                <p className="text-xs text-gray-600">{description}</p>
+              </td>
+              <td className="w-1/4 py-3 px-4">
+                <p className="text-xs text-gray-500 italic">{access}</p>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </main>
   );
 }
+

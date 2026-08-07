@@ -29,20 +29,13 @@ export function Header() {
         <nav>
           <ul className="flex items-center gap-4 justify-center transition-all duration-300">
             {navItems.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                pathname === `${item.href}/` ||
-                (item.href !== "/mockup" && pathname?.startsWith(item.href));
+              const isActive = pathname === item.href || pathname === `${item.href}/` || (item.href !== "/mockup" && pathname?.startsWith(item.href));
 
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`text-sm font-bold px-4 py-1.5 rounded-full transition-all duration-200 ${
-                      isActive
-                        ? "bg-[#1f7a3d] text-white shadow-sm"
-                        : "text-gray-900 hover:text-green-700"
-                    }`}
+                    className={`text-sm font-bold px-4 py-1.5 rounded-full transition-all duration-200 ${isActive ? "bg-[#1f7a3d] text-white shadow-sm" : "text-gray-900 hover:text-green-700"}`}
                   >
                     {item.label}
                   </Link>
@@ -55,4 +48,3 @@ export function Header() {
     </div>
   );
 }
-

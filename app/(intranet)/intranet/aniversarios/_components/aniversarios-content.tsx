@@ -1,20 +1,31 @@
 /** @format */
+"use client";
 
+import { useState } from "react";
 import { Cake } from "lucide-react";
 import { numberToMonth } from "../data/conversorMonths";
-import { pessoasMock as peopleMock } from "../data/people";
+import { pessoasMock, PessoaMock } from "../data/people";
+import { usuarioAtualMock } from "../data/current-user";
+import { parseDateBirthday, diasDesdeAniversario } from "../data/birthday-utils";
 import { BirthdayCard } from "./birthday-card";
 
-function parseDateBirthday(date: string) {
-    const [year, month, day] = date.split("-").map(Number);
-    return { year, month, day };
+function estadoInicial(): PessoaMock[] {
+  const today = new Date();
+  return pessoasMock.map((person) => {
+    const { day, month } = parseDateBirthday(person.data_nascimento);
+    const diff = diasDesdeAniversario({ day, month }, today);
+    const expirado = diff > 1;
+    return expirado ? { ...person, felicitantes: [] } : person;
+  });
 }
 
-export function AniversariosContent() {
+export async function AniversariosContent() {
+  const [pessoas, setPessoas] = useState<PessoaMock[]>(estadoInicial());
+
   const today = new Date();
   const currentMonth = numberToMonth[today.getMonth() + 1];
-  
-  const monthBirthdays = peopleMock
+
+  const monthBirthdays = pessoas
     .filter((person) => {
       const { month } = parseDateBirthday(person.data_nascimento);
       return month === today.getMonth() + 1;
@@ -24,6 +35,16 @@ export function AniversariosContent() {
       const { day: dayB } = parseDateBirthday(b.data_nascimento);
       return dayA - dayB;
     });
+
+  function handleParabenizar(personId: string) {
+    setPessoas((atual) =>
+      atual.map((person) =>
+        person.id === personId
+          ? { ...person, felicitantes: [...person.felicitantes, usuarioAtualMock] }
+          : person
+      )
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -40,14 +61,17 @@ export function AniversariosContent() {
       </div>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {monthBirthdays.map((person, index) => {
+        {monthBirthdays.map((person) => {
           const { day, month } = parseDateBirthday(person.data_nascimento);
           return (
             <BirthdayCard
-              key={index}
+              key={person.id}
               nome={person.nome}
               setor={person.setor}
               data_nascimento={{ day, month }}
+              contagem={person.felicitantes.length}
+              enviado={person.felicitantes.includes(usuarioAtualMock)}
+              onParabenizar={() => handleParabenizar(person.id)}
             />
           );
         })}

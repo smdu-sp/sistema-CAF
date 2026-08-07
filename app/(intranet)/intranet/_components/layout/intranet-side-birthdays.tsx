@@ -66,11 +66,11 @@ export function IntranetSideBirthday({
                             </p>
                         ) : (
                             <ul className="ml-2">
-                                {todaysBirthdays.map((person, index) => {
+                                {todaysBirthdays.map((person) => {
                                     const initials = getInitials(person.nome);
                                     const { month, day } = parseDateBirthday(person.data_nascimento);
                                     return (
-                                        <li key={index} className="flex items-center gap-3 py-2">
+                                        <li key={person.id} className="flex items-center gap-3 py-2">
                                             <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
                                                 {initials}
                                             </span>

@@ -7,7 +7,9 @@ export default function Informacoes() {
       <PreviousPage />
       <div className="flex-1 flex-col gap-4 py-4">
         <h1 className="text-3xl font-bold">Temos bastante informção para compartilhar</h1>
-        <p className="text-xs">Cartazes, e-mails informativos, mapa de risco, legislação e muito mais. Tudo o que a CIPA produz fica arquivado aqui — inclusive cartazes de meses anteriores.</p>
+        <p className="text-xs max-w-[500px]">
+          Cartazes, e-mails informativos, mapa de risco, legislação e muito mais. Tudo o que a CIPA produz fica arquivado aqui — inclusive cartazes de meses anteriores.
+        </p>
       </div>
       <section className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {MockInfo.map(({ id, title, description }) => (
@@ -44,4 +46,3 @@ export default function Informacoes() {
     </main>
   );
 }
-

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Header } from "@/components/mockup/header";
+import { BannerAlert } from "@/components/mockup/BannerAlert";
 import { Boxes } from "@/app/mockup/mockBoxes";
 import { Button } from "@/components/mockup/Button";
 import { ArrowRight, TriangleAlert, Image as Image, ImageIcon } from "lucide-react";
@@ -24,12 +25,7 @@ export default function home() {
     <div>
       <AccessibilityBar />
       <Header />
-      <div className="flex gap-4 items-center justify-center flex-1 bg-[#1f7a3d] py-2">
-        <span className=" flex justify-center items-center gap-2 text-xs text-white font-bold">
-          <TriangleAlert size={14} /> Sofreu ou presenciou assédio moral ou sexual? Você não está sozinho(a).
-        </span>
-        <Button className="text-sm max-w-72 font-bold bg-[#ffffff] text-[#1f7a3d]" onClick={() => alert("funcionou")} title={"Canal de denúncia e Acolhimento "} icon={<ArrowRight size={12} />} />
-      </div>
+      <BannerAlert />
       <main className="max-w-[1180px] mx-auto px-6 py-4">
         <div className="w-full flex flex-col gap-4 bg-[#ffffff] rounded-lg py-8 mb-8 px-6 border border-gray-200">
           <section className="flex flex-col gap-4">

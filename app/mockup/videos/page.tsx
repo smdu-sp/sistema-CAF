@@ -13,7 +13,7 @@ export default function Videos() {
         <h1 className="text-3xl font-bold">Venha assistir nossos vídeos</h1>
         <p className="text-xs max-w-[420px]">Vídeos produzidos pela CIPA, disponíveis para assistir a qualquer momento — todos com legendas para garantir acessibilidade.</p>
       </div>
-      <section className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <section className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6  mb-8">
         {videosList.map((video) => (
           <VideoCard key={video.id} id={video.id} />
         ))}

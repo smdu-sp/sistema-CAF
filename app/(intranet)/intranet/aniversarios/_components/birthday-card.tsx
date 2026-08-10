@@ -27,7 +27,7 @@ export function BirthdayCard({ birthday }: BirthdayCardProps) {
         }`;
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <div className="flex items-start gap-3">
           <EmployeeAvatar
@@ -58,7 +58,7 @@ export function BirthdayCard({ birthday }: BirthdayCardProps) {
         </div>
       </CardContent>
 
-      <CardFooter>
+      <CardFooter className="mt-auto">
         <Button
           size="sm"
           variant={birthday.congratulated ? "secondary" : "default"}

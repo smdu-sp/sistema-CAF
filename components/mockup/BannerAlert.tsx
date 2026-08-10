@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/mockup/Button";
 
@@ -12,8 +13,18 @@ interface BannerAlertProps {
 export function BannerAlert({
   message = "Sofreu ou presenciou assédio moral ou sexual? Você não está sozinho(a).",
   buttonTitle = "Canal de denúncia e Acolhimento",
-  onButtonClick = () => alert("funcionou"),
+  onButtonClick,
 }: BannerAlertProps) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (onButtonClick) {
+      onButtonClick();
+    } else {
+      router.push("/mockup/eventos");
+    }
+  };
+
   return (
     <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-center justify-center bg-[#1f7a3d] px-4 py-2.5 sm:py-2 text-center">
       <span className="flex items-center justify-center gap-2 text-xs text-white font-bold">
@@ -22,7 +33,7 @@ export function BannerAlert({
       </span>
       <Button
         className="text-xs sm:text-sm font-bold bg-[#ffffff] text-[#1f7a3d] shrink-0"
-        onClick={onButtonClick}
+        onClick={handleClick}
         title={buttonTitle}
         icon={<ArrowRight className="w-3.5 h-3.5 shrink-0" />}
       />

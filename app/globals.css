@@ -78,6 +78,7 @@
   }
 }
 
+/* Estilos de Alto Contraste */
 .high-contrast,
 .high-contrast body,
 .high-contrast header,
@@ -85,28 +86,97 @@
 .high-contrast main,
 .high-contrast section,
 .high-contrast footer,
-.high-contrast div:not(.bg-\[\#111111\]) {
+.high-contrast div,
+.high-contrast article,
+.high-contrast table,
+.high-contrast tr,
+.high-contrast th,
+.high-contrast td {
   background-color: #000000 !important;
   color: #ffffff !important;
-  border-color: #ffffff !important;
+  border-color: #333333 !important;
 }
 
-.high-contrast footer {
+/* Textos gerais em alto contraste */
+.high-contrast p,
+.high-contrast span,
+.high-contrast h1,
+.high-contrast h2,
+.high-contrast h3,
+.high-contrast h4,
+.high-contrast li,
+.high-contrast td,
+.high-contrast th,
+.high-contrast label,
+.high-contrast strong {
+  color: #ffffff !important;
+}
+
+/* Estilo do Banner de Alerta em Alto Contraste (Faixa Amarela Vibrante) */
+.high-contrast .banner-alert,
+.high-contrast div.banner-alert {
+  background-color: #ffcc00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast .banner-alert *,
+.high-contrast .banner-alert p,
+.high-contrast .banner-alert span,
+.high-contrast .banner-alert svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+
+/* Botão dentro do BannerAlert em Alto Contraste (Pílula Preta com texto amarelo) */
+.high-contrast .banner-alert button {
   background-color: #000000 !important;
-  color: #ffffff !important;
-  border-top: 1px solid #333333 !important;
+  color: #ffcc00 !important;
+  border: none !important;
 }
 
-.high-contrast footer p {
+.high-contrast .banner-alert button *,
+.high-contrast .banner-alert button svg {
+  color: #ffcc00 !important;
+  stroke: #ffcc00 !important;
+}
+
+/* Links no Header em Alto Contraste */
+.high-contrast header a {
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+/* Item ativo da navegação do header em alto contraste (Pílula amarela com texto preto) */
+.high-contrast header a.bg-\[\#1f7a3d\],
+.high-contrast header a[class*="bg-[#1f7a3d]"] {
+  background-color: #ffcc00 !important;
+  color: #000000 !important;
+  font-weight: bold !important;
+}
+
+/* Barra de acessibilidade em Alto Contraste */
+.high-contrast .accessibility-bar {
+  background-color: #000000 !important;
+}
+
+.high-contrast .accessibility-bar span {
   color: #ffffff !important;
 }
 
-.high-contrast footer a {
-  color: #ffff00 !important;
+.high-contrast .accessibility-bar button {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #ffffff !important;
 }
 
-.high-contrast footer a:hover {
-  color: #ffffff !important;
-  text-decoration: underline;
+.high-contrast .accessibility-bar button *,
+.high-contrast .accessibility-bar button span,
+.high-contrast .accessibility-bar button strong,
+.high-contrast .accessibility-bar button svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
 }
+
+
+
 

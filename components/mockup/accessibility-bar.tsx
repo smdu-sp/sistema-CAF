@@ -55,7 +55,7 @@ export function AccessibilityBar() {
   };
 
   return (
-    <div className="bg-[#fff] text-white border-b border-zinc-800 py-1.5 px-4 text-xs select-none">
+    <div className="accessibility-bar bg-[#fff] text-white border-b border-zinc-800 py-1.5 px-4 text-xs select-none">
       <div className="max-w-[1180px] mx-auto flex items-center justify-end gap-4">
         <div className="flex items-center gap-1.5">
           <span className="text-black font-normal mr-1">Fonte:</span>

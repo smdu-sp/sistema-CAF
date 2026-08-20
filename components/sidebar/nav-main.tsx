@@ -10,6 +10,7 @@ import {
   FileText,
   House,
   KeyRound,
+  Laptop,
   LayoutDashboard,
   Network,
   Package,
@@ -20,6 +21,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { rotaChamadosArea } from "@/lib/helpdesk/tipos-chamado";
+import { obterAcessoTeletrabalho } from "@/lib/teletrabalho/permissoes";
 
 import {
   SidebarContent,
@@ -61,6 +63,20 @@ export async function NavMain() {
   const mostraGestaoPessoas =
     acessoTotalModulos ||
     permissoesModulos.includes("gestao_pessoas.modulo.visualizar");
+
+  let mostraTeletrabalho = false;
+  if (usuario?.id) {
+    try {
+      const acessoTeletrabalho = await obterAcessoTeletrabalho(
+        usuario.id,
+        desenvolvedor,
+        permissao,
+      );
+      mostraTeletrabalho = acessoTeletrabalho.podeVisualizar;
+    } catch {
+      mostraTeletrabalho = false;
+    }
+  }
 
   return (
     <SidebarContent>
@@ -208,6 +224,14 @@ export async function NavMain() {
             <Link href="/gestao-pessoas">
               <Users className="size-4" />
               <span>Gestão de Pessoas</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {mostraTeletrabalho ? (
+          <SidebarMenuItem>
+            <Link href="/teletrabalho">
+              <Laptop className="size-4" />
+              <span>Teletrabalho</span>
             </Link>
           </SidebarMenuItem>
           ) : null}

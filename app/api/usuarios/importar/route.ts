@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
     update: {
       nome: ldapUser.nome,
       email: ldapUser.email,
+      telefone: ldapUser.telefone ?? null,
       ...(ldapUser.avatar ? { avatar: ldapUser.avatar } : {}),
     },
     create: {
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
       email: ldapUser.email,
       permissao: "USR",
       status: true,
+      telefone: ldapUser.telefone ?? null,
       ...(ldapUser.avatar ? { avatar: ldapUser.avatar } : {}),
     },
   });

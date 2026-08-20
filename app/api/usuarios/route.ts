@@ -17,6 +17,7 @@ export async function GET() {
       nome: true,
       login: true,
       email: true,
+      telefone: true,
       permissao: true,
       coordenadoriaId: true,
       coordenadoria: { select: { id: true, nome: true } },

@@ -1,0 +1,113 @@
+// Gestão de Pessoas — folha de ponto (FFI) e carga SIGPEG
+
+enum GpPapelUnidade {
+  usuario
+  administrador
+  dgp
+}
+
+model GpUnidade {
+  id        String  @id @default(uuid())
+  /// Código EH completo (15 dígitos), ex.: 291000020000000
+  codigoEh  String  @unique @db.VarChar(15)
+  /// Prefixo EH para agrupamento de impressão (6 primeiros dígitos)
+  prefixoEh String  @db.VarChar(6)
+  nome      String  @db.VarChar(250)
+  ativo     Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  usuarios   GpUsuarioUnidade[]
+
+  @@index([prefixoEh])
+  @@map("gp.unidades")
+}
+
+/// Cadastro mestre de servidores (atualizado a cada carga SIGPEG)
+model GpServidor {
+  id           String  @id @default(uuid())
+  rf           String  @unique @db.VarChar(7)
+  nome         String  @db.VarChar(250)
+  vinculo      String? @db.VarChar(3)
+  nomeCargo    String? @db.VarChar(150)
+  refCargo     String? @db.VarChar(10)
+  unidadeEh    String? @db.VarChar(15)
+  nomeUnidade  String? @db.VarChar(250)
+  ultimaCarga  Boolean @default(false)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  vinculos GpServidorVinculo[]
+
+  @@map("gp.servidores")
+}
+
+/// Lote de importação mensal do SIGPEG
+model GpCargaMensal {
+  id              String   @id @default(uuid())
+  mes             Int
+  ano             Int
+  totalRegistros  Int      @default(0)
+  importadoPorId  String?
+  importadoEm     DateTime @default(now())
+
+  importadoPor Usuario?           @relation("gpImportadorCargas", fields: [importadoPorId], references: [id], onDelete: SetNull)
+  vinculos     GpServidorVinculo[]
+
+  @@unique([mes, ano])
+  @@map("gp.cargas_mensais")
+}
+
+/// Registro de vínculo do servidor em uma competência (snapshot da carga)
+model GpServidorVinculo {
+  id            String  @id @default(uuid())
+  cargaId       String
+  servidorId    String?
+  rf            String  @db.VarChar(7)
+  nome          String  @db.VarChar(250)
+  vinculo       String? @db.VarChar(3)
+  especie       String? @db.VarChar(50)
+  inicio        String? @db.VarChar(10)
+  termino       String? @db.VarChar(10)
+  codigoCargo   String? @db.VarChar(10)
+  nomeCargo     String? @db.VarChar(150)
+  refCargo      String? @db.VarChar(10)
+  codigoEh      String  @db.VarChar(15)
+  nomeUnidade   String  @db.VarChar(250)
+  relJurAdm     String? @db.VarChar(20)
+  tipoEvento    String? @db.VarChar(30)
+  inicioExerc   String? @db.VarChar(10)
+  titularRf     String? @db.VarChar(10)
+  numVincTit    String? @db.VarChar(10)
+  nomeFuncTit   String? @db.VarChar(250)
+  inicioRem     String? @db.VarChar(10)
+  fimRem        String? @db.VarChar(10)
+  observacao    String? @db.Text
+  vaga          String? @db.VarChar(10)
+
+  carga    GpCargaMensal @relation(fields: [cargaId], references: [id], onDelete: Cascade)
+  servidor GpServidor?   @relation(fields: [servidorId], references: [id], onDelete: SetNull)
+
+  @@index([cargaId, codigoEh])
+  @@index([cargaId, rf])
+  @@index([rf])
+  @@map("gp.servidor_vinculos")
+}
+
+/// Permissão do usuário do sistema em uma ou mais unidades organizacionais
+model GpUsuarioUnidade {
+  usuarioId String
+  unidadeId String
+  papel     GpPapelUnidade @default(usuario)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  usuario Usuario   @relation("gpUsuarioUnidades", fields: [usuarioId], references: [id], onDelete: Cascade)
+  unidade GpUnidade @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, unidadeId])
+  @@map("gp.usuario_unidades")
+}

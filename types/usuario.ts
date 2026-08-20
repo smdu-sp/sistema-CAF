@@ -3,12 +3,15 @@ export interface IUsuario {
   nome: string;
   login: string;
   email: string;
+  permissao?: string;
+  desenvolvedor?: boolean;
   avatar?: string;
   status: boolean;
   ultimoLogin: Date;
   criadoEm: Date;
   atualizadoEm: Date;
   nomeSocial?: string;
+  coordenadoriaId?: string;
 }
 
 export interface IRespostaUsuario {

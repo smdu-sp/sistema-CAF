@@ -221,13 +221,8 @@ export default async function UsuariosAdminPage() {
           <Button onClick={importar} disabled={!login || loading}>
             {loading ? "Importando..." : "Importar do AD"}
           </Button>
-
-          <Button
-            variant="outline"
-            onClick={importarLoteDeX}
-            disabled={loadingLote}
-          >
-            {loadingLote ? "Importando..." : "Importar todos D e X do AD"}
+          <Button variant="outline" onClick={importarLoteDeX} disabled={loadingLote}>
+            {loadingLote ? "Importando..." : "Importar todos do AD"}
           </Button>
         </div>
 

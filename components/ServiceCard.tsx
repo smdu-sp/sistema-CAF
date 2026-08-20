@@ -1,5 +1,7 @@
 import { listarPermissoes } from "@/services/permissoes";
-import { ArrowRight, CalendarSearch, ClipboardCheck } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { temAcessoTotalModulos } from "@/lib/permissoes";
+import { ArrowRight, CalendarSearch, ClipboardCheck, Users } from "lucide-react";
 import Link from "next/link";
 
 interface IModulo {
@@ -27,17 +29,39 @@ const modulos = [
     href: "/avaliacao-limpeza",
     icon: ClipboardCheck,
     permissao: "avaliacao_limpeza.avaliacoes.visualizar",
+  },
+  {
+    nome: "gestao-pessoas",
+    titulo: "Gestão de Pessoas",
+    descricao: "Folha de ponto (FFI), carga SIGPEG e permissões por unidade.",
+    href: "/gestao-pessoas",
+    icon: Users,
+    permissao: "gestao_pessoas.modulo.visualizar",
   }
 ]
 
 export default async function ServiceCards() {
+  const session = await auth();
+  const usuario = session?.usuario;
+  const permissao = usuario?.permissao?.toString?.() ?? "";
+  const acessoTotal = temAcessoTotalModulos(
+    permissao,
+    Boolean(usuario?.desenvolvedor),
+  );
+
   let modulosFiltrados: IModulo[] = [];
-  try {
-    const permissoes = await listarPermissoes();
-    modulosFiltrados = modulos.filter((modulo) => permissoes.includes(modulo.permissao));
-  } catch (error) {
-    console.error("Erro ao listar permissões:", error);
-    modulosFiltrados = [];
+  if (acessoTotal) {
+    modulosFiltrados = modulos;
+  } else {
+    try {
+      const permissoes = await listarPermissoes();
+      modulosFiltrados = modulos.filter((modulo) =>
+        permissoes.includes(modulo.permissao),
+      );
+    } catch (error) {
+      console.error("Erro ao listar permissões:", error);
+      modulosFiltrados = [];
+    }
   }
   return (
     <section className="grid gap-6 md:grid-cols-2">

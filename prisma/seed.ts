@@ -18,6 +18,7 @@ async function main() {
     update: {
       email: "vmabreu@prefeitura.sp.gov.br",
       desenvolvedor: true,
+      permissao: "DEV",
       nome: "Victor Alexander Menezes de Abreu",
     },
     create: {
@@ -25,6 +26,7 @@ async function main() {
       nome: "Victor Alexander Menezes de Abreu",
       email: "vmabreu@prefeitura.sp.gov.br",
       desenvolvedor: true,
+      permissao: "DEV",
     },
   });
 
@@ -174,9 +176,62 @@ async function main() {
         nome: "reserva_salas.usuarios.excluir",
         modulo: "reserva_salas"
       },
-    ]
+      {
+        nome: "gestao_pessoas.modulo.visualizar",
+        modulo: "gestao_pessoas",
+        descricao: "Acesso ao módulo Gestão de Pessoas",
+      },
+      {
+        nome: "gestao_pessoas.importacao.executar",
+        modulo: "gestao_pessoas",
+        descricao: "Importar carga mensal SIGPEG",
+      },
+      {
+        nome: "gestao_pessoas.folha_ponto.imprimir",
+        modulo: "gestao_pessoas",
+        descricao: "Imprimir folha de frequência individual",
+      },
+      {
+        nome: "gestao_pessoas.permissoes.gerenciar",
+        modulo: "gestao_pessoas",
+        descricao: "Gerenciar vínculos usuário-unidade",
+      },
+    ],
+    skipDuplicates: true,
   });
-  console.log("Seed: usuário d927014 (DEV) criado/atualizado.");
+  console.log("Seed: usuário x577988 (USR) criado/atualizado.");
+
+  await prisma.usuario.upsert({
+    where: { login: "teste.chamados" },
+    update: {
+      email: "teste.chamados@prefeitura.sp.gov.br",
+      permissao: "USR",
+      nome: "Usuário Teste Chamados",
+      status: true,
+    },
+    create: {
+      login: "teste.chamados",
+      nome: "Usuário Teste Chamados",
+      email: "teste.chamados@prefeitura.sp.gov.br",
+      permissao: "USR",
+      status: true,
+    },
+  });
+  console.log("Seed: usuário teste.chamados (USR) criado/atualizado.");
+
+  await prisma.usuario.upsert({
+    where: { login: "d854440" },
+    update: { permissao: "DEV", desenvolvedor: true },
+    create: {
+      login: "d854440",
+      nome: "Bruno Luiz Vieira",
+      email: "blv.bruno@gmail.com",
+      permissao: "DEV",
+      desenvolvedor: true,
+      status: true,
+    },
+  });
+  console.log("Seed: usuário d854440 (DEV) criado/atualizado.");
 }
 
 main()

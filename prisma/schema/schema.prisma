@@ -20,8 +20,19 @@ model Coordenadoria {
 
   usuarios Usuario[]
   reservas Reserva[]
+  solicitacoesAcesso HdSolicitacaoAcesso[]
 
   @@map("principal.coordenadorias")
+}
+
+/// Papel operacional do usuário (help desk e administração legada).
+enum PapelUsuario {
+  DEV
+  ADM
+  TEC
+  SUP
+  PAT
+  USR
 }
 
 model Usuario {
@@ -30,11 +41,13 @@ model Usuario {
   nomeSocial      String?
   login           String    @unique
   email           String    @unique
+  permissao       PapelUsuario @default(USR)
   status          Boolean   @default(true)
   avatar          String?   @db.Text
   coordenadoriaId String?
   desenvolvedor   Boolean   @default(false)
 
+  telefone      String?   @db.VarChar(30)
   ultimoLogin   DateTime  @default(now())
   criadoEm      DateTime  @default(now())
   atualizadoEm  DateTime  @default(now()) @updatedAt
@@ -43,7 +56,24 @@ model Usuario {
   reservas      Reserva[]
   participacoes ReservaParticipante[]
   avaliacoes    Avaliacao[] @relation("avaliador")
+
+  hdSolicitanteChamados HdChamado[]          @relation("hdSolicitanteChamados")
+  hdAbertoEmNomeDe      HdChamado[]          @relation("hdAbertoEmNomeDe")
+  hdChamadoUsuarios     HdChamadoUsuario[]   @relation("hdChamadoUsuarios")
+  hdAutorEventos        HdChamadoEvento[]    @relation("hdAutorEventos")
+  hdAutorMensagens      HdMensagem[]         @relation("hdAutorMensagens")
+  hdAutorAnexos         HdAnexo[]            @relation("hdAutorAnexos")
+  hdAutorEncaminhamentos HdChamadoEncaminhamento[] @relation("hdAutorEncaminhamentos")
+  hdServidorItens       HdItemPatrimonio[]   @relation("hdServidorItens")
+  hdTransferencias      HdTransferenciaCabecalho[] @relation("hdUsuarioTransferencias")
+  hdBaixasPatrimonio    HdBaixaPatrimonio[]        @relation("hdUsuarioBaixas")
+  hdStatusPatrimonio    HdItemPatrimonioStatusHistorico[] @relation("hdUsuarioStatusPatrimonio")
+  hdPontoFocalUnidades  HdPontoFocalUnidade[]             @relation("hdPontoFocalUnidades")
+  hdBeneficiarioAcesso  HdSolicitacaoAcesso[]             @relation("hdBeneficiarioAcesso")
+  hdNegadorAcesso       HdSolicitacaoAcesso[]             @relation("hdNegadorAcesso")
   permissoes    UsuarioPermissao[]
+  gpImportadorCargas    GpCargaMensal[]                   @relation("gpImportadorCargas")
+  gpUnidades            GpUsuarioUnidade[]                @relation("gpUsuarioUnidades")
 
   @@map("principal.usuarios")
 }
@@ -51,6 +81,7 @@ model Usuario {
 enum Modulo {
   reserva_salas
   avaliacao_limpeza
+  gestao_pessoas
 }
 
 model Permissao {

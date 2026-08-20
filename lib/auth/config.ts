@@ -5,6 +5,30 @@ import type { NextAuthConfig } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { autenticarLDAP } from "@/lib/auth/ldap";
 
+function dadosSessaoUsuario(usuario: {
+  id: string;
+  login: string;
+  nome: string;
+  email: string;
+  nomeSocial: string | null;
+  avatar: string | null;
+  coordenadoriaId: string | null;
+  permissao: string;
+  desenvolvedor: boolean;
+}) {
+  return {
+    id: usuario.id,
+    login: usuario.login,
+    nome: usuario.nome,
+    email: usuario.email,
+    nomeSocial: usuario.nomeSocial ?? undefined,
+    avatar: usuario.avatar || undefined,
+    coordenadoriaId: usuario.coordenadoriaId ?? undefined,
+    permissao: usuario.permissao,
+    desenvolvedor: usuario.desenvolvedor,
+  };
+}
+
 export default {
   secret: process.env.AUTH_SECRET,
   providers: [
@@ -51,15 +75,12 @@ export default {
                 ...(ldapUser.avatar ? { avatar: ldapUser.avatar } : {}),
               },
             });
-            return {
-              id: usuario.id,
-              login: usuario.login,
+            return dadosSessaoUsuario({
+              ...usuario,
               nome: ldapUser.nome || usuario.nome,
               email: ldapUser.email || usuario.email,
-              nomeSocial: usuario.nomeSocial ?? undefined,
-              avatar: ldapUser.avatar || usuario.avatar || undefined,
-              coordenadoriaId: usuario.coordenadoriaId ?? undefined,
-            };
+              avatar: ldapUser.avatar || usuario.avatar,
+            });
           }
 
           // Modo local: atualiza só o último login
@@ -67,15 +88,7 @@ export default {
             where: { id: usuario.id },
             data: { ultimoLogin: new Date() },
           });
-          return {
-            id: usuario.id,
-            login: usuario.login,
-            nome: usuario.nome,
-            email: usuario.email,
-            nomeSocial: usuario.nomeSocial ?? undefined,
-            avatar: usuario.avatar || undefined,
-            coordenadoriaId: usuario.coordenadoriaId ?? undefined,
-          };
+          return dadosSessaoUsuario(usuario);
         } catch (err) {
           console.error("[auth] Erro inesperado ao autenticar:", err);
           return null;

@@ -13,10 +13,10 @@ export default function Link({
   return (
     <SidebarMenuButton
       asChild
-      className={`transition-all ease-linear duration-200 active:shadow-lg ${
+      className={`transition-all ease-linear duration-200 ${
         isCurrentPath
-          ? "bg-primary hover:bg-primary/90 text-primary-foreground hover:text-primary-foreground active:bg-primary/90 active:primary-foreground active:text-primary-foreground"
-          : "bg-transparent"
+          ? "!bg-white/15 font-semibold"
+          : ""
       } ${className ?? ""}`}
     >
       <NextLink {...props} />

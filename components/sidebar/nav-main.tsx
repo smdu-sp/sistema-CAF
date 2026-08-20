@@ -1,246 +1,238 @@
 /** @format */
 
 import {
+  ArrowLeftRight,
+  BarChart2,
+  Building,
   Building2,
   CalendarSearch,
-  ChevronRight,
-  House,
-  LucideProps,
-  Users,
   ClipboardCheck,
+  FileText,
+  House,
+  KeyRound,
+  LayoutDashboard,
+  Network,
+  Package,
+  Phone,
+  TicketCheck,
+  Users,
   UsersRound,
+  Wrench,
 } from "lucide-react";
+import { rotaChamadosArea } from "@/lib/helpdesk/tipos-chamado";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
-import { ForwardRefExoticComponent, RefAttributes } from "react";
+import {
+  getCapacidadesHelpdesk,
+  podeAcessarAreaChamadosHelpdesk,
+  podeAcessarPatrimonioHelpdesk,
+  podeAdministrarSistema,
+  temAcessoTotalModulos,
+} from "@/lib/permissoes";
 import Link from "../link";
-import { listarPermissoes, verificarDesenvolvedor } from "@/services/permissoes/";
+import { listarPermissoes } from "@/services/permissoes/";
 
 export async function NavMain() {
-  const mostraAdmin = await verificarDesenvolvedor();
-  interface IMenu {
-    icone: ForwardRefExoticComponent<
-      Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
-    >;
-    titulo: string;
-    url?: string;
-    permissao?: string;
-    subItens?: ISubMenu[];
+  const session = await auth();
+  const usuario = (session as any)?.usuario ?? null;
+  const permissao = usuario?.permissao?.toString?.() ?? "";
+  const desenvolvedor = Boolean(usuario?.desenvolvedor);
+  const mostraAdmin = podeAdministrarSistema(permissao);
+  const hd = getCapacidadesHelpdesk(permissao);
+  const mostraHelpDesk =
+    podeAcessarAreaChamadosHelpdesk(permissao) ||
+    podeAcessarPatrimonioHelpdesk(permissao);
+
+  const acessoTotalModulos = temAcessoTotalModulos(permissao, desenvolvedor);
+
+  let permissoesModulos: string[] = [];
+  try {
+    permissoesModulos = await listarPermissoes();
+  } catch {
+    permissoesModulos = [];
   }
-
-  interface ISubMenu {
-    titulo: string;
-    url: string;
-  }
-
-  const permissoes = await listarPermissoes();
-
-  const menuUsuario: IMenu[] = [
-    {
-      icone: House,
-      titulo: "Página Inicial",
-      url: "/",
-    },
-    {
-      icone: UsersRound,
-      titulo: "Intranet",
-      url: "/intranet",
-    }
-  ];
-
-  const menuModulos: IMenu[] = [
-    {
-      icone: CalendarSearch,
-      titulo: "Reservas de Salas",
-      url: "/reserva-salas",
-      permissao: "reserva_salas.reservas.visualizar",
-    },
-    {
-      icone: ClipboardCheck,
-      titulo: "Avaliação de Limpeza",
-      url: "/avaliacao-limpeza",
-      permissao: "avaliacao_limpeza.avaliacoes.visualizar",
-    },
-  ];
-  const setPermissoes = new Set(permissoes);
-  const menuModulosFiltrados = menuModulos.filter((item) => {
-    if (!item.permissao) return true;
-    return setPermissoes.has(item.permissao);
-  });
-
-  const menuAdmin: IMenu[] = [
-    {
-      icone: Users,
-      titulo: "Usuários",
-      url: "/usuarios"
-    },
-    {
-      icone: Building2,
-      titulo: "Coordenadorias",
-      url: "/coordenadorias"
-    },
-    {
-      icone: ClipboardCheck,
-      titulo: "Permissões",
-      url: "/permissoes"
-    },
-  ];
+  const mostraGestaoPessoas =
+    acessoTotalModulos ||
+    permissoesModulos.includes("gestao_pessoas.modulo.visualizar");
 
   return (
     <SidebarContent>
-      <SidebarGroup className="space-y-2">
-        {menuAdmin && mostraAdmin && (
+      {mostraHelpDesk && (
+      <SidebarGroup>
+        <SidebarGroupLabel>Help Desk</SidebarGroupLabel>
+        <SidebarMenu>
+          {hd.abrirChamados || hd.atenderChamados ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk">
+              <LayoutDashboard className="size-4" />
+              <span>Dashboard</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.abrirChamados || hd.atenderChamados ? (
           <>
-            <SidebarGroupLabel>Administração</SidebarGroupLabel>
-            <SidebarMenu>
-              {menuAdmin.map((item) =>
-                item.subItens ? (
-                  <Collapsible
-                    key={item.titulo}
-                    asChild
-                    className="group/collapsible"
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton tooltip={item.titulo}>
-                          {item.icone && <item.icone />}
-                          <span>{item.titulo}</span>
-                          <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.subItens?.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.titulo}>
-                              <Link href={subItem.url}>
-                                <span>{subItem.titulo}</span>
-                              </Link>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem key={item.titulo} className="z-50">
-                    <Link href={item.url || "#"}>
-                      {item.icone && <item.icone />}
-                      <span>{item.titulo}</span>
-                    </Link>
-                  </SidebarMenuItem>
-                ),
-              )}
-            </SidebarMenu>
-          </>
-        )}
-
-        {menuUsuario && (
+          <SidebarMenuItem>
+            <Link href={rotaChamadosArea("suporte_tecnico")}>
+              <TicketCheck className="size-4" />
+              <span>Suporte Técnico</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href={rotaChamadosArea("telefonia_voip")}>
+              <Phone className="size-4" />
+              <span>Telefonia VoIP</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href={rotaChamadosArea("acesso_sistemas")}>
+              <KeyRound className="size-4" />
+              <span>Acesso a Sistemas</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/helpdesk/chamados/acesso-sistemas/autorizacoes">
+              <KeyRound className="size-4 opacity-60" />
+              <span>Autorizações de acesso</span>
+            </Link>
+          </SidebarMenuItem>
+          {hd.gerenciarAcessoSistemas ? (
           <>
-            <SidebarGroupLabel>Geral</SidebarGroupLabel>
-            <SidebarMenu>
-              {menuUsuario.map((item: IMenu) =>
-                item.subItens ? (
-                  <Collapsible
-                    key={item.titulo}
-                    asChild
-                    className="group/collapsible"
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton tooltip={item.titulo}>
-                          {item.icone && <item.icone />}
-                          <span>{item.titulo}</span>
-                          <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.subItens?.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.titulo}>
-                              <Link href={subItem.url}>
-                                <span>{subItem.titulo}</span>
-                              </Link>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem key={item.titulo} className="z-50">
-                    <Link href={item.url || "#"}>
-                      {item.icone && <item.icone />}
-                      <span>{item.titulo}</span>
-                    </Link>
-                  </SidebarMenuItem>
-                ),
-              )}
-            </SidebarMenu>
+          <SidebarMenuItem>
+            <Link href="/helpdesk/acesso-sistemas/permissoes">
+              <KeyRound className="size-4 opacity-60" />
+              <span>Permissões de sistemas</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/helpdesk/acesso-sistemas/pontos-focais">
+              <KeyRound className="size-4 opacity-60" />
+              <span>Pontos focais</span>
+            </Link>
+          </SidebarMenuItem>
           </>
-        )}
-      {menuModulosFiltrados && (
-          <>
-            <SidebarGroupLabel>Módulos</SidebarGroupLabel>
-            <SidebarMenu>
-              {menuModulosFiltrados.map((item: IMenu) =>
-                item.subItens ? (
-                  <Collapsible
-                    key={item.titulo}
-                    asChild
-                    className="group/collapsible"
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton tooltip={item.titulo}>
-                          {item.icone && <item.icone />}
-                          <span>{item.titulo}</span>
-                          <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.subItens?.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.titulo}>
-                              <Link href={subItem.url}>
-                                <span>{subItem.titulo}</span>
-                              </Link>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem key={item.titulo} className="z-50">
-                    <Link href={item.url || "#"}>
-                      {item.icone && <item.icone />}
-                      <span>{item.titulo}</span>
-                    </Link>
-                  </SidebarMenuItem>
-                ),
-              )}
-            </SidebarMenu>
+          ) : null}
+          <SidebarMenuItem>
+            <Link href={rotaChamadosArea("rede_conectividade")}>
+              <Network className="size-4" />
+              <span>Rede e Conectividade</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href={rotaChamadosArea("reparos_infraestrutura")}>
+              <Wrench className="size-4" />
+              <span>Reparos de Infraestrutura</span>
+            </Link>
+          </SidebarMenuItem>
           </>
-        )}
+          ) : null}
+          {hd.patrimonio ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/patrimonio">
+              <Package className="size-4" />
+              <span>Patrimônio</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.patrimonio ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/movimentacoes">
+              <ArrowLeftRight className="size-4" />
+              <span>Movimentações</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.patrimonio ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/termos">
+              <FileText className="size-4" />
+              <span>Termos</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.unidades ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/unidades">
+              <Building className="size-4" />
+              <span>Unidades</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+          {hd.relatorios ? (
+          <SidebarMenuItem>
+            <Link href="/helpdesk/relatorios">
+              <BarChart2 className="size-4" />
+              <span>Relatórios</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+        </SidebarMenu>
       </SidebarGroup>
+      )}
+
+      <SidebarGroup>
+        <SidebarGroupLabel>Geral</SidebarGroupLabel>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <Link href="/">
+              <House className="size-4" />
+              <span>Página Inicial</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/intranet">
+              <UsersRound className="size-4" />
+              <span>Intranet</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/reserva-salas">
+              <CalendarSearch className="size-4" />
+              <span>Reservas de Salas</span>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Link href="/avaliacao-limpeza">
+              <ClipboardCheck className="size-4" />
+              <span>Avaliação de Limpeza</span>
+            </Link>
+          </SidebarMenuItem>
+          {mostraGestaoPessoas ? (
+          <SidebarMenuItem>
+            <Link href="/gestao-pessoas">
+              <Users className="size-4" />
+              <span>Gestão de Pessoas</span>
+            </Link>
+          </SidebarMenuItem>
+          ) : null}
+        </SidebarMenu>
+      </SidebarGroup>
+
+      {mostraAdmin && (
+        <SidebarGroup>
+          <SidebarGroupLabel>Administração</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <Link href="/usuarios">
+                <Users className="size-4" />
+                <span>Usuários</span>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link href="/coordenadorias">
+                <Building2 className="size-4" />
+                <span>Coordenadorias</span>
+              </Link>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      )}
     </SidebarContent>
   );
 }

@@ -1,47 +1,68 @@
-import { cookies } from "next/headers";
+import { auth } from "@/lib/auth";
+import { temAcessoTotalModulos } from "@/lib/permissoes";
+import { prisma } from "@/lib/prisma";
+import { Modulo } from "@/prisma/generated";
+
+async function obterUsuarioSessao() {
+  const session = await auth();
+  if (!session?.usuario?.id) return null;
+
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: session.usuario.id },
+    select: { id: true, desenvolvedor: true, permissao: true },
+  });
+  if (!usuario) return null;
+
+  return {
+    id: usuario.id,
+    permissao: String(usuario.permissao ?? session.usuario.permissao ?? ""),
+    desenvolvedor: usuario.desenvolvedor ?? session.usuario.desenvolvedor ?? false,
+  };
+}
 
 async function verificarDesenvolvedor(): Promise<boolean> {
-    const cookieStore = await cookies();
-    try {
-        const resposta = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}api/usuarios/permissoes/desenvolvedor`, {
-            headers: { cookie: cookieStore.toString() }
-        });
-        const { desenvolvedor } = await resposta.json();
-        return desenvolvedor;
-    } catch (error) {
-        console.error("Erro ao verificar permissão de desenvolvedor:", error);
-        return false;
-    }
+  const usuario = await obterUsuarioSessao();
+  return usuario?.desenvolvedor ?? false;
 }
 
 async function listarPermissoes(modulo?: string): Promise<string[]> {
-    const cookieStore = await cookies();
-    try {
-        const resposta = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}api/usuarios/permissoes${modulo ? `?modulo=${modulo}` : ''}`,
-            { headers: { Cookie: cookieStore.toString() } }
-        );
-        const { permissoes } = await resposta.json();
-        return permissoes;
-    } catch (error) {
-        throw new Error("Erro ao listar permissões: " + error);
-    }
+  const usuario = await obterUsuarioSessao();
+  if (!usuario) return [];
+
+  const acessoTotal = temAcessoTotalModulos(
+    usuario.permissao,
+    usuario.desenvolvedor,
+  );
+
+  const permissoes = await prisma.permissao.findMany({
+    where: {
+      ...(acessoTotal
+        ? {}
+        : { usuarios: { some: { usuarioId: usuario.id } } }),
+      modulo: (modulo as Modulo) || undefined,
+    },
+    select: { nome: true },
+  });
+
+  return permissoes.map((p) => p.nome);
 }
 
 async function validarPermissao(permissao: string): Promise<boolean> {
-    const cookieStore = await cookies();
-    try {
-        const resposta = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}api/usuarios/permissoes/validar/${permissao}`,
-            { headers: { Cookie: cookieStore.toString() } }
-        );
-        const { temPermissao } = await resposta.json();
-        return temPermissao;
-    } catch (error) {
-        console.error("Erro ao validar permissão:", error);
-        return false;
-    }
+  const usuario = await obterUsuarioSessao();
+  if (!usuario) return false;
+
+  if (temAcessoTotalModulos(usuario.permissao, usuario.desenvolvedor)) {
+    return true;
+  }
+
+  const vinculo = await prisma.usuarioPermissao.findFirst({
+    where: {
+      usuarioId: usuario.id,
+      permissao: { nome: permissao },
+    },
+  });
+
+  return !!vinculo;
 }
 
 export { verificarDesenvolvedor, listarPermissoes, validarPermissao };

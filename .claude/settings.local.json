@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(cp webfetch-1779211615906-ym4qul.bin design.gz)",
+      "Bash(gunzip -f design.gz)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(admin\\\\\\))",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find \"/c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\(rotas-auth\\)/helpdesk\" -type f)",
+      "Bash(wc -l \"/c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\(rotas-auth\\)/helpdesk/_components/hd-app.tsx\")",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/_components/)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/chamados/)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/patrimonio/)",
+      "Bash(ls /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/transferencias/)",
+      "Bash(wc -l /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/_components/hd-app.tsx)",
+      "Bash(head -5 /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/_components/hd-app.tsx)",
+      "Bash(cat /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/chamados/[id]/page.tsx)",
+      "Bash(cat /c/Users/d854440/Sistemas/salas-reuniao-fullstack/app/\\\\\\(rotas-auth\\\\\\)/helpdesk/page.tsx)",
+      "Bash(npx tsx *)",
+      "Bash(npx prisma *)",
+      "Bash(node -e ' *)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\d854440\\\\Sistemas\\\\salas-reuniao-fullstack\\\\app\\\\api\\\\helpdesk\\\\chamados\")",
+      "Bash(node -e \"const {PrismaClient} = require\\('./node_modules/.prisma/client'\\); const p = new PrismaClient\\(\\); p.hdChamado.findMany\\({take:1, include:{solicitante:true, abertoEmNomeDe:true, categoria:true, unidade:true}}\\).then\\(r => console.log\\('OK', JSON.stringify\\(r\\).slice\\(0,200\\)\\)\\).catch\\(e => console.error\\('ERR', e.message\\)\\)\")",
+      "Bash(npx next *)",
+      "Bash(Start-Sleep -Seconds 5)",
+      "Bash(Invoke-WebRequest -Uri \"http://localhost:3001/api/helpdesk/chamados\" -UseBasicParsing -TimeoutSec 10)",
+      "Bash(Select-Object -ExpandProperty Content)",
+      "Bash(Select-String \"next-auth|next\\\\\"\")",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\d854440\\\\\" -File | Where-Object { $_.Name -match \"sisgp|patrimonio|bens\" -or $_.Extension -match \"\\\\.sql|\\\\.db|\\\\.dump|\\\\.backup\" } | Select-Object FullName, Name, LastWriteTime | Sort-Object LastWriteTime -Descending | Select-Object -First 20)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\d854440\\\\Downloads\\\\\" -Recurse -File | Where-Object { $_.Name -match \"sisgp|patrimonio|bens\" -or $_.Extension -match \"\\\\.sql|\\\\.db|\\\\.dump|\\\\.backup\" } | Select-Object FullName, Name, LastWriteTime | Sort-Object LastWriteTime -Descending | Select-Object -First 20)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\d854440\\\\Downloads\\\\\" -File | Where-Object { $_.Extension -match \"\\\\.sql\" } | Select-Object FullName, Name, LastWriteTime, Length | Sort-Object LastWriteTime -Descending)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\d854440\\\\Sistemas\\\\\" -Directory | Select-Object FullName, Name | Where-Object { $_.Name -match \"sisgp|patrimonio|bens|inventario\" })",
+      "Bash(head -50 \"c:\\\\Users\\\\d854440\\\\Downloads\\\\antares.sql\")",
+      "Read(//c/Users/d854440/Downloads/**)",
+      "Bash(head -50 \"c:\\\\Users\\\\d854440\\\\Downloads\\\\inventario.sql\")",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\d854440\\\\\" -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match \"sisgp\" } | Select-Object FullName, Name, LastWriteTime | Select-Object -First 20)",
+      "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\d854440\\\\Sistemas\\\\salas-reuniao-fullstack\\\\app\\\\api\\\\helpdesk\\\\transferencias\")",
+      "Bash(Out-Null)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\d854440\\Sistemas\\salas-reuniao-fullstack\\app\\api\\helpdesk"
+    ]
+  }
+}

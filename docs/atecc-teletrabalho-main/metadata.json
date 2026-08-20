@@ -1,0 +1,5 @@
+{
+  "name": "ATECC - Teletrabalho",
+  "description": "Sistema de registro de atividades diárias para servidores em regime de teletrabalho da ATECC.",
+  "requestFramePermissions": []
+}

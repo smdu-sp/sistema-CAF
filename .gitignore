@@ -29,3 +29,11 @@ next-env.d.ts
 # Uploads locais (fotos de layout das salas)
 /public/uploads/salas/*
 !/public/uploads/salas/.gitkeep
+
+# design-sync
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+.design-sync/compiled-tailwind.css

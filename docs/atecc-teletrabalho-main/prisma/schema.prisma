@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Unidade {
+  id   String @id
+  nome String
+}
+
+model User {
+  id                String @id
+  rf                String @unique
+  nomeCompleto      String
+  unidadeId         String
+  cargo             String
+  grupoTeletrabalho Int?
+  role              String @default("user")
+}
+
+model Registro {
+  id                    String              @id
+  userId                String
+  rf                    String
+  nomeCompleto          String
+  unidadeLotacao        String
+  unidadeId             String
+  dataTeletrabalho      String
+  cargo                 String
+  processosAnalisados   String?             @db.Text
+  dificuldades          String?             @db.Text
+  motivoAtraso          String?             @db.Text
+  compensacao           Boolean?
+  dataRealPreenchimento String
+  timestamp             String
+  pontuacaoTotal        Int
+  atividades            AtividadeRegistro[]
+}
+
+model AtividadeRegistro {
+  id          String   @id @default(cuid())
+  registroId  String
+  registro    Registro @relation(fields: [registroId], references: [id], onDelete: Cascade)
+  atividadeId String
+  quantidade  Int
+}
+
+model CargoConfig {
+  id         String      @id
+  atividades Atividade[]
+}
+
+model Atividade {
+  id            String      @id
+  cargoConfigId String
+  cargoConfig   CargoConfig @relation(fields: [cargoConfigId], references: [id], onDelete: Cascade)
+  categoria     String
+  descricao     String      @db.Text
+  pontuacao     Int
+}
+
+model CalendarActivity {
+  id      String @id
+  userId  String
+  date    String
+  time    String
+  subject String
+}
+
+model DutyStaff {
+  id        String @id
+  userId    String
+  userName  String
+  userCargo String
+  date      String
+}

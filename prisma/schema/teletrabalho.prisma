@@ -1,0 +1,416 @@
+// Teletrabalho SMUL — tabelas tt.*
+
+enum TtPapelUnidade {
+  servidor
+  chefia
+  coordenador
+  caf_dgp
+}
+
+enum TtTipoFeriado {
+  nacional
+  municipal
+  ponto_facultativo
+}
+
+enum TtSituacaoTermoAdesao {
+  pendente
+  vigente
+  encerrado
+}
+
+enum TtIniciativaDesligamento {
+  servidor
+  chefia
+}
+
+enum TtEstadoRegistro {
+  RASCUNHO
+  ENVIADO
+  VALIDADO
+  DEVOLVIDO
+}
+
+enum TtSituacaoFechamento {
+  aberto
+  fechado
+}
+
+enum TtTipoAlgoritmoEscala {
+  atecc_grupos_2
+  personalizado
+}
+
+enum TtTipoRelatorio {
+  individual
+  consolidado
+}
+
+enum TtAuditAcao {
+  criar
+  alterar
+  validar
+  devolver
+  excluir
+  fechar
+  reabrir
+  enviar
+}
+
+model TtUnidade {
+  id        String  @id @default(uuid())
+  nome      String  @db.VarChar(250)
+  sigla     String  @db.VarChar(20)
+  codigoEh  String? @unique @db.VarChar(15)
+  parentId  String?
+  chefiaId  String?
+  ativo     Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  parent  TtUnidade?  @relation("ttUnidadeHierarquia", fields: [parentId], references: [id], onDelete: SetNull)
+  filhas  TtUnidade[] @relation("ttUnidadeHierarquia")
+  chefia  TtServidor? @relation("ttChefiaUnidade", fields: [chefiaId], references: [id], onDelete: SetNull)
+
+  servidores          TtServidor[]          @relation("ttServidorUnidade")
+  cargos              TtCargo[]
+  categorias          TtCategoriaAtividade[]
+  atividades          TtAtividade[]
+  regimeEscala        TtRegimeEscala?
+  registros           TtRegistroDiario[]
+  fechamentos         TtFechamentoMensal[]
+  papeisUsuarios      TtUsuarioUnidade[]
+
+  @@index([parentId])
+  @@index([sigla])
+  @@map("tt.unidades")
+}
+
+model TtServidor {
+  id             String  @id @default(uuid())
+  rf             String  @unique @db.VarChar(7)
+  nome           String  @db.VarChar(250)
+  email          String  @db.VarChar(180)
+  telefoneSetor  String? @db.VarChar(30)
+  unidadeId      String
+  cargoId        String
+  usuarioId      String? @unique
+  ativo          Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  unidade TtUnidade  @relation("ttServidorUnidade", fields: [unidadeId], references: [id], onDelete: Restrict)
+  cargo   TtCargo    @relation(fields: [cargoId], references: [id], onDelete: Restrict)
+  usuario Usuario?   @relation("ttServidorUsuario", fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  unidadesChefiadas TtUnidade[]           @relation("ttChefiaUnidade")
+  termosAdesao      TtTermoAdesao[]
+  termosDesligamento TtTermoDesligamento[]
+  escala            TtEscalaServidor?
+  registros         TtRegistroDiario[]
+
+  @@index([unidadeId])
+  @@index([cargoId])
+  @@map("tt.servidores")
+}
+
+model TtUsuarioUnidade {
+  usuarioId String
+  unidadeId String
+  papel     TtPapelUnidade @default(servidor)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  usuario Usuario   @relation("ttUsuarioUnidades", fields: [usuarioId], references: [id], onDelete: Cascade)
+  unidade TtUnidade @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, unidadeId])
+  @@map("tt.usuario_unidades")
+}
+
+model TtCargo {
+  id        String  @id @default(uuid())
+  unidadeId String
+  nome      String  @db.VarChar(150)
+  ativo     Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  unidade    TtUnidade         @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  servidores TtServidor[]
+  atividades TtCargoAtividade[]
+
+  @@unique([unidadeId, nome])
+  @@index([unidadeId])
+  @@map("tt.cargos")
+}
+
+model TtCategoriaAtividade {
+  id        String  @id @default(uuid())
+  unidadeId String
+  nome      String  @db.VarChar(80)
+  ordem     Int     @default(0)
+  ativo     Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  unidade    TtUnidade     @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  atividades TtAtividade[]
+
+  @@unique([unidadeId, nome])
+  @@index([unidadeId])
+  @@map("tt.categorias_atividade")
+}
+
+model TtAtividade {
+  id          String  @id @default(uuid())
+  unidadeId   String
+  categoriaId String
+  descricao   String  @db.Text
+  ativo       Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  unidade   TtUnidade              @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  categoria TtCategoriaAtividade   @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  cargos    TtCargoAtividade[]
+  itensRegistro TtAtividadeRegistro[]
+
+  @@index([unidadeId])
+  @@index([categoriaId])
+  @@map("tt.atividades")
+}
+
+model TtCargoAtividade {
+  id             String    @id @default(uuid())
+  cargoId        String
+  atividadeId    String
+  pontuacao      Int
+  inicioVigencia DateTime  @db.Date
+  fimVigencia    DateTime? @db.Date
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  cargo     TtCargo     @relation(fields: [cargoId], references: [id], onDelete: Restrict)
+  atividade TtAtividade @relation(fields: [atividadeId], references: [id], onDelete: Restrict)
+
+  @@index([cargoId, inicioVigencia])
+  @@index([atividadeId])
+  @@map("tt.cargo_atividades")
+}
+
+model TtExercicio {
+  id        String  @id @default(uuid())
+  ano       Int     @unique
+  corrente  Boolean @default(false)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  feriados TtFeriado[]
+
+  @@map("tt.exercicios")
+}
+
+model TtFeriado {
+  id          String        @id @default(uuid())
+  exercicioId String
+  data        DateTime      @db.Date
+  nome        String        @db.VarChar(120)
+  tipo        TtTipoFeriado
+  ativo       Boolean       @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  exercicio TtExercicio @relation(fields: [exercicioId], references: [id], onDelete: Cascade)
+
+  @@unique([exercicioId, data])
+  @@index([data])
+  @@map("tt.feriados")
+}
+
+model TtTermoAdesao {
+  id                 String                 @id @default(uuid())
+  servidorId         String
+  dataAssinatura     DateTime               @db.Date
+  dataCienciaChefia  DateTime?              @db.Date
+  situacao           TtSituacaoTermoAdesao  @default(pendente)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  servidor TtServidor @relation(fields: [servidorId], references: [id], onDelete: Restrict)
+
+  @@index([servidorId, situacao])
+  @@map("tt.termos_adesao")
+}
+
+model TtTermoDesligamento {
+  id         String                    @id @default(uuid())
+  servidorId String
+  data       DateTime                  @db.Date
+  iniciativa TtIniciativaDesligamento
+  motivo     String                    @db.Text
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  servidor TtServidor @relation(fields: [servidorId], references: [id], onDelete: Restrict)
+
+  @@index([servidorId])
+  @@map("tt.termos_desligamento")
+}
+
+model TtRegimeEscala {
+  id               String                 @id @default(uuid())
+  unidadeId        String                 @unique
+  diasRemotos      Int                    @default(2)
+  diasPresenciais  Int                    @default(3)
+  gruposRodizio    Int                    @default(2)
+  algoritmo        TtTipoAlgoritmoEscala  @default(atecc_grupos_2)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  unidade TtUnidade @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+
+  @@map("tt.regimes_escala")
+}
+
+model TtEscalaServidor {
+  id                  String  @id @default(uuid())
+  servidorId          String  @unique
+  grupo               Int
+  janelaInicio        String? @db.VarChar(5)
+  janelaFim           String? @db.VarChar(5)
+  horarioAlmocoInicio String? @db.VarChar(5)
+  horarioAlmocoFim    String? @db.VarChar(5)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  servidor TtServidor @relation(fields: [servidorId], references: [id], onDelete: Cascade)
+
+  @@map("tt.escalas_servidor")
+}
+
+model TtRegistroDiario {
+  id                  String            @id @default(uuid())
+  servidorId          String
+  unidadeId           String
+  data                DateTime          @db.Date
+  estado              TtEstadoRegistro  @default(RASCUNHO)
+  pontuacaoTotal      Int               @default(0)
+  processosAnalisados String?           @db.Text
+  dificuldades        String?           @db.Text
+  observacoes         String?           @db.Text
+  motivoAtraso        String?           @db.Text
+  compensacao         Boolean           @default(false)
+  justificativaDevolucao String?        @db.Text
+  enviadoEm           DateTime?
+  validadoEm          DateTime?
+  validadoPorId       String?
+  devolvidoEm         DateTime?
+  devolvidoPorId      String?
+  excluidoEm          DateTime?
+  excluidoPorId       String?
+  motivoExclusao      String?           @db.Text
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  servidor     TtServidor           @relation(fields: [servidorId], references: [id], onDelete: Restrict)
+  unidade      TtUnidade            @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  validadoPor  Usuario?             @relation("ttRegistroValidador", fields: [validadoPorId], references: [id], onDelete: SetNull)
+  devolvidoPor Usuario?             @relation("ttRegistroDevolvedor", fields: [devolvidoPorId], references: [id], onDelete: SetNull)
+  excluidoPor  Usuario?             @relation("ttRegistroExcluidor", fields: [excluidoPorId], references: [id], onDelete: SetNull)
+  atividades   TtAtividadeRegistro[]
+
+  @@unique([servidorId, data])
+  @@index([unidadeId, data])
+  @@index([servidorId, data])
+  @@index([estado])
+  @@map("tt.registros_diarios")
+}
+
+model TtAtividadeRegistro {
+  id                 String @id @default(uuid())
+  registroId         String
+  atividadeId        String
+  quantidade         Int
+  descricaoSnapshot  String @db.Text
+  pontuacaoUnitaria  Int
+
+  registro  TtRegistroDiario @relation(fields: [registroId], references: [id], onDelete: Cascade)
+  atividade TtAtividade      @relation(fields: [atividadeId], references: [id], onDelete: Restrict)
+
+  @@index([registroId])
+  @@index([atividadeId])
+  @@map("tt.atividades_registro")
+}
+
+model TtFechamentoMensal {
+  id                    String               @id @default(uuid())
+  unidadeId             String
+  ano                   Int
+  mes                   Int
+  situacao              TtSituacaoFechamento @default(aberto)
+  fechadoEm             DateTime?
+  fechadoPorId          String?
+  reabertoEm            DateTime?
+  reabertoPorId         String?
+  justificativaReabertura String?            @db.Text
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  unidade     TtUnidade           @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  fechadoPor  Usuario?            @relation("ttFechamentoAutor", fields: [fechadoPorId], references: [id], onDelete: SetNull)
+  reabertoPor Usuario?            @relation("ttFechamentoReabertura", fields: [reabertoPorId], references: [id], onDelete: SetNull)
+  relatorios  TtRelatorioEmitido[]
+
+  @@unique([unidadeId, ano, mes])
+  @@index([unidadeId, ano, mes])
+  @@map("tt.fechamentos_mensais")
+}
+
+model TtRelatorioEmitido {
+  id           String          @id @default(uuid())
+  fechamentoId String
+  tipo         TtTipoRelatorio
+  versao       Int             @default(1)
+  formato      String          @db.VarChar(10)
+  emitidoPorId String?
+  emitidoEm    DateTime        @default(now())
+
+  fechamento TtFechamentoMensal @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
+  emitidoPor Usuario?           @relation("ttRelatorioAutor", fields: [emitidoPorId], references: [id], onDelete: SetNull)
+
+  @@index([fechamentoId])
+  @@map("tt.relatorios_emitidos")
+}
+
+model TtAuditLog {
+  id            String      @id @default(uuid())
+  entidade      String      @db.VarChar(80)
+  entidadeId    String      @db.VarChar(40)
+  acao          TtAuditAcao
+  atorId        String?
+  estadoAnterior String?    @db.Text
+  criadoEm      DateTime    @default(now())
+
+  ator Usuario? @relation("ttAuditAtor", fields: [atorId], references: [id], onDelete: SetNull)
+
+  @@index([entidade, entidadeId])
+  @@index([atorId])
+  @@index([criadoEm])
+  @@map("tt.audit_logs")
+}

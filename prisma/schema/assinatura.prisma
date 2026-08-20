@@ -1,0 +1,56 @@
+// Assinatura de e-mail institucional — tabelas assinatura.*
+
+model AssinaturaSetor {
+  id    String  @id @default(uuid())
+  nome  String  @unique @db.VarChar(250)
+  ativo Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  perfis AssinaturaPerfil[]
+
+  @@map("assinatura.setores")
+}
+
+model AssinaturaCargo {
+  id    String  @id @default(uuid())
+  nome  String  @unique @db.VarChar(150)
+  ativo Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  @@map("assinatura.cargos")
+}
+
+model AssinaturaGrupoRamal {
+  id         String @id @default(uuid())
+  usuario    String @unique @db.VarChar(30)
+  ramalGrupo String @db.VarChar(30)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  @@map("assinatura.gruporamais")
+}
+
+model AssinaturaPerfil {
+  id           String  @id @default(uuid())
+  usuarioId    String  @unique
+  nomeExibicao String? @db.VarChar(120)
+  cargo        String? @db.VarChar(150)
+  setorId      String?
+  andar        String? @db.VarChar(10)
+  aniversario  String? @db.VarChar(10)
+  ramal        String? @db.VarChar(30)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  usuario Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  setor   AssinaturaSetor? @relation(fields: [setorId], references: [id], onDelete: SetNull)
+
+  @@index([setorId])
+  @@map("assinatura.perfis")
+}

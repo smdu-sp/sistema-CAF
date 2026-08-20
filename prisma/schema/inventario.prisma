@@ -1,0 +1,210 @@
+// Gestão de Inventário de TI — ativo técnico (hardware/software/rede)
+// Complementa o registro patrimonial (HdItemPatrimonio) via vínculo 1:1 opcional.
+
+enum InvTipoEquipamento {
+  desktop
+  notebook
+  servidor
+  switch
+  roteador
+  impressora
+  storage
+  outro
+}
+
+enum InvStatusRede {
+  online
+  offline
+  nunca_visto
+}
+
+enum InvMetodoColeta {
+  winrm
+  snmp
+  ssh
+  manual
+  import
+  ping
+}
+
+enum InvStatusSolicitacaoColeta {
+  pendente
+  processando
+  concluida
+  erro
+}
+
+model InvEquipamento {
+  id     Int               @id @default(autoincrement())
+  /// Vínculo opcional com o registro patrimonial já existente
+  itemId Int?              @unique
+  item   HdItemPatrimonio? @relation("invItemPatrimonio", fields: [itemId], references: [idbem], onDelete: SetNull)
+
+  tipo       InvTipoEquipamento @default(outro)
+  hostname   String?            @db.VarChar(200)
+  nome       String?            @db.VarChar(200)
+  ip         String?            @db.VarChar(45) // suporta IPv6
+  mac        String?            @db.VarChar(20)
+  fabricante String?            @db.VarChar(150)
+  modelo     String?            @db.VarChar(200)
+  numserie   String?            @db.VarChar(200)
+  so         String?            @db.VarChar(150)
+  soVersao   String?            @db.VarChar(80)
+  soBuild    String?            @db.VarChar(80)
+
+  usuarioLogado String? @db.VarChar(150)
+  dominio       String? @db.VarChar(150)
+
+  statusRede    InvStatusRede    @default(nunca_visto)
+  ultimoContato DateTime?
+  ultimaColeta  DateTime?
+  metodoColeta  InvMetodoColeta?
+
+  unidadeId  String?
+  unidade    HdUnidade? @relation("invUnidadeEquipamentos", fields: [unidadeId], references: [id])
+  servidorId String?
+  servidor   Usuario?   @relation("invServidorEquipamentos", fields: [servidorId], references: [id])
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+
+  hardware     InvHardware?
+  discos       InvDisco[]
+  softwares    InvSoftware[]
+  historico    InvHistorico[]
+  localizacoes InvLocalizacao[]
+  alertas      InvAlerta[]
+
+  @@index([statusRede])
+  @@index([ip])
+  @@index([mac])
+  @@map("inv.equipamentos")
+}
+
+/// Snapshot atual do hardware (1:1)
+model InvHardware {
+  id            Int     @id @default(autoincrement())
+  equipamentoId Int     @unique
+  cpuModelo     String? @db.VarChar(200)
+  cpuNucleos    Int?
+  ramTotalMb    Int?
+  placaMae      String? @db.VarChar(200)
+  bios          String? @db.VarChar(200)
+  placaVideo    String? @db.VarChar(200)
+
+  equipamento InvEquipamento @relation(fields: [equipamentoId], references: [id], onDelete: Cascade)
+
+  @@map("inv.hardware")
+}
+
+model InvDisco {
+  id            Int     @id @default(autoincrement())
+  equipamentoId Int
+  modelo        String? @db.VarChar(200)
+  tamanhoMb     Int?
+  livreMb       Int?
+
+  equipamento InvEquipamento @relation(fields: [equipamentoId], references: [id], onDelete: Cascade)
+
+  @@index([equipamentoId])
+  @@map("inv.discos")
+}
+
+model InvSoftware {
+  id             Int       @id @default(autoincrement())
+  equipamentoId  Int
+  nome           String    @db.VarChar(300)
+  fabricante     String?   @db.VarChar(200)
+  versao         String?   @db.VarChar(80)
+  dataInstalacao DateTime?
+  caminho        String?   @db.VarChar(500)
+  proibido       Boolean   @default(false)
+
+  equipamento InvEquipamento @relation(fields: [equipamentoId], references: [id], onDelete: Cascade)
+
+  @@index([equipamentoId])
+  @@index([nome])
+  @@map("inv.softwares")
+}
+
+/// Histórico de alterações — NUNCA apaga (troca de RAM/HD/usuário/IP, updates de SO…)
+model InvHistorico {
+  id            Int             @id @default(autoincrement())
+  equipamentoId Int
+  campo         String          @db.VarChar(80) // "ram", "ip", "usuarioLogado"…
+  valorAnterior String?         @db.Text
+  valorNovo     String?         @db.Text
+  origem        InvMetodoColeta
+  criadoEm      DateTime        @default(now())
+
+  equipamento InvEquipamento @relation(fields: [equipamentoId], references: [id], onDelete: Cascade)
+
+  @@index([equipamentoId, criadoEm])
+  @@map("inv.historico")
+}
+
+/// Localização física (prédio/andar/sala/mesa) com histórico de movimentação
+model InvLocalizacao {
+  id            Int      @id @default(autoincrement())
+  equipamentoId Int
+  predio        String?  @db.VarChar(150)
+  andar         String?  @db.VarChar(80)
+  sala          String?  @db.VarChar(120)
+  mesa          String?  @db.VarChar(80)
+  /// true = localização vigente; registros anteriores ficam como histórico
+  atual         Boolean  @default(true)
+  criadoEm      DateTime @default(now())
+
+  equipamento InvEquipamento @relation(fields: [equipamentoId], references: [id], onDelete: Cascade)
+
+  @@index([equipamentoId])
+  @@map("inv.localizacoes")
+}
+
+model InvAlerta {
+  id            Int      @id @default(autoincrement())
+  equipamentoId Int
+  tipo          String   @db.VarChar(80) // disco_cheio, offline, garantia, sw_proibido…
+  mensagem      String   @db.Text
+  resolvido     Boolean  @default(false)
+  criadoEm      DateTime @default(now())
+
+  equipamento InvEquipamento @relation(fields: [equipamentoId], references: [id], onDelete: Cascade)
+
+  @@index([equipamentoId, resolvido])
+  @@map("inv.alertas")
+}
+
+/// Fila de solicitações de coleta sob demanda (consumida pelo coletor .ps1)
+model InvColetaSolicitacao {
+  id           Int                        @id @default(autoincrement())
+  /// Hostname, IP ou CIDR a coletar
+  alvo         String                     @db.VarChar(200)
+  /// "host" ou "subrede"
+  tipoAlvo     String                     @default("host") @db.VarChar(20)
+  status       InvStatusSolicitacaoColeta @default(pendente)
+  solicitadoPor String?
+  /// Resumo/erro devolvido pelo coletor
+  resultado    String?                    @db.Text
+  processadoEm DateTime?
+  criadoEm     DateTime                   @default(now())
+  atualizadoEm DateTime                   @default(now()) @updatedAt
+
+  solicitante Usuario? @relation("invSolicitanteColeta", fields: [solicitadoPor], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@map("inv.coleta_solicitacoes")
+}
+
+/// Sub-redes alvo da descoberta automática
+model InvSubrede {
+  id           Int       @id @default(autoincrement())
+  cidr         String    @db.VarChar(50) // ex.: 10.75.32.0/24
+  descricao    String?   @db.VarChar(200)
+  ativo        Boolean   @default(true)
+  ultimoScan   DateTime?
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @default(now()) @updatedAt
+
+  @@map("inv.subredes")
+}

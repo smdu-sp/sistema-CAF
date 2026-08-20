@@ -5,11 +5,12 @@ import { isTipoChamado, type TipoChamado } from '@/lib/helpdesk/tipos-chamado';
 export default async function NovoChamadoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ area?: string }>;
+  searchParams: Promise<{ area?: string; modo?: string }>;
 }) {
   await verificarAcessoPaginaHelpdesk('chamados');
-  const { area } = await searchParams;
+  const { area, modo } = await searchParams;
   const initialArea: TipoChamado | undefined =
-    area && isTipoChamado(area) ? area : 'suporte_tecnico';
-  return <HdApp initialView="novo-chamado" initialArea={initialArea} />;
+    area && isTipoChamado(area) ? area : undefined;
+  const initialView = modo === 'tecnico' ? 'novo-chamado' : 'novo-chamado-assistente';
+  return <HdApp initialView={initialView} initialArea={initialArea} />;
 }

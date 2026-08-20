@@ -8,6 +8,7 @@ import {
   PatrimonioNovoItemButton,
 } from './item-patrimonio/inventario-acoes';
 import { ViewTermos } from './termos-patrimonio/view-termos';
+import { ViewNovoChamadoAssistente } from './wizard-abertura-chamado';
 import type { BaixaPatrimonio, Chamado, ItemPatrimonio, StatusHistoricoPatrimonio, Transferencia, StatusChamado, Prioridade, TipoEvento, Mensagem, Anexo, Usuario, Unidade, Categoria, TipoChamado } from '../_types';
 import { STATUS_META, PRIORIDADE_META, TIPO_CHAMADO_META, TIPOS_CHAMADO, labelTipoChamado, exigeComputadorNaAbertura } from '../_types';
 import { categoriaCompativelComArea } from '@/lib/helpdesk/tipos-chamado';
@@ -94,7 +95,7 @@ const CAPACIDADES_VAZIAS: CapacidadesHelpdesk = {
   gerenciarAcessoSistemas: false,
 };
 
-function resolveCategoriaId(categorias: Categoria[], pai: string, filho: string): number | null {
+export function resolveCategoriaId(categorias: Categoria[], pai: string, filho: string): number | null {
   if (filho) {
     return categorias.find(c => c.pai === pai && c.filho === filho)?.id ?? null;
   }
@@ -359,7 +360,7 @@ function SearchInput({ value, onChange, placeholder }: { value: string; onChange
   );
 }
 
-function AutocompleteInput<T>({
+export function AutocompleteInput<T>({
   value, onChange, items, getLabel, getKey, placeholder, renderItem,
 }: {
   value: T | null;
@@ -826,7 +827,7 @@ function DonutChart({ segments, total, size = 140 }: { segments: { nome: string;
   );
 }
 
-type View = 'dashboard' | 'chamados' | 'chamado-detalhe' | 'novo-chamado' | 'inventario' | 'item-detalhe' | 'movimentacoes' | 'nova-transferencia' | 'termos' | 'usuarios' | 'relatorios';
+type View = 'dashboard' | 'chamados' | 'chamado-detalhe' | 'novo-chamado' | 'novo-chamado-assistente' | 'inventario' | 'item-detalhe' | 'movimentacoes' | 'nova-transferencia' | 'termos' | 'usuarios' | 'relatorios';
 type AbaMovimentacao = 'transferencia' | 'baixa' | 'status';
 
 interface HdAppProps {
@@ -918,6 +919,7 @@ export function HdApp({ initialView = 'dashboard', initialId, initialArea, initi
       {view === 'chamados' && <ViewChamados {...viewProps} />}
       {view === 'chamado-detalhe' && <ViewChamadoDetalhe {...viewProps} />}
       {view === 'novo-chamado' && <ViewNovoChamado {...viewProps} />}
+      {view === 'novo-chamado-assistente' && <ViewNovoChamadoAssistente {...viewProps} />}
       {view === 'inventario' && capacidades.patrimonio && <ViewInventario {...viewProps} />}
       {view === 'item-detalhe' && capacidades.patrimonio && <ViewItemDetalhe {...viewProps} />}
       {view === 'movimentacoes' && capacidades.patrimonio && <ViewMovimentacoes {...viewProps} />}
@@ -1020,7 +1022,7 @@ function ViewDashboard({ navTo, chamados, transferencias, usuarioPorId, capacida
         title="Dashboard"
         sub="Visão geral do suporte técnico"
         action={
-          <button style={BTN_PRIMARY} onClick={() => navTo('novo-chamado')}>
+          <button style={BTN_PRIMARY} onClick={() => navTo('novo-chamado-assistente')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
             Novo Chamado
           </button>
@@ -1238,7 +1240,7 @@ function ViewChamados({ navTo, chamados, usuarioPorId, perfilLogado, areaFiltro 
               </a>
             </div>
           ) : (
-          <button style={BTN_PRIMARY} onClick={() => navTo('novo-chamado')}>
+          <button style={BTN_PRIMARY} onClick={() => navTo('novo-chamado-assistente')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
             Novo Chamado
           </button>
